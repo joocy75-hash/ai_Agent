@@ -1,0 +1,12 @@
+# 테스트 파일 제외
+test_*.py
+debug_*.sh
+
+# 환경 변수
+.env
+.env.local
+.env.production
+
+# API 키
+*_keys.txt
+credentials.json

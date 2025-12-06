@@ -1,0 +1,97 @@
+/* Admin Dashboard App Styles */
+
+/* Remove Vite template styles */
+
+/* Animation keyframes */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-spinner {
+  animation: spin 1s linear infinite;
+}
+
+/* Form input focus styles */
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* Button transitions */
+button {
+  transition: all 0.2s ease;
+}
+
+button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* Card hover effects */
+.stat-card,
+.bot-card {
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.stat-card:hover,
+.bot-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Table row hover */
+tr:hover {
+  background-color: #f9fafb;
+}
+
+/* Badge styles */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.badge-admin {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.badge-user {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.badge-active {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.badge-inactive {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.badge-buy {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.badge-sell {
+  background: #fee2e2;
+  color: #991b1b;
+}

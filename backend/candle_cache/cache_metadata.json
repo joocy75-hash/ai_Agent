@@ -1,0 +1,229 @@
+{
+  "caches": {
+    "BTCUSDT_1h": {
+      "symbol": "BTCUSDT",
+      "timeframe": "1h",
+      "count": 1019,
+      "start": 1761253200000,
+      "end": 1764918000000,
+      "updated_at": "2025-12-05T16:49:00.242833"
+    },
+    "BTCUSDT_4h": {
+      "symbol": "BTCUSDT",
+      "timeframe": "4h",
+      "count": 1084,
+      "start": 1749312000000,
+      "end": 1764907200000,
+      "updated_at": "2025-12-05T16:49:04.512345"
+    },
+    "ETHUSDT_1h": {
+      "symbol": "ETHUSDT",
+      "timeframe": "1h",
+      "count": 1019,
+      "start": 1761253200000,
+      "end": 1764918000000,
+      "updated_at": "2025-12-05T16:49:11.835644"
+    },
+    "ETHUSDT_4h": {
+      "symbol": "ETHUSDT",
+      "timeframe": "4h",
+      "count": 1084,
+      "start": 1749312000000,
+      "end": 1764907200000,
+      "updated_at": "2025-12-05T16:49:16.083241"
+    },
+    "SOLUSDT_1h": {
+      "symbol": "SOLUSDT",
+      "timeframe": "1h",
+      "count": 1019,
+      "start": 1761253200000,
+      "end": 1764918000000,
+      "updated_at": "2025-12-05T16:49:23.358040"
+    },
+    "SOLUSDT_4h": {
+      "symbol": "SOLUSDT",
+      "timeframe": "4h",
+      "count": 1084,
+      "start": 1749312000000,
+      "end": 1764907200000,
+      "updated_at": "2025-12-05T16:49:27.660670"
+    },
+    "XRPUSDT_1h": {
+      "symbol": "XRPUSDT",
+      "timeframe": "1h",
+      "count": 1019,
+      "start": 1761253200000,
+      "end": 1764918000000,
+      "updated_at": "2025-12-05T16:49:34.918689"
+    },
+    "XRPUSDT_4h": {
+      "symbol": "XRPUSDT",
+      "timeframe": "4h",
+      "count": 1084,
+      "start": 1749312000000,
+      "end": 1764907200000,
+      "updated_at": "2025-12-05T16:49:39.183063"
+    },
+    "DOGEUSDT_1h": {
+      "symbol": "DOGEUSDT",
+      "timeframe": "1h",
+      "count": 1019,
+      "start": 1761253200000,
+      "end": 1764918000000,
+      "updated_at": "2025-12-05T16:49:46.461749"
+    },
+    "DOGEUSDT_4h": {
+      "symbol": "DOGEUSDT",
+      "timeframe": "4h",
+      "count": 1084,
+      "start": 1749312000000,
+      "end": 1764907200000,
+      "updated_at": "2025-12-05T16:49:50.686256"
+    },
+    "ADAUSDT_1h": {
+      "symbol": "ADAUSDT",
+      "timeframe": "1h",
+      "count": 1019,
+      "start": 1761253200000,
+      "end": 1764918000000,
+      "updated_at": "2025-12-05T16:49:57.920790"
+    },
+    "ADAUSDT_4h": {
+      "symbol": "ADAUSDT",
+      "timeframe": "4h",
+      "count": 1084,
+      "start": 1749312000000,
+      "end": 1764907200000,
+      "updated_at": "2025-12-05T16:50:02.167283"
+    },
+    "AVAXUSDT_1h": {
+      "symbol": "AVAXUSDT",
+      "timeframe": "1h",
+      "count": 1019,
+      "start": 1761253200000,
+      "end": 1764918000000,
+      "updated_at": "2025-12-05T16:50:09.457698"
+    },
+    "AVAXUSDT_4h": {
+      "symbol": "AVAXUSDT",
+      "timeframe": "4h",
+      "count": 1084,
+      "start": 1749312000000,
+      "end": 1764907200000,
+      "updated_at": "2025-12-05T16:50:13.713482"
+    },
+    "LINKUSDT_1h": {
+      "symbol": "LINKUSDT",
+      "timeframe": "1h",
+      "count": 1019,
+      "start": 1761253200000,
+      "end": 1764918000000,
+      "updated_at": "2025-12-05T16:50:20.962440"
+    },
+    "LINKUSDT_4h": {
+      "symbol": "LINKUSDT",
+      "timeframe": "4h",
+      "count": 1084,
+      "start": 1749312000000,
+      "end": 1764907200000,
+      "updated_at": "2025-12-05T16:50:25.269936"
+    },
+    "DOTUSDT_1h": {
+      "symbol": "DOTUSDT",
+      "timeframe": "1h",
+      "count": 1019,
+      "start": 1761253200000,
+      "end": 1764918000000,
+      "updated_at": "2025-12-05T16:50:32.548518"
+    },
+    "DOTUSDT_4h": {
+      "symbol": "DOTUSDT",
+      "timeframe": "4h",
+      "count": 1084,
+      "start": 1749312000000,
+      "end": 1764907200000,
+      "updated_at": "2025-12-05T16:50:36.851064"
+    },
+    "ETHUSDT_1m": {
+      "symbol": "ETHUSDT",
+      "timeframe": "1m",
+      "count": 44091,
+      "start": 1762214400000,
+      "end": 1764859800000,
+      "updated_at": "2025-12-04T23:50:36.057722"
+    },
+    "BTCUSDT_1d": {
+      "symbol": "BTCUSDT",
+      "timeframe": "1d",
+      "count": 1441,
+      "start": 1640448000000,
+      "end": 1764864000000,
+      "updated_at": "2025-12-05T16:34:34.256873"
+    },
+    "ETHUSDT_1d": {
+      "symbol": "ETHUSDT",
+      "timeframe": "1d",
+      "count": 1441,
+      "start": 1640448000000,
+      "end": 1764864000000,
+      "updated_at": "2025-12-05T16:34:44.801937"
+    },
+    "XRPUSDT_1d": {
+      "symbol": "XRPUSDT",
+      "timeframe": "1d",
+      "count": 1441,
+      "start": 1640448000000,
+      "end": 1764864000000,
+      "updated_at": "2025-12-05T16:35:05.934877"
+    },
+    "SOLUSDT_1d": {
+      "symbol": "SOLUSDT",
+      "timeframe": "1d",
+      "count": 1441,
+      "start": 1640448000000,
+      "end": 1764864000000,
+      "updated_at": "2025-12-05T16:34:55.355877"
+    },
+    "DOGEUSDT_1d": {
+      "symbol": "DOGEUSDT",
+      "timeframe": "1d",
+      "count": 1441,
+      "start": 1640448000000,
+      "end": 1764864000000,
+      "updated_at": "2025-12-05T16:35:16.517493"
+    },
+    "ADAUSDT_1d": {
+      "symbol": "ADAUSDT",
+      "timeframe": "1d",
+      "count": 1441,
+      "start": 1640448000000,
+      "end": 1764864000000,
+      "updated_at": "2025-12-05T16:35:27.117443"
+    },
+    "AVAXUSDT_1d": {
+      "symbol": "AVAXUSDT",
+      "timeframe": "1d",
+      "count": 1441,
+      "start": 1640448000000,
+      "end": 1764864000000,
+      "updated_at": "2025-12-05T16:35:37.713687"
+    },
+    "LINKUSDT_1d": {
+      "symbol": "LINKUSDT",
+      "timeframe": "1d",
+      "count": 1441,
+      "start": 1640448000000,
+      "end": 1764864000000,
+      "updated_at": "2025-12-05T16:35:48.285514"
+    },
+    "DOTUSDT_1d": {
+      "symbol": "DOTUSDT",
+      "timeframe": "1d",
+      "count": 1441,
+      "start": 1640448000000,
+      "end": 1764864000000,
+      "updated_at": "2025-12-05T16:35:58.882889"
+    }
+  },
+  "last_update": "2025-12-05T16:50:36.851283"
+}

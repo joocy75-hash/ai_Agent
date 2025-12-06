@@ -1,0 +1,39 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -m py_compile:*)",
+      "Bash(python3 -m py_compile:*)",
+      "Bash(python3:*)",
+      "Bash(pip install:*)",
+      "Bash(alembic init:*)",
+      "Bash(alembic revision:*)",
+      "Bash(python -m pytest:*)",
+      "Bash(alembic current:*)",
+      "Bash(brew services:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(docker exec:*)",
+      "Bash(alembic upgrade:*)",
+      "Bash(pip3 install:*)",
+      "Bash(export ENCRYPTION_KEY=\"test-encryption-key-32-bytes-long!\")",
+      "Bash(export ENCRYPTION_KEY=\"Dz9w_blEMa-tMD5hqK6V7yiaYecQBdsTaO0PJR3ESn8=\":*)",
+      "Bash(chmod:*)",
+      "Bash(curl:*)",
+      "Bash(export ENCRYPTION_KEY=\"Dz9w_blEMa-tMD5hqK6V7yiaYecQBdsTaO0PJR3ESn8=\")",
+      "Bash(uvicorn:*)",
+      "Bash(jq:*)",
+      "Bash(./scripts/quick_stress_test.sh:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npm create:*)",
+      "Bash(npm install)",
+      "Bash(npx create-vite@latest:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run build:*)",
+      "Bash(python:*)",
+      "Bash(lsof:*)",
+      "Bash(export DATABASE_URL=\"sqlite+aiosqlite:///./trading.db\")",
+      "Bash(/Users/mr.joo/Desktop/auto-dashboard/backend/register_test_account.sh)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lightweight Charts 테스트</title>
+    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        #container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        #chart {
+            width: 100%;
+            height: 500px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+        }
+        .info {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #e3f2fd;
+            border-radius: 4px;
+        }
+        .success {
+            color: #2e7d32;
+            font-weight: bold;
+        }
+        .error {
+            color: #c62828;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <h1>🔬 Lightweight Charts 테스트</h1>
+        <div class="info">
+            <p>이 페이지는 차트 라이브러리가 정상적으로 작동하는지 테스트합니다.</p>
+            <p id="status">테스트 중...</p>
+        </div>
+        <div id="chart"></div>
+    </div>
+
+    <script>
+        console.log('[Test] Starting chart test...');
+
+        try {
+            // 샘플 데이터 (백엔드 API와 동일한 형식)
+            const sampleData = [
+                {
+                    "time": 1764767100,
+                    "open": 93025.6,
+                    "high": 93025.6,
+                    "low": 92994.4,
+                    "close": 93003.4,
+                    "volume": 617322.3229
+                },
+                {
+                    "time": 1764767160,
+                    "open": 93003.6,
+                    "high": 93006.8,
+                    "low": 92983.1,
+                    "close": 92993.7,
+                    "volume": 673798.2498
+                },
+                {
+                    "time": 1764767220,
+                    "open": 92997.0,
+                    "high": 92997.0,
+                    "low": 92911.5,
+                    "close": 92946.0,
+                    "volume": 617719.0529
+                },
+                {
+                    "time": 1764767280,
+                    "open": 92936.5,
+                    "high": 92953.3,
+                    "low": 92900.0,
+                    "close": 92935.9,
+                    "volume": 617478.3849
+                },
+                {
+                    "time": 1764767340,
+                    "open": 92939.0,
+                    "high": 92939.0,
+                    "low": 92882.0,
+                    "close": 92935.0,
+                    "volume": 673374.7705
+                }
+            ];
+
+            console.log('[Test] Sample data:', sampleData);
+
+            // 차트 컨테이너
+            const chartContainer = document.getElementById('chart');
+            console.log('[Test] Container dimensions:', {
+                width: chartContainer.clientWidth,
+                height: chartContainer.clientHeight
+            });
+
+            if (chartContainer.clientWidth === 0) {
+                throw new Error('Container width is 0!');
+            }
+
+            // 차트 생성
+            const chart = LightweightCharts.createChart(chartContainer, {
+                width: chartContainer.clientWidth,
+                height: 500,
+                layout: {
+                    background: { type: 'solid', color: '#ffffff' },
+                    textColor: '#4b5563',
+                },
+                grid: {
+                    vertLines: { color: '#eceff3' },
+                    horzLines: { color: '#eceff3' },
+                },
+                rightPriceScale: {
+                    borderColor: '#e5e7eb',
+                },
+                timeScale: {
+                    borderColor: '#e5e7eb',
+                    timeVisible: true,
+                },
+            });
+
+            console.log('[Test] Chart instance created');
+
+            // 캔들스틱 시리즈 추가
+            const candleSeries = chart.addCandlestickSeries({
+                upColor: '#0ecb81',
+                downColor: '#f6465d',
+                borderVisible: false,
+                wickUpColor: '#0ecb81',
+                wickDownColor: '#f6465d',
+            });
+
+            console.log('[Test] Candlestick series added');
+
+            // 볼륨 시리즈 추가
+            const volumeSeries = chart.addHistogramSeries({
+                color: '#26a69a',
+                priceFormat: { type: 'volume' },
+                priceScaleId: 'volume',
+                scaleMargins: {
+                    top: 0.8,
+                    bottom: 0.0,
+                },
+            });
+
+            console.log('[Test] Volume series added');
+
+            // 데이터 변환
+            const candleData = sampleData.map(candle => ({
+                time: candle.time,
+                open: parseFloat(candle.open),
+                high: parseFloat(candle.high),
+                low: parseFloat(candle.low),
+                close: parseFloat(candle.close),
+            }));
+
+            const volumeData = sampleData.map(candle => ({
+                time: candle.time,
+                value: parseFloat(candle.volume),
+                color: parseFloat(candle.close) >= parseFloat(candle.open)
+                    ? 'rgba(8, 153, 129, 0.5)'
+                    : 'rgba(242, 54, 69, 0.5)',
+            }));
+
+            console.log('[Test] Candle data prepared:', candleData);
+            console.log('[Test] Volume data prepared:', volumeData);
+
+            // 데이터 설정
+            candleSeries.setData(candleData);
+            console.log('[Test] ✅ Candlestick data set');
+
+            volumeSeries.setData(volumeData);
+            console.log('[Test] ✅ Volume data set');
+
+            // 차트 맞춤
+            chart.timeScale().fitContent();
+            console.log('[Test] ✅ Chart fitted to content');
+
+            // 성공 메시지
+            document.getElementById('status').innerHTML = '<span class="success">✅ 차트가 성공적으로 렌더링되었습니다!</span>';
+            console.log('[Test] ========== TEST SUCCESSFUL ==========');
+
+            // 윈도우 리사이즈 처리
+            window.addEventListener('resize', () => {
+                chart.applyOptions({
+                    width: chartContainer.clientWidth
+                });
+            });
+
+        } catch (error) {
+            console.error('[Test] ❌ ERROR:', error);
+            console.error('[Test] Stack:', error.stack);
+            document.getElementById('status').innerHTML =
+                '<span class="error">❌ 에러 발생: ' + error.message + '</span>';
+        }
+    </script>
+</body>
+</html>

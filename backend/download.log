@@ -1,0 +1,774 @@
+2025-12-05 16:34:25,530 - INFO - 📦 CandleCacheManager initialized: /Users/mr.joo/Desktop/auto-dashboard/backend/candle_cache
+2025-12-05 16:34:25,530 - INFO - 🚀 Starting download: 10 symbols × 3 timeframes
+2025-12-05 16:34:25,530 - INFO - 📅 Date range: 2022-12-06 ~ 2025-12-05 (3 years)
+2025-12-05 16:34:25,530 - INFO - ⏱️ Estimated time: ~0.1 minutes
+2025-12-05 16:34:25,530 - INFO - --------------------------------------------------
+2025-12-05 16:34:25,530 - INFO - 📥 Downloading BTCUSDT 1h: 2022-12-06 ~ 2025-12-05
+2025-12-05 16:34:25,530 - INFO - 📊 Requesting candles: BTCUSDT 1h (2022-12-06 ~ 2025-12-05)
+2025-12-05 16:34:25,534 - INFO -    ⚠️ Partial cache, fetching 2 missing ranges
+2025-12-05 16:34:25,677 - INFO - 📊 Fetching ALL historical candles for BTCUSDT (1h)
+2025-12-05 16:34:25,677 - INFO -    Period: 2022-12-06 ~ 2025-10-24
+2025-12-05 16:34:25,827 - INFO -    No more candles available (batch 1)
+2025-12-05 16:34:25,827 - INFO - ✅ Total 0 candles fetched for BTCUSDT (1h)
+2025-12-05 16:34:25,827 - INFO -    Period: 2022-12-06 ~ 2025-10-24 (1 API calls)
+2025-12-05 16:34:25,827 - INFO -    🌐 Fetched 0 candles from Bitget API
+2025-12-05 16:34:25,827 - ERROR - Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x1050e8710>
+2025-12-05 16:34:25,827 - ERROR - Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x106424590>, 16390.8910265)])']
+connector: <aiohttp.connector.TCPConnector object at 0x10624ea50>
+2025-12-05 16:34:27,828 - INFO - 📊 Fetching ALL historical candles for BTCUSDT (1h)
+2025-12-05 16:34:27,829 - INFO -    Period: 2025-12-04 ~ 2025-12-05
+2025-12-05 16:34:27,946 - INFO -    Reached start date 2025-12-04
+2025-12-05 16:34:27,946 - INFO - ✅ Total 32 candles fetched for BTCUSDT (1h)
+2025-12-05 16:34:27,946 - INFO -    Period: 2025-12-04 ~ 2025-12-05 (1 API calls)
+2025-12-05 16:34:27,946 - INFO -    🌐 Fetched 32 candles from Bitget API
+2025-12-05 16:34:27,946 - ERROR - Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x104f78d10>
+2025-12-05 16:34:27,946 - ERROR - Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x1064248a0>, 16393.008336375)])']
+connector: <aiohttp.connector.TCPConnector object at 0x106137ad0>
+2025-12-05 16:34:27,953 - INFO -    💾 Saved 1019 candles to BTCUSDT_1h.csv
+2025-12-05 16:34:27,953 - INFO -    ✅ Downloaded 1019 candles
+2025-12-05 16:34:28,254 - INFO -    Progress: 1/30 (3.3%)
+2025-12-05 16:34:28,254 - INFO - 📥 Downloading BTCUSDT 4h: 2022-12-06 ~ 2025-12-05
+2025-12-05 16:34:28,254 - INFO - 📊 Requesting candles: BTCUSDT 4h (2022-12-06 ~ 2025-12-05)
+2025-12-05 16:34:28,257 - INFO -    ⚠️ Partial cache, fetching 2 missing ranges
+2025-12-05 16:34:29,947 - INFO - 📊 Fetching ALL historical candles for BTCUSDT (4h)
+2025-12-05 16:34:29,947 - INFO -    Period: 2022-12-06 ~ 2025-06-08
+2025-12-05 16:34:30,036 - INFO -    No more candles available (batch 1)
+2025-12-05 16:34:30,036 - INFO - ✅ Total 0 candles fetched for BTCUSDT (4h)
+2025-12-05 16:34:30,036 - INFO -    Period: 2022-12-06 ~ 2025-06-08 (1 API calls)
+2025-12-05 16:34:30,036 - INFO -    🌐 Fetched 0 candles from Bitget API
+2025-12-05 16:34:30,036 - ERROR - Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x104908290>
+2025-12-05 16:34:30,036 - ERROR - Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x106424750>, 16395.099615458)])']
+connector: <aiohttp.connector.TCPConnector object at 0x1050d7bd0>
+2025-12-05 16:34:32,037 - INFO - 📊 Fetching ALL historical candles for BTCUSDT (4h)
+2025-12-05 16:34:32,038 - INFO -    Period: 2025-12-04 ~ 2025-12-05
+2025-12-05 16:34:32,154 - INFO -    Reached start date 2025-12-04
+2025-12-05 16:34:32,154 - INFO - ✅ Total 8 candles fetched for BTCUSDT (4h)
+2025-12-05 16:34:32,154 - INFO -    Period: 2025-12-04 ~ 2025-12-05 (1 API calls)
+2025-12-05 16:34:32,154 - INFO -    🌐 Fetched 8 candles from Bitget API
+2025-12-05 16:34:32,154 - ERROR - Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x104f59d10>
+2025-12-05 16:34:32,154 - ERROR - Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x1064246e0>, 16397.217138166)])']
+connector: <aiohttp.connector.TCPConnector object at 0x1065716d0>
+2025-12-05 16:34:32,159 - INFO -    💾 Saved 1084 candles to BTCUSDT_4h.csv
+2025-12-05 16:34:32,159 - INFO -    ✅ Downloaded 1084 candles
+2025-12-05 16:34:32,460 - INFO -    Progress: 2/30 (6.7%)
+2025-12-05 16:34:32,460 - INFO - 📥 Downloading BTCUSDT 1d: 2022-12-06 ~ 2025-12-05
+2025-12-05 16:34:32,461 - INFO - 📊 Requesting candles: BTCUSDT 1d (2022-12-06 ~ 2025-12-05)
+2025-12-05 16:34:32,465 - INFO -    ⚠️ Partial cache, fetching 1 missing ranges
+2025-12-05 16:34:34,155 - INFO - 📊 Fetching ALL historical candles for BTCUSDT (1d)
+2025-12-05 16:34:34,156 - INFO -    Period: 2025-12-04 ~ 2025-12-05
+2025-12-05 16:34:34,252 - INFO -    Reached start date 2025-12-04
+2025-12-05 16:34:34,252 - INFO - ✅ Total 1 candles fetched for BTCUSDT (1d)
+2025-12-05 16:34:34,252 - INFO -    Period: 2025-12-04 ~ 2025-12-05 (1 API calls)
+2025-12-05 16:34:34,252 - INFO -    🌐 Fetched 1 candles from Bitget API
+2025-12-05 16:34:34,252 - ERROR - Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x1050d7bd0>
+2025-12-05 16:34:34,252 - ERROR - Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x1064248a0>, 16399.315431625)])']
+connector: <aiohttp.connector.TCPConnector object at 0x104f2b050>
+2025-12-05 16:34:34,257 - INFO -    💾 Saved 1441 candles to BTCUSDT_1d.csv
+2025-12-05 16:34:34,257 - INFO -    ✅ Downloaded 1096 candles
+2025-12-05 16:34:34,558 - INFO -    Progress: 3/30 (10.0%)
+2025-12-05 16:34:34,558 - INFO - 📥 Downloading ETHUSDT 1h: 2022-12-06 ~ 2025-12-05
+2025-12-05 16:34:34,558 - INFO - 📊 Requesting candles: ETHUSDT 1h (2022-12-06 ~ 2025-12-05)
+2025-12-05 16:34:34,561 - INFO -    ⚠️ Partial cache, fetching 2 missing ranges
+2025-12-05 16:34:36,256 - INFO - 📊 Fetching ALL historical candles for ETHUSDT (1h)
+2025-12-05 16:34:36,256 - INFO -    Period: 2022-12-06 ~ 2025-10-24
+2025-12-05 16:34:36,349 - INFO -    No more candles available (batch 1)
+2025-12-05 16:34:36,350 - INFO - ✅ Total 0 candles fetched for ETHUSDT (1h)
+2025-12-05 16:34:36,350 - INFO -    Period: 2022-12-06 ~ 2025-10-24 (1 API calls)
+2025-12-05 16:34:36,350 - INFO -    🌐 Fetched 0 candles from Bitget API
+2025-12-05 16:34:36,350 - ERROR - Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x1064cbb90>
+2025-12-05 16:34:36,350 - ERROR - Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x106424750>, 16401.413433416)])']
+connector: <aiohttp.connector.TCPConnector object at 0x1064cb290>
+2025-12-05 16:34:38,350 - INFO - 📊 Fetching ALL historical candles for ETHUSDT (1h)
+2025-12-05 16:34:38,351 - INFO -    Period: 2025-12-04 ~ 2025-12-05
+2025-12-05 16:34:38,484 - INFO -    Reached start date 2025-12-04
+2025-12-05 16:34:38,484 - INFO - ✅ Total 32 candles fetched for ETHUSDT (1h)
+2025-12-05 16:34:38,484 - INFO -    Period: 2025-12-04 ~ 2025-12-05 (1 API calls)
+2025-12-05 16:34:38,484 - INFO -    🌐 Fetched 32 candles from Bitget API
+2025-12-05 16:34:38,484 - ERROR - Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x1064cbb90>
+2025-12-05 16:34:38,484 - ERROR - Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x106424600>, 16403.546603208)])']
+connector: <aiohttp.connector.TCPConnector object at 0x1064cb050>
+2025-12-05 16:34:38,487 - INFO -    💾 Saved 1019 candles to ETHUSDT_1h.csv
+2025-12-05 16:34:38,487 - INFO -    ✅ Downloaded 1019 candles
+2025-12-05 16:34:38,788 - INFO -    Progress: 4/30 (13.3%)
+2025-12-05 16:34:38,788 - INFO - 📥 Downloading ETHUSDT 4h: 2022-12-06 ~ 2025-12-05
+2025-12-05 16:34:38,789 - INFO - 📊 Requesting candles: ETHUSDT 4h (2022-12-06 ~ 2025-12-05)
+2025-12-05 16:34:38,791 - INFO -    ⚠️ Partial cache, fetching 2 missing ranges
+2025-12-05 16:34:40,485 - INFO - 📊 Fetching ALL historical candles for ETHUSDT (4h)
+2025-12-05 16:34:40,485 - INFO -    Period: 2022-12-06 ~ 2025-06-08
+2025-12-05 16:34:40,581 - INFO -    No more candles available (batch 1)
+2025-12-05 16:34:40,581 - INFO - ✅ Total 0 candles fetched for ETHUSDT (4h)
+2025-12-05 16:34:40,581 - INFO -    Period: 2022-12-06 ~ 2025-06-08 (1 API calls)
+2025-12-05 16:34:40,581 - INFO -    🌐 Fetched 0 candles from Bitget API
+2025-12-05 16:34:40,581 - ERROR - Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x10630c1d0>
+2025-12-05 16:34:40,582 - ERROR - Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x1064248a0>, 16405.645216416)])']
+connector: <aiohttp.connector.TCPConnector object at 0x1065a8150>
+2025-12-05 16:34:42,583 - INFO - 📊 Fetching ALL historical candles for ETHUSDT (4h)
+2025-12-05 16:34:42,583 - INFO -    Period: 2025-12-04 ~ 2025-12-05
+2025-12-05 16:34:42,695 - INFO -    Reached start date 2025-12-04
+2025-12-05 16:34:42,695 - INFO - ✅ Total 8 candles fetched for ETHUSDT (4h)
+2025-12-05 16:34:42,695 - INFO -    Period: 2025-12-04 ~ 2025-12-05 (1 API calls)
+2025-12-05 16:34:42,696 - INFO -    🌐 Fetched 8 candles from Bitget API
+2025-12-05 16:34:42,696 - ERROR - Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x106273dd0>
+2025-12-05 16:34:42,696 - ERROR - Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x1064246e0>, 16407.758761375)])']
+connector: <aiohttp.connector.TCPConnector object at 0x1066cf910>
+2025-12-05 16:34:42,701 - INFO -    💾 Saved 1084 candles to ETHUSDT_4h.csv
+2025-12-05 16:34:42,701 - INFO -    ✅ Downloaded 1084 candles
+2025-12-05 16:34:43,002 - INFO -    Progress: 5/30 (16.7%)
+2025-12-05 16:34:43,002 - INFO - 📥 Downloading ETHUSDT 1d: 2022-12-06 ~ 2025-12-05
+2025-12-05 16:34:43,002 - INFO - 📊 Requesting candles: ETHUSDT 1d (2022-12-06 ~ 2025-12-05)
+2025-12-05 16:34:43,006 - INFO -    ⚠️ Partial cache, fetching 1 missing ranges
+2025-12-05 16:34:44,697 - INFO - 📊 Fetching ALL historical candles for ETHUSDT (1d)
+2025-12-05 16:34:44,697 - INFO -    Period: 2025-12-04 ~ 2025-12-05
+2025-12-05 16:34:44,796 - INFO -    Reached start date 2025-12-04
+2025-12-05 16:34:44,796 - INFO - ✅ Total 1 candles fetched for ETHUSDT (1d)
+2025-12-05 16:34:44,796 - INFO -    Period: 2025-12-04 ~ 2025-12-05 (1 API calls)
+2025-12-05 16:34:44,796 - INFO -    🌐 Fetched 1 candles from Bitget API
+2025-12-05 16:34:44,796 - ERROR - Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x1064cc050>
+2025-12-05 16:34:44,796 - ERROR - Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x1064246e0>, 16409.859975458)])']
+connector: <aiohttp.connector.TCPConnector object at 0x10630c1d0>
+2025-12-05 16:34:44,802 - INFO -    💾 Saved 1441 candles to ETHUSDT_1d.csv
+2025-12-05 16:34:44,802 - INFO -    ✅ Downloaded 1096 candles
+2025-12-05 16:34:45,103 - INFO -    Progress: 6/30 (20.0%)
+2025-12-05 16:34:45,103 - INFO - 📥 Downloading SOLUSDT 1h: 2022-12-06 ~ 2025-12-05
+2025-12-05 16:34:45,103 - INFO - 📊 Requesting candles: SOLUSDT 1h (2022-12-06 ~ 2025-12-05)
+2025-12-05 16:34:45,106 - INFO -    ⚠️ Partial cache, fetching 2 missing ranges
+2025-12-05 16:34:46,797 - INFO - 📊 Fetching ALL historical candles for SOLUSDT (1h)
+2025-12-05 16:34:46,797 - INFO -    Period: 2022-12-06 ~ 2025-10-24
+2025-12-05 16:34:46,891 - INFO -    No more candles available (batch 1)
+2025-12-05 16:34:46,891 - INFO - ✅ Total 0 candles fetched for SOLUSDT (1h)
+2025-12-05 16:34:46,891 - INFO -    Period: 2022-12-06 ~ 2025-10-24 (1 API calls)
+2025-12-05 16:34:46,891 - INFO -    🌐 Fetched 0 candles from Bitget API
+2025-12-05 16:34:46,891 - ERROR - Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x106562fd0>
+2025-12-05 16:34:46,892 - ERROR - Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x106427cb0>, 16411.954965708)])']
+connector: <aiohttp.connector.TCPConnector object at 0x106563190>
+2025-12-05 16:34:48,893 - INFO - 📊 Fetching ALL historical candles for SOLUSDT (1h)
+2025-12-05 16:34:48,893 - INFO -    Period: 2025-12-04 ~ 2025-12-05
+2025-12-05 16:34:49,014 - INFO -    Reached start date 2025-12-04
+2025-12-05 16:34:49,014 - INFO - ✅ Total 32 candles fetched for SOLUSDT (1h)
+2025-12-05 16:34:49,014 - INFO -    Period: 2025-12-04 ~ 2025-12-05 (1 API calls)
+2025-12-05 16:34:49,015 - INFO -    🌐 Fetched 32 candles from Bitget API
+2025-12-05 16:34:49,015 - ERROR - Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x106705b90>
+2025-12-05 16:34:49,015 - ERROR - Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x1064248a0>, 16414.077254125)])']
+connector: <aiohttp.connector.TCPConnector object at 0x106723f90>
+2025-12-05 16:34:49,019 - INFO -    💾 Saved 1019 candles to SOLUSDT_1h.csv
+2025-12-05 16:34:49,019 - INFO -    ✅ Downloaded 1019 candles
+2025-12-05 16:34:49,320 - INFO -    Progress: 7/30 (23.3%)
+2025-12-05 16:34:49,320 - INFO - 📥 Downloading SOLUSDT 4h: 2022-12-06 ~ 2025-12-05
+2025-12-05 16:34:49,320 - INFO - 📊 Requesting candles: SOLUSDT 4h (2022-12-06 ~ 2025-12-05)
+2025-12-05 16:34:49,323 - INFO -    ⚠️ Partial cache, fetching 2 missing ranges
+2025-12-05 16:34:51,017 - INFO - 📊 Fetching ALL historical candles for SOLUSDT (4h)
+2025-12-05 16:34:51,017 - INFO -    Period: 2022-12-06 ~ 2025-06-08
+2025-12-05 16:34:51,119 - INFO -    No more candles available (batch 1)
+2025-12-05 16:34:51,119 - INFO - ✅ Total 0 candles fetched for SOLUSDT (4h)
+2025-12-05 16:34:51,120 - INFO -    Period: 2022-12-06 ~ 2025-06-08 (1 API calls)
+2025-12-05 16:34:51,120 - INFO -    🌐 Fetched 0 candles from Bitget API
+2025-12-05 16:34:51,120 - ERROR - Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x106706950>
+2025-12-05 16:34:51,120 - ERROR - Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x106424590>, 16416.183358833)])']
+connector: <aiohttp.connector.TCPConnector object at 0x106705b90>
+2025-12-05 16:34:53,121 - INFO - 📊 Fetching ALL historical candles for SOLUSDT (4h)
+2025-12-05 16:34:53,121 - INFO -    Period: 2025-12-04 ~ 2025-12-05
+2025-12-05 16:34:53,230 - INFO -    Reached start date 2025-12-04
+2025-12-05 16:34:53,230 - INFO - ✅ Total 8 candles fetched for SOLUSDT (4h)
+2025-12-05 16:34:53,230 - INFO -    Period: 2025-12-04 ~ 2025-12-05 (1 API calls)
+2025-12-05 16:34:53,230 - INFO -    🌐 Fetched 8 candles from Bitget API
+2025-12-05 16:34:53,230 - ERROR - Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x106706a90>
+2025-12-05 16:34:53,231 - ERROR - Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x106427cb0>, 16418.293462833)])']
+connector: <aiohttp.connector.TCPConnector object at 0x106706a10>
+2025-12-05 16:34:53,235 - INFO -    💾 Saved 1084 candles to SOLUSDT_4h.csv
+2025-12-05 16:34:53,236 - INFO -    ✅ Downloaded 1084 candles
+2025-12-05 16:34:53,537 - INFO -    Progress: 8/30 (26.7%)
+2025-12-05 16:34:53,537 - INFO - 📥 Downloading SOLUSDT 1d: 2022-12-06 ~ 2025-12-05
+2025-12-05 16:34:53,537 - INFO - 📊 Requesting candles: SOLUSDT 1d (2022-12-06 ~ 2025-12-05)
+2025-12-05 16:34:53,543 - INFO -    ⚠️ Partial cache, fetching 1 missing ranges
+2025-12-05 16:34:55,231 - INFO - 📊 Fetching ALL historical candles for SOLUSDT (1d)
+2025-12-05 16:34:55,231 - INFO -    Period: 2025-12-04 ~ 2025-12-05
+2025-12-05 16:34:55,349 - INFO -    Reached start date 2025-12-04
+2025-12-05 16:34:55,349 - INFO - ✅ Total 1 candles fetched for SOLUSDT (1d)
+2025-12-05 16:34:55,349 - INFO -    Period: 2025-12-04 ~ 2025-12-05 (1 API calls)
+2025-12-05 16:34:55,349 - INFO -    🌐 Fetched 1 candles from Bitget API
+2025-12-05 16:34:55,349 - ERROR - Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x1066cf8d0>
+2025-12-05 16:34:55,349 - ERROR - Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x1064248a0>, 16420.4124735)])']
+connector: <aiohttp.connector.TCPConnector object at 0x1067069d0>
+2025-12-05 16:34:55,356 - INFO -    💾 Saved 1441 candles to SOLUSDT_1d.csv
+2025-12-05 16:34:55,356 - INFO -    ✅ Downloaded 1096 candles
+2025-12-05 16:34:55,657 - INFO -    Progress: 9/30 (30.0%)
+2025-12-05 16:34:55,657 - INFO - 📥 Downloading XRPUSDT 1h: 2022-12-06 ~ 2025-12-05
+2025-12-05 16:34:55,657 - INFO - 📊 Requesting candles: XRPUSDT 1h (2022-12-06 ~ 2025-12-05)
+2025-12-05 16:34:55,660 - INFO -    ⚠️ Partial cache, fetching 2 missing ranges
+2025-12-05 16:34:57,350 - INFO - 📊 Fetching ALL historical candles for XRPUSDT (1h)
+2025-12-05 16:34:57,350 - INFO -    Period: 2022-12-06 ~ 2025-10-24
+2025-12-05 16:34:57,460 - INFO -    No more candles available (batch 1)
+2025-12-05 16:34:57,460 - INFO - ✅ Total 0 candles fetched for XRPUSDT (1h)
+2025-12-05 16:34:57,460 - INFO -    Period: 2022-12-06 ~ 2025-10-24 (1 API calls)
+2025-12-05 16:34:57,460 - INFO -    🌐 Fetched 0 candles from Bitget API
+2025-12-05 16:34:57,460 - ERROR - Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x106665e10>
+2025-12-05 16:34:57,460 - ERROR - Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x106424600>, 16422.523918583)])']
+connector: <aiohttp.connector.TCPConnector object at 0x106665e90>
+2025-12-05 16:34:59,461 - INFO - 📊 Fetching ALL historical candles for XRPUSDT (1h)
+2025-12-05 16:34:59,461 - INFO -    Period: 2025-12-04 ~ 2025-12-05
+2025-12-05 16:34:59,589 - INFO -    Reached start date 2025-12-04
+2025-12-05 16:34:59,590 - INFO - ✅ Total 32 candles fetched for XRPUSDT (1h)
+2025-12-05 16:34:59,590 - INFO -    Period: 2025-12-04 ~ 2025-12-05 (1 API calls)
+2025-12-05 16:34:59,590 - INFO -    🌐 Fetched 32 candles from Bitget API
+2025-12-05 16:34:59,590 - ERROR - Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x106665fd0>
+2025-12-05 16:34:59,590 - ERROR - Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x106427cb0>, 16424.65189225)])']
+connector: <aiohttp.connector.TCPConnector object at 0x1066660d0>
+2025-12-05 16:34:59,595 - INFO -    💾 Saved 1019 candles to XRPUSDT_1h.csv
+2025-12-05 16:34:59,595 - INFO -    ✅ Downloaded 1019 candles
+2025-12-05 16:34:59,896 - INFO -    Progress: 10/30 (33.3%)
+2025-12-05 16:34:59,896 - INFO - 📥 Downloading XRPUSDT 4h: 2022-12-06 ~ 2025-12-05
+2025-12-05 16:34:59,896 - INFO - 📊 Requesting candles: XRPUSDT 4h (2022-12-06 ~ 2025-12-05)
+2025-12-05 16:34:59,899 - INFO -    ⚠️ Partial cache, fetching 2 missing ranges
+2025-12-05 16:35:01,591 - INFO - 📊 Fetching ALL historical candles for XRPUSDT (4h)
+2025-12-05 16:35:01,591 - INFO -    Period: 2022-12-06 ~ 2025-06-08
+2025-12-05 16:35:01,702 - INFO -    No more candles available (batch 1)
+2025-12-05 16:35:01,702 - INFO - ✅ Total 0 candles fetched for XRPUSDT (4h)
+2025-12-05 16:35:01,702 - INFO -    Period: 2022-12-06 ~ 2025-06-08 (1 API calls)
+2025-12-05 16:35:01,702 - INFO -    🌐 Fetched 0 candles from Bitget API
+2025-12-05 16:35:01,702 - ERROR - Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x10a901fd0>
+2025-12-05 16:35:01,703 - ERROR - Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x106424830>, 16426.766367791)])']
+connector: <aiohttp.connector.TCPConnector object at 0x10a88c410>
+2025-12-05 16:35:03,703 - INFO - 📊 Fetching ALL historical candles for XRPUSDT (4h)
+2025-12-05 16:35:03,703 - INFO -    Period: 2025-12-04 ~ 2025-12-05
+2025-12-05 16:35:03,815 - INFO -    Reached start date 2025-12-04
+2025-12-05 16:35:03,815 - INFO - ✅ Total 8 candles fetched for XRPUSDT (4h)
+2025-12-05 16:35:03,815 - INFO -    Period: 2025-12-04 ~ 2025-12-05 (1 API calls)
+2025-12-05 16:35:03,815 - INFO -    🌐 Fetched 8 candles from Bitget API
+2025-12-05 16:35:03,815 - ERROR - Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x10a868990>
+2025-12-05 16:35:03,815 - ERROR - Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x106424520>, 16428.878232541)])']
+connector: <aiohttp.connector.TCPConnector object at 0x10a86afd0>
+2025-12-05 16:35:03,869 - INFO -    💾 Saved 1084 candles to XRPUSDT_4h.csv
+2025-12-05 16:35:03,872 - INFO -    ✅ Downloaded 1084 candles
+2025-12-05 16:35:04,174 - INFO -    Progress: 11/30 (36.7%)
+2025-12-05 16:35:04,174 - INFO - 📥 Downloading XRPUSDT 1d: 2022-12-06 ~ 2025-12-05
+2025-12-05 16:35:04,174 - INFO - 📊 Requesting candles: XRPUSDT 1d (2022-12-06 ~ 2025-12-05)
+2025-12-05 16:35:04,177 - INFO -    ⚠️ Partial cache, fetching 1 missing ranges
+2025-12-05 16:35:05,815 - INFO - 📊 Fetching ALL historical candles for XRPUSDT (1d)
+2025-12-05 16:35:05,815 - INFO -    Period: 2025-12-04 ~ 2025-12-05
+2025-12-05 16:35:05,929 - INFO -    Reached start date 2025-12-04
+2025-12-05 16:35:05,930 - INFO - ✅ Total 1 candles fetched for XRPUSDT (1d)
+2025-12-05 16:35:05,930 - INFO -    Period: 2025-12-04 ~ 2025-12-05 (1 API calls)
+2025-12-05 16:35:05,930 - INFO -    🌐 Fetched 1 candles from Bitget API
+2025-12-05 16:35:05,930 - ERROR - Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x10a88c050>
+2025-12-05 16:35:05,930 - ERROR - Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x106424ad0>, 16430.993429375)])']
+connector: <aiohttp.connector.TCPConnector object at 0x10a88c410>
+2025-12-05 16:35:05,935 - INFO -    💾 Saved 1441 candles to XRPUSDT_1d.csv
+2025-12-05 16:35:05,935 - INFO -    ✅ Downloaded 1096 candles
+2025-12-05 16:35:06,235 - INFO -    Progress: 12/30 (40.0%)
+2025-12-05 16:35:06,235 - INFO - 📥 Downloading DOGEUSDT 1h: 2022-12-06 ~ 2025-12-05
+2025-12-05 16:35:06,236 - INFO - 📊 Requesting candles: DOGEUSDT 1h (2022-12-06 ~ 2025-12-05)
+2025-12-05 16:35:06,239 - INFO -    ⚠️ Partial cache, fetching 2 missing ranges
+2025-12-05 16:35:07,931 - INFO - 📊 Fetching ALL historical candles for DOGEUSDT (1h)
+2025-12-05 16:35:07,931 - INFO -    Period: 2022-12-06 ~ 2025-10-24
+2025-12-05 16:35:08,025 - INFO -    No more candles available (batch 1)
+2025-12-05 16:35:08,025 - INFO - ✅ Total 0 candles fetched for DOGEUSDT (1h)
+2025-12-05 16:35:08,025 - INFO -    Period: 2022-12-06 ~ 2025-10-24 (1 API calls)
+2025-12-05 16:35:08,025 - INFO -    🌐 Fetched 0 candles from Bitget API
+2025-12-05 16:35:08,025 - ERROR - Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x10aa78a50>
+2025-12-05 16:35:08,025 - ERROR - Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x106424910>, 16433.089066166)])']
+connector: <aiohttp.connector.TCPConnector object at 0x10aa78a10>
+2025-12-05 16:35:10,026 - INFO - 📊 Fetching ALL historical candles for DOGEUSDT (1h)
+2025-12-05 16:35:10,026 - INFO -    Period: 2025-12-04 ~ 2025-12-05
+2025-12-05 16:35:10,158 - INFO -    Reached start date 2025-12-04
+2025-12-05 16:35:10,158 - INFO - ✅ Total 32 candles fetched for DOGEUSDT (1h)
+2025-12-05 16:35:10,158 - INFO -    Period: 2025-12-04 ~ 2025-12-05 (1 API calls)
+2025-12-05 16:35:10,158 - INFO -    🌐 Fetched 32 candles from Bitget API
+2025-12-05 16:35:10,158 - ERROR - Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x10aa78b50>
+2025-12-05 16:35:10,158 - ERROR - Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x106424520>, 16435.221053916)])']
+connector: <aiohttp.connector.TCPConnector object at 0x10aa78bd0>
+2025-12-05 16:35:10,163 - INFO -    💾 Saved 1019 candles to DOGEUSDT_1h.csv
+2025-12-05 16:35:10,163 - INFO -    ✅ Downloaded 1019 candles
+2025-12-05 16:35:10,464 - INFO -    Progress: 13/30 (43.3%)
+2025-12-05 16:35:10,464 - INFO - 📥 Downloading DOGEUSDT 4h: 2022-12-06 ~ 2025-12-05
+2025-12-05 16:35:10,464 - INFO - 📊 Requesting candles: DOGEUSDT 4h (2022-12-06 ~ 2025-12-05)
+2025-12-05 16:35:10,467 - INFO -    ⚠️ Partial cache, fetching 2 missing ranges
+2025-12-05 16:35:12,159 - INFO - 📊 Fetching ALL historical candles for DOGEUSDT (4h)
+2025-12-05 16:35:12,160 - INFO -    Period: 2022-12-06 ~ 2025-06-08
+2025-12-05 16:35:12,285 - INFO -    No more candles available (batch 1)
+2025-12-05 16:35:12,285 - INFO - ✅ Total 0 candles fetched for DOGEUSDT (4h)
+2025-12-05 16:35:12,286 - INFO -    Period: 2022-12-06 ~ 2025-06-08 (1 API calls)
+2025-12-05 16:35:12,286 - INFO -    🌐 Fetched 0 candles from Bitget API
+2025-12-05 16:35:12,286 - ERROR - Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x106562bd0>
+2025-12-05 16:35:12,286 - ERROR - Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x106424980>, 16437.349499958)])']
+connector: <aiohttp.connector.TCPConnector object at 0x10abd4610>
+2025-12-05 16:35:14,293 - INFO - 📊 Fetching ALL historical candles for DOGEUSDT (4h)
+2025-12-05 16:35:14,293 - INFO -    Period: 2025-12-04 ~ 2025-12-05
+2025-12-05 16:35:14,412 - INFO -    Reached start date 2025-12-04
+2025-12-05 16:35:14,412 - INFO - ✅ Total 8 candles fetched for DOGEUSDT (4h)
+2025-12-05 16:35:14,412 - INFO -    Period: 2025-12-04 ~ 2025-12-05 (1 API calls)
+2025-12-05 16:35:14,412 - INFO -    🌐 Fetched 8 candles from Bitget API
+2025-12-05 16:35:14,412 - ERROR - Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x10abd4350>
+2025-12-05 16:35:14,412 - ERROR - Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x106424910>, 16439.475103333)])']
+connector: <aiohttp.connector.TCPConnector object at 0x10abd42d0>
+2025-12-05 16:35:14,417 - INFO -    💾 Saved 1084 candles to DOGEUSDT_4h.csv
+2025-12-05 16:35:14,417 - INFO -    ✅ Downloaded 1084 candles
+2025-12-05 16:35:14,718 - INFO -    Progress: 14/30 (46.7%)
+2025-12-05 16:35:14,718 - INFO - 📥 Downloading DOGEUSDT 1d: 2022-12-06 ~ 2025-12-05
+2025-12-05 16:35:14,718 - INFO - 📊 Requesting candles: DOGEUSDT 1d (2022-12-06 ~ 2025-12-05)
+2025-12-05 16:35:14,721 - INFO -    ⚠️ Partial cache, fetching 1 missing ranges
+2025-12-05 16:35:16,412 - INFO - 📊 Fetching ALL historical candles for DOGEUSDT (1d)
+2025-12-05 16:35:16,413 - INFO -    Period: 2025-12-04 ~ 2025-12-05
+2025-12-05 16:35:16,512 - INFO -    Reached start date 2025-12-04
+2025-12-05 16:35:16,512 - INFO - ✅ Total 1 candles fetched for DOGEUSDT (1d)
+2025-12-05 16:35:16,512 - INFO -    Period: 2025-12-04 ~ 2025-12-05 (1 API calls)
+2025-12-05 16:35:16,512 - INFO -    🌐 Fetched 1 candles from Bitget API
+2025-12-05 16:35:16,512 - ERROR - Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x104f6f650>
+2025-12-05 16:35:16,512 - ERROR - Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x106424520>, 16441.575601125)])']
+connector: <aiohttp.connector.TCPConnector object at 0x104f6f510>
+2025-12-05 16:35:16,517 - INFO -    💾 Saved 1441 candles to DOGEUSDT_1d.csv
+2025-12-05 16:35:16,517 - INFO -    ✅ Downloaded 1096 candles
+2025-12-05 16:35:16,819 - INFO -    Progress: 15/30 (50.0%)
+2025-12-05 16:35:16,819 - INFO - 📥 Downloading ADAUSDT 1h: 2022-12-06 ~ 2025-12-05
+2025-12-05 16:35:16,819 - INFO - 📊 Requesting candles: ADAUSDT 1h (2022-12-06 ~ 2025-12-05)
+2025-12-05 16:35:16,821 - INFO -    ⚠️ Partial cache, fetching 2 missing ranges
+2025-12-05 16:35:18,512 - INFO - 📊 Fetching ALL historical candles for ADAUSDT (1h)
+2025-12-05 16:35:18,512 - INFO -    Period: 2022-12-06 ~ 2025-10-24
+2025-12-05 16:35:18,606 - INFO -    No more candles available (batch 1)
+2025-12-05 16:35:18,606 - INFO - ✅ Total 0 candles fetched for ADAUSDT (1h)
+2025-12-05 16:35:18,606 - INFO -    Period: 2022-12-06 ~ 2025-10-24 (1 API calls)
+2025-12-05 16:35:18,606 - INFO -    🌐 Fetched 0 candles from Bitget API
+2025-12-05 16:35:18,606 - ERROR - Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x10aa72f10>
+2025-12-05 16:35:18,606 - ERROR - Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x1064244b0>, 16443.670345791)])']
+connector: <aiohttp.connector.TCPConnector object at 0x10aa733d0>
+2025-12-05 16:35:20,607 - INFO - 📊 Fetching ALL historical candles for ADAUSDT (1h)
+2025-12-05 16:35:20,608 - INFO -    Period: 2025-12-04 ~ 2025-12-05
+2025-12-05 16:35:20,729 - INFO -    Reached start date 2025-12-04
+2025-12-05 16:35:20,730 - INFO - ✅ Total 32 candles fetched for ADAUSDT (1h)
+2025-12-05 16:35:20,730 - INFO -    Period: 2025-12-04 ~ 2025-12-05 (1 API calls)
+2025-12-05 16:35:20,730 - INFO -    🌐 Fetched 32 candles from Bitget API
+2025-12-05 16:35:20,730 - ERROR - Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x10ac4bb90>
+2025-12-05 16:35:20,730 - ERROR - Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x106424910>, 16445.792325458)])']
+connector: <aiohttp.connector.TCPConnector object at 0x10ac4bd50>
+2025-12-05 16:35:20,735 - INFO -    💾 Saved 1019 candles to ADAUSDT_1h.csv
+2025-12-05 16:35:20,735 - INFO -    ✅ Downloaded 1019 candles
+2025-12-05 16:35:21,035 - INFO -    Progress: 16/30 (53.3%)
+2025-12-05 16:35:21,036 - INFO - 📥 Downloading ADAUSDT 4h: 2022-12-06 ~ 2025-12-05
+2025-12-05 16:35:21,036 - INFO - 📊 Requesting candles: ADAUSDT 4h (2022-12-06 ~ 2025-12-05)
+2025-12-05 16:35:21,038 - INFO -    ⚠️ Partial cache, fetching 2 missing ranges
+2025-12-05 16:35:22,731 - INFO - 📊 Fetching ALL historical candles for ADAUSDT (4h)
+2025-12-05 16:35:22,731 - INFO -    Period: 2022-12-06 ~ 2025-06-08
+2025-12-05 16:35:22,830 - INFO -    No more candles available (batch 1)
+2025-12-05 16:35:22,830 - INFO - ✅ Total 0 candles fetched for ADAUSDT (4h)
+2025-12-05 16:35:22,830 - INFO -    Period: 2022-12-06 ~ 2025-06-08 (1 API calls)
+2025-12-05 16:35:22,830 - INFO -    🌐 Fetched 0 candles from Bitget API
+2025-12-05 16:35:22,830 - ERROR - Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x10aa72f10>
+2025-12-05 16:35:22,830 - ERROR - Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x106424980>, 16447.893762833)])']
+connector: <aiohttp.connector.TCPConnector object at 0x10aa73450>
+2025-12-05 16:35:24,831 - INFO - 📊 Fetching ALL historical candles for ADAUSDT (4h)
+2025-12-05 16:35:24,831 - INFO -    Period: 2025-12-04 ~ 2025-12-05
+2025-12-05 16:35:24,935 - INFO -    Reached start date 2025-12-04
+2025-12-05 16:35:24,936 - INFO - ✅ Total 8 candles fetched for ADAUSDT (4h)
+2025-12-05 16:35:24,936 - INFO -    Period: 2025-12-04 ~ 2025-12-05 (1 API calls)
+2025-12-05 16:35:24,936 - INFO -    🌐 Fetched 8 candles from Bitget API
+2025-12-05 16:35:24,936 - ERROR - Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x10acf3cd0>
+2025-12-05 16:35:24,936 - ERROR - Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x1064244b0>, 16449.998978625)])']
+connector: <aiohttp.connector.TCPConnector object at 0x10acf3f10>
+2025-12-05 16:35:24,941 - INFO -    💾 Saved 1084 candles to ADAUSDT_4h.csv
+2025-12-05 16:35:24,941 - INFO -    ✅ Downloaded 1084 candles
+2025-12-05 16:35:25,242 - INFO -    Progress: 17/30 (56.7%)
+2025-12-05 16:35:25,242 - INFO - 📥 Downloading ADAUSDT 1d: 2022-12-06 ~ 2025-12-05
+2025-12-05 16:35:25,242 - INFO - 📊 Requesting candles: ADAUSDT 1d (2022-12-06 ~ 2025-12-05)
+2025-12-05 16:35:25,251 - INFO -    ⚠️ Partial cache, fetching 1 missing ranges
+2025-12-05 16:35:26,937 - INFO - 📊 Fetching ALL historical candles for ADAUSDT (1d)
+2025-12-05 16:35:26,937 - INFO -    Period: 2025-12-04 ~ 2025-12-05
+2025-12-05 16:35:27,112 - INFO -    Reached start date 2025-12-04
+2025-12-05 16:35:27,112 - INFO - ✅ Total 1 candles fetched for ADAUSDT (1d)
+2025-12-05 16:35:27,112 - INFO -    Period: 2025-12-04 ~ 2025-12-05 (1 API calls)
+2025-12-05 16:35:27,112 - INFO -    🌐 Fetched 1 candles from Bitget API
+2025-12-05 16:35:27,112 - ERROR - Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x10aa72e10>
+2025-12-05 16:35:27,112 - ERROR - Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x106424910>, 16452.175694)])']
+connector: <aiohttp.connector.TCPConnector object at 0x10aa73150>
+2025-12-05 16:35:27,117 - INFO -    💾 Saved 1441 candles to ADAUSDT_1d.csv
+2025-12-05 16:35:27,117 - INFO -    ✅ Downloaded 1096 candles
+2025-12-05 16:35:27,418 - INFO -    Progress: 18/30 (60.0%)
+2025-12-05 16:35:27,419 - INFO - 📥 Downloading AVAXUSDT 1h: 2022-12-06 ~ 2025-12-05
+2025-12-05 16:35:27,419 - INFO - 📊 Requesting candles: AVAXUSDT 1h (2022-12-06 ~ 2025-12-05)
+2025-12-05 16:35:27,421 - INFO -    ⚠️ Partial cache, fetching 2 missing ranges
+2025-12-05 16:35:29,112 - INFO - 📊 Fetching ALL historical candles for AVAXUSDT (1h)
+2025-12-05 16:35:29,112 - INFO -    Period: 2022-12-06 ~ 2025-10-24
+2025-12-05 16:35:29,251 - INFO -    No more candles available (batch 1)
+2025-12-05 16:35:29,251 - INFO - ✅ Total 0 candles fetched for AVAXUSDT (1h)
+2025-12-05 16:35:29,251 - INFO -    Period: 2022-12-06 ~ 2025-10-24 (1 API calls)
+2025-12-05 16:35:29,251 - INFO -    🌐 Fetched 0 candles from Bitget API
+2025-12-05 16:35:29,251 - ERROR - Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x10ac4bc90>
+2025-12-05 16:35:29,252 - ERROR - Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x106424830>, 16454.3154795)])']
+connector: <aiohttp.connector.TCPConnector object at 0x10ac4bf90>
+2025-12-05 16:35:31,253 - INFO - 📊 Fetching ALL historical candles for AVAXUSDT (1h)
+2025-12-05 16:35:31,253 - INFO -    Period: 2025-12-04 ~ 2025-12-05
+2025-12-05 16:35:31,396 - INFO -    Reached start date 2025-12-04
+2025-12-05 16:35:31,396 - INFO - ✅ Total 32 candles fetched for AVAXUSDT (1h)
+2025-12-05 16:35:31,396 - INFO -    Period: 2025-12-04 ~ 2025-12-05 (1 API calls)
+2025-12-05 16:35:31,396 - INFO -    🌐 Fetched 32 candles from Bitget API
+2025-12-05 16:35:31,396 - ERROR - Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x10acecb90>
+2025-12-05 16:35:31,396 - ERROR - Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x106424910>, 16456.45319575)])']
+connector: <aiohttp.connector.TCPConnector object at 0x10ad6c190>
+2025-12-05 16:35:31,402 - INFO -    💾 Saved 1019 candles to AVAXUSDT_1h.csv
+2025-12-05 16:35:31,402 - INFO -    ✅ Downloaded 1019 candles
+2025-12-05 16:35:31,703 - INFO -    Progress: 19/30 (63.3%)
+2025-12-05 16:35:31,703 - INFO - 📥 Downloading AVAXUSDT 4h: 2022-12-06 ~ 2025-12-05
+2025-12-05 16:35:31,703 - INFO - 📊 Requesting candles: AVAXUSDT 4h (2022-12-06 ~ 2025-12-05)
+2025-12-05 16:35:31,706 - INFO -    ⚠️ Partial cache, fetching 2 missing ranges
+2025-12-05 16:35:33,397 - INFO - 📊 Fetching ALL historical candles for AVAXUSDT (4h)
+2025-12-05 16:35:33,398 - INFO -    Period: 2022-12-06 ~ 2025-06-08
+2025-12-05 16:35:33,492 - INFO -    No more candles available (batch 1)
+2025-12-05 16:35:33,493 - INFO - ✅ Total 0 candles fetched for AVAXUSDT (4h)
+2025-12-05 16:35:33,493 - INFO -    Period: 2022-12-06 ~ 2025-06-08 (1 API calls)
+2025-12-05 16:35:33,493 - INFO -    🌐 Fetched 0 candles from Bitget API
+2025-12-05 16:35:33,493 - ERROR - Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x10ac4bcd0>
+2025-12-05 16:35:33,493 - ERROR - Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x1062c80c0>, 16458.556597291)])']
+connector: <aiohttp.connector.TCPConnector object at 0x10ac4bc50>
+2025-12-05 16:35:35,494 - INFO - 📊 Fetching ALL historical candles for AVAXUSDT (4h)
+2025-12-05 16:35:35,494 - INFO -    Period: 2025-12-04 ~ 2025-12-05
+2025-12-05 16:35:35,605 - INFO -    Reached start date 2025-12-04
+2025-12-05 16:35:35,605 - INFO - ✅ Total 8 candles fetched for AVAXUSDT (4h)
+2025-12-05 16:35:35,605 - INFO -    Period: 2025-12-04 ~ 2025-12-05 (1 API calls)
+2025-12-05 16:35:35,605 - INFO -    🌐 Fetched 8 candles from Bitget API
+2025-12-05 16:35:35,605 - ERROR - Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x10ad1f390>
+2025-12-05 16:35:35,605 - ERROR - Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x1062c80c0>, 16460.668562208)])']
+connector: <aiohttp.connector.TCPConnector object at 0x10ad1f5d0>
+2025-12-05 16:35:35,610 - INFO -    💾 Saved 1084 candles to AVAXUSDT_4h.csv
+2025-12-05 16:35:35,610 - INFO -    ✅ Downloaded 1084 candles
+2025-12-05 16:35:35,911 - INFO -    Progress: 20/30 (66.7%)
+2025-12-05 16:35:35,911 - INFO - 📥 Downloading AVAXUSDT 1d: 2022-12-06 ~ 2025-12-05
+2025-12-05 16:35:35,911 - INFO - 📊 Requesting candles: AVAXUSDT 1d (2022-12-06 ~ 2025-12-05)
+2025-12-05 16:35:35,918 - INFO -    ⚠️ Partial cache, fetching 1 missing ranges
+2025-12-05 16:35:37,606 - INFO - 📊 Fetching ALL historical candles for AVAXUSDT (1d)
+2025-12-05 16:35:37,606 - INFO -    Period: 2025-12-04 ~ 2025-12-05
+2025-12-05 16:35:37,708 - INFO -    Reached start date 2025-12-04
+2025-12-05 16:35:37,708 - INFO - ✅ Total 1 candles fetched for AVAXUSDT (1d)
+2025-12-05 16:35:37,708 - INFO -    Period: 2025-12-04 ~ 2025-12-05 (1 API calls)
+2025-12-05 16:35:37,708 - INFO -    🌐 Fetched 1 candles from Bitget API
+2025-12-05 16:35:37,708 - ERROR - Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x10ac4bd10>
+2025-12-05 16:35:37,708 - ERROR - Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x1062c80c0>, 16462.771675291)])']
+connector: <aiohttp.connector.TCPConnector object at 0x10ac4bcd0>
+2025-12-05 16:35:37,714 - INFO -    💾 Saved 1441 candles to AVAXUSDT_1d.csv
+2025-12-05 16:35:37,714 - INFO -    ✅ Downloaded 1096 candles
+2025-12-05 16:35:38,015 - INFO -    Progress: 21/30 (70.0%)
+2025-12-05 16:35:38,015 - INFO - 📥 Downloading LINKUSDT 1h: 2022-12-06 ~ 2025-12-05
+2025-12-05 16:35:38,015 - INFO - 📊 Requesting candles: LINKUSDT 1h (2022-12-06 ~ 2025-12-05)
+2025-12-05 16:35:38,018 - INFO -    ⚠️ Partial cache, fetching 2 missing ranges
+2025-12-05 16:35:39,709 - INFO - 📊 Fetching ALL historical candles for LINKUSDT (1h)
+2025-12-05 16:35:39,709 - INFO -    Period: 2022-12-06 ~ 2025-10-24
+2025-12-05 16:35:39,817 - INFO -    No more candles available (batch 1)
+2025-12-05 16:35:39,817 - INFO - ✅ Total 0 candles fetched for LINKUSDT (1h)
+2025-12-05 16:35:39,817 - INFO -    Period: 2022-12-06 ~ 2025-10-24 (1 API calls)
+2025-12-05 16:35:39,817 - INFO -    🌐 Fetched 0 candles from Bitget API
+2025-12-05 16:35:39,817 - ERROR - Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x10ad1f5d0>
+2025-12-05 16:35:39,817 - ERROR - Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x1062c80c0>, 16464.881155041)])']
+connector: <aiohttp.connector.TCPConnector object at 0x10ad1f390>
+2025-12-05 16:35:41,818 - INFO - 📊 Fetching ALL historical candles for LINKUSDT (1h)
+2025-12-05 16:35:41,818 - INFO -    Period: 2025-12-04 ~ 2025-12-05
+2025-12-05 16:35:41,947 - INFO -    Reached start date 2025-12-04
+2025-12-05 16:35:41,947 - INFO - ✅ Total 32 candles fetched for LINKUSDT (1h)
+2025-12-05 16:35:41,947 - INFO -    Period: 2025-12-04 ~ 2025-12-05 (1 API calls)
+2025-12-05 16:35:41,948 - INFO -    🌐 Fetched 32 candles from Bitget API
+2025-12-05 16:35:41,948 - ERROR - Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x10ad1fc90>
+2025-12-05 16:35:41,948 - ERROR - Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x1062c80c0>, 16467.010573708)])']
+connector: <aiohttp.connector.TCPConnector object at 0x10ad1c690>
+2025-12-05 16:35:41,952 - INFO -    💾 Saved 1019 candles to LINKUSDT_1h.csv
+2025-12-05 16:35:41,952 - INFO -    ✅ Downloaded 1019 candles
+2025-12-05 16:35:42,253 - INFO -    Progress: 22/30 (73.3%)
+2025-12-05 16:35:42,253 - INFO - 📥 Downloading LINKUSDT 4h: 2022-12-06 ~ 2025-12-05
+2025-12-05 16:35:42,253 - INFO - 📊 Requesting candles: LINKUSDT 4h (2022-12-06 ~ 2025-12-05)
+2025-12-05 16:35:42,256 - INFO -    ⚠️ Partial cache, fetching 2 missing ranges
+2025-12-05 16:35:43,949 - INFO - 📊 Fetching ALL historical candles for LINKUSDT (4h)
+2025-12-05 16:35:43,949 - INFO -    Period: 2022-12-06 ~ 2025-06-08
+2025-12-05 16:35:44,047 - INFO -    No more candles available (batch 1)
+2025-12-05 16:35:44,047 - INFO - ✅ Total 0 candles fetched for LINKUSDT (4h)
+2025-12-05 16:35:44,047 - INFO -    Period: 2022-12-06 ~ 2025-06-08 (1 API calls)
+2025-12-05 16:35:44,047 - INFO -    🌐 Fetched 0 candles from Bitget API
+2025-12-05 16:35:44,047 - ERROR - Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x10acecdd0>
+2025-12-05 16:35:44,047 - ERROR - Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x1062c80c0>, 16469.111332833)])']
+connector: <aiohttp.connector.TCPConnector object at 0x10aced010>
+2025-12-05 16:35:46,048 - INFO - 📊 Fetching ALL historical candles for LINKUSDT (4h)
+2025-12-05 16:35:46,048 - INFO -    Period: 2025-12-04 ~ 2025-12-05
+2025-12-05 16:35:46,166 - INFO -    Reached start date 2025-12-04
+2025-12-05 16:35:46,166 - INFO - ✅ Total 8 candles fetched for LINKUSDT (4h)
+2025-12-05 16:35:46,166 - INFO -    Period: 2025-12-04 ~ 2025-12-05 (1 API calls)
+2025-12-05 16:35:46,166 - INFO -    🌐 Fetched 8 candles from Bitget API
+2025-12-05 16:35:46,166 - ERROR - Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x10ae1c5d0>
+2025-12-05 16:35:46,166 - ERROR - Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x1062c80c0>, 16471.229572541)])']
+connector: <aiohttp.connector.TCPConnector object at 0x10ae1cc90>
+2025-12-05 16:35:46,171 - INFO -    💾 Saved 1084 candles to LINKUSDT_4h.csv
+2025-12-05 16:35:46,171 - INFO -    ✅ Downloaded 1084 candles
+2025-12-05 16:35:46,472 - INFO -    Progress: 23/30 (76.7%)
+2025-12-05 16:35:46,472 - INFO - 📥 Downloading LINKUSDT 1d: 2022-12-06 ~ 2025-12-05
+2025-12-05 16:35:46,472 - INFO - 📊 Requesting candles: LINKUSDT 1d (2022-12-06 ~ 2025-12-05)
+2025-12-05 16:35:46,475 - INFO -    ⚠️ Partial cache, fetching 1 missing ranges
+2025-12-05 16:35:48,167 - INFO - 📊 Fetching ALL historical candles for LINKUSDT (1d)
+2025-12-05 16:35:48,167 - INFO -    Period: 2025-12-04 ~ 2025-12-05
+2025-12-05 16:35:48,280 - INFO -    Reached start date 2025-12-04
+2025-12-05 16:35:48,280 - INFO - ✅ Total 1 candles fetched for LINKUSDT (1d)
+2025-12-05 16:35:48,280 - INFO -    Period: 2025-12-04 ~ 2025-12-05 (1 API calls)
+2025-12-05 16:35:48,280 - INFO -    🌐 Fetched 1 candles from Bitget API
+2025-12-05 16:35:48,280 - ERROR - Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x10acecb90>
+2025-12-05 16:35:48,280 - ERROR - Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x1062c80c0>, 16473.343937666)])']
+connector: <aiohttp.connector.TCPConnector object at 0x10acec950>
+2025-12-05 16:35:48,285 - INFO -    💾 Saved 1441 candles to LINKUSDT_1d.csv
+2025-12-05 16:35:48,285 - INFO -    ✅ Downloaded 1096 candles
+2025-12-05 16:35:48,587 - INFO -    Progress: 24/30 (80.0%)
+2025-12-05 16:35:48,587 - INFO - 📥 Downloading DOTUSDT 1h: 2022-12-06 ~ 2025-12-05
+2025-12-05 16:35:48,587 - INFO - 📊 Requesting candles: DOTUSDT 1h (2022-12-06 ~ 2025-12-05)
+2025-12-05 16:35:48,589 - INFO -    ⚠️ Partial cache, fetching 2 missing ranges
+2025-12-05 16:35:50,281 - INFO - 📊 Fetching ALL historical candles for DOTUSDT (1h)
+2025-12-05 16:35:50,281 - INFO -    Period: 2022-12-06 ~ 2025-10-24
+2025-12-05 16:35:50,400 - INFO -    No more candles available (batch 1)
+2025-12-05 16:35:50,400 - INFO - ✅ Total 0 candles fetched for DOTUSDT (1h)
+2025-12-05 16:35:50,400 - INFO -    Period: 2022-12-06 ~ 2025-10-24 (1 API calls)
+2025-12-05 16:35:50,400 - INFO -    🌐 Fetched 0 candles from Bitget API
+2025-12-05 16:35:50,400 - ERROR - Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x10b022890>
+2025-12-05 16:35:50,400 - ERROR - Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x1062c80c0>, 16475.463901916)])']
+connector: <aiohttp.connector.TCPConnector object at 0x10b022490>
+2025-12-05 16:35:52,401 - INFO - 📊 Fetching ALL historical candles for DOTUSDT (1h)
+2025-12-05 16:35:52,402 - INFO -    Period: 2025-12-04 ~ 2025-12-05
+2025-12-05 16:35:52,527 - INFO -    Reached start date 2025-12-04
+2025-12-05 16:35:52,527 - INFO - ✅ Total 32 candles fetched for DOTUSDT (1h)
+2025-12-05 16:35:52,527 - INFO -    Period: 2025-12-04 ~ 2025-12-05 (1 API calls)
+2025-12-05 16:35:52,527 - INFO -    🌐 Fetched 32 candles from Bitget API
+2025-12-05 16:35:52,527 - ERROR - Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x10b031490>
+2025-12-05 16:35:52,527 - ERROR - Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x1062c80c0>, 16477.590173708)])']
+connector: <aiohttp.connector.TCPConnector object at 0x10b022790>
+2025-12-05 16:35:52,532 - INFO -    💾 Saved 1019 candles to DOTUSDT_1h.csv
+2025-12-05 16:35:52,532 - INFO -    ✅ Downloaded 1019 candles
+2025-12-05 16:35:52,833 - INFO -    Progress: 25/30 (83.3%)
+2025-12-05 16:35:52,833 - INFO - 📥 Downloading DOTUSDT 4h: 2022-12-06 ~ 2025-12-05
+2025-12-05 16:35:52,833 - INFO - 📊 Requesting candles: DOTUSDT 4h (2022-12-06 ~ 2025-12-05)
+2025-12-05 16:35:52,836 - INFO -    ⚠️ Partial cache, fetching 2 missing ranges
+2025-12-05 16:35:54,528 - INFO - 📊 Fetching ALL historical candles for DOTUSDT (4h)
+2025-12-05 16:35:54,528 - INFO -    Period: 2022-12-06 ~ 2025-06-08
+2025-12-05 16:35:54,616 - INFO -    No more candles available (batch 1)
+2025-12-05 16:35:54,616 - INFO - ✅ Total 0 candles fetched for DOTUSDT (4h)
+2025-12-05 16:35:54,616 - INFO -    Period: 2022-12-06 ~ 2025-06-08 (1 API calls)
+2025-12-05 16:35:54,616 - INFO -    🌐 Fetched 0 candles from Bitget API
+2025-12-05 16:35:54,616 - ERROR - Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x10afb5750>
+2025-12-05 16:35:54,616 - ERROR - Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x1062c80c0>, 16479.680430625)])']
+connector: <aiohttp.connector.TCPConnector object at 0x10afb7b50>
+2025-12-05 16:35:56,617 - INFO - 📊 Fetching ALL historical candles for DOTUSDT (4h)
+2025-12-05 16:35:56,618 - INFO -    Period: 2025-12-04 ~ 2025-12-05
+2025-12-05 16:35:56,754 - INFO -    Reached start date 2025-12-04
+2025-12-05 16:35:56,754 - INFO - ✅ Total 8 candles fetched for DOTUSDT (4h)
+2025-12-05 16:35:56,754 - INFO -    Period: 2025-12-04 ~ 2025-12-05 (1 API calls)
+2025-12-05 16:35:56,754 - INFO -    🌐 Fetched 8 candles from Bitget API
+2025-12-05 16:35:56,754 - ERROR - Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x10b13f510>
+2025-12-05 16:35:56,754 - ERROR - Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x1062c80c0>, 16481.817694375)])']
+connector: <aiohttp.connector.TCPConnector object at 0x10b13f890>
+2025-12-05 16:35:56,759 - INFO -    💾 Saved 1084 candles to DOTUSDT_4h.csv
+2025-12-05 16:35:56,759 - INFO -    ✅ Downloaded 1084 candles
+2025-12-05 16:35:57,060 - INFO -    Progress: 26/30 (86.7%)
+2025-12-05 16:35:57,060 - INFO - 📥 Downloading DOTUSDT 1d: 2022-12-06 ~ 2025-12-05
+2025-12-05 16:35:57,060 - INFO - 📊 Requesting candles: DOTUSDT 1d (2022-12-06 ~ 2025-12-05)
+2025-12-05 16:35:57,064 - INFO -    ⚠️ Partial cache, fetching 1 missing ranges
+2025-12-05 16:35:58,755 - INFO - 📊 Fetching ALL historical candles for DOTUSDT (1d)
+2025-12-05 16:35:58,755 - INFO -    Period: 2025-12-04 ~ 2025-12-05
+2025-12-05 16:35:58,877 - INFO -    Reached start date 2025-12-04
+2025-12-05 16:35:58,877 - INFO - ✅ Total 1 candles fetched for DOTUSDT (1d)
+2025-12-05 16:35:58,877 - INFO -    Period: 2025-12-04 ~ 2025-12-05 (1 API calls)
+2025-12-05 16:35:58,877 - INFO -    🌐 Fetched 1 candles from Bitget API
+2025-12-05 16:35:58,877 - ERROR - Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x10afb7fd0>
+2025-12-05 16:35:58,878 - ERROR - Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x1062c80c0>, 16483.941468458)])']
+connector: <aiohttp.connector.TCPConnector object at 0x10afb7910>
+2025-12-05 16:35:58,883 - INFO -    💾 Saved 1441 candles to DOTUSDT_1d.csv
+2025-12-05 16:35:58,883 - INFO -    ✅ Downloaded 1096 candles
+2025-12-05 16:35:59,184 - INFO -    Progress: 27/30 (90.0%)
+2025-12-05 16:35:59,184 - INFO - 📥 Downloading MATICUSDT 1h: 2022-12-06 ~ 2025-12-05
+2025-12-05 16:35:59,184 - INFO - 📊 Requesting candles: MATICUSDT 1h (2022-12-06 ~ 2025-12-05)
+2025-12-05 16:35:59,184 - INFO -    🌐 No cache, fetching from Bitget API...
+2025-12-05 16:36:00,878 - INFO - 📊 Fetching ALL historical candles for MATICUSDT (1h)
+2025-12-05 16:36:00,878 - INFO -    Period: 2022-12-06 ~ 2025-12-05
+2025-12-05 16:36:00,993 - ERROR - Bitget API error: [40309] The symbol has been removed | Response: {'code': '40309', 'msg': 'The symbol has been removed', 'requestTime': 1764920161073, 'data': None}
+2025-12-05 16:36:00,993 - WARNING - Request failed, retrying... (attempt 1/3)
+2025-12-05 16:36:02,079 - ERROR - Bitget API error: [40309] The symbol has been removed | Response: {'code': '40309', 'msg': 'The symbol has been removed', 'requestTime': 1764920162160, 'data': None}
+2025-12-05 16:36:02,079 - WARNING - Request failed, retrying... (attempt 2/3)
+2025-12-05 16:36:03,146 - ERROR - Bitget API error: [40309] The symbol has been removed | Response: {'code': '40309', 'msg': 'The symbol has been removed', 'requestTime': 1764920163233, 'data': None}
+2025-12-05 16:36:03,146 - ERROR - Unexpected error: Bitget API 에러: The symbol has been removed
+Traceback (most recent call last):
+  File "/Users/mr.joo/Desktop/auto-dashboard/backend/src/services/bitget_rest.py", line 221, in _request
+    raise exception
+src.utils.bitget_exceptions.BitgetAPIError: Bitget API 에러: The symbol has been removed
+2025-12-05 16:36:03,147 - ERROR -    Error fetching batch 1: 예상치 못한 에러: Bitget API 에러: The symbol has been removed
+2025-12-05 16:36:03,147 - INFO - ✅ Total 0 candles fetched for MATICUSDT (1h)
+2025-12-05 16:36:03,147 - INFO -    Period: 2022-12-06 ~ 2025-12-05 (1 API calls)
+2025-12-05 16:36:03,147 - INFO -    🌐 Fetched 0 candles from Bitget API
+2025-12-05 16:36:03,147 - WARNING -    ⚠️ No data returned
+2025-12-05 16:36:03,147 - INFO -    Progress: 28/30 (93.3%)
+2025-12-05 16:36:03,147 - INFO - 📥 Downloading MATICUSDT 4h: 2022-12-06 ~ 2025-12-05
+2025-12-05 16:36:03,147 - INFO - 📊 Requesting candles: MATICUSDT 4h (2022-12-06 ~ 2025-12-05)
+2025-12-05 16:36:03,147 - INFO -    🌐 No cache, fetching from Bitget API...
+2025-12-05 16:36:05,148 - INFO - 📊 Fetching ALL historical candles for MATICUSDT (4h)
+2025-12-05 16:36:05,148 - INFO -    Period: 2022-12-06 ~ 2025-12-05
+2025-12-05 16:36:05,241 - ERROR - Bitget API error: [40309] The symbol has been removed | Response: {'code': '40309', 'msg': 'The symbol has been removed', 'requestTime': 1764920165328, 'data': None}
+2025-12-05 16:36:05,241 - WARNING - Request failed, retrying... (attempt 1/3)
+2025-12-05 16:36:06,320 - ERROR - Bitget API error: [40309] The symbol has been removed | Response: {'code': '40309', 'msg': 'The symbol has been removed', 'requestTime': 1764920166403, 'data': None}
+2025-12-05 16:36:06,320 - WARNING - Request failed, retrying... (attempt 2/3)
+2025-12-05 16:36:07,381 - ERROR - Bitget API error: [40309] The symbol has been removed | Response: {'code': '40309', 'msg': 'The symbol has been removed', 'requestTime': 1764920167470, 'data': None}
+2025-12-05 16:36:07,381 - ERROR - Unexpected error: Bitget API 에러: The symbol has been removed
+Traceback (most recent call last):
+  File "/Users/mr.joo/Desktop/auto-dashboard/backend/src/services/bitget_rest.py", line 221, in _request
+    raise exception
+src.utils.bitget_exceptions.BitgetAPIError: Bitget API 에러: The symbol has been removed
+2025-12-05 16:36:07,381 - ERROR -    Error fetching batch 1: 예상치 못한 에러: Bitget API 에러: The symbol has been removed
+2025-12-05 16:36:07,381 - INFO - ✅ Total 0 candles fetched for MATICUSDT (4h)
+2025-12-05 16:36:07,381 - INFO -    Period: 2022-12-06 ~ 2025-12-05 (1 API calls)
+2025-12-05 16:36:07,381 - INFO -    🌐 Fetched 0 candles from Bitget API
+2025-12-05 16:36:07,381 - WARNING -    ⚠️ No data returned
+2025-12-05 16:36:07,381 - INFO -    Progress: 29/30 (96.7%)
+2025-12-05 16:36:07,381 - INFO - 📥 Downloading MATICUSDT 1d: 2022-12-06 ~ 2025-12-05
+2025-12-05 16:36:07,381 - INFO - 📊 Requesting candles: MATICUSDT 1d (2022-12-06 ~ 2025-12-05)
+2025-12-05 16:36:07,381 - INFO -    🌐 No cache, fetching from Bitget API...
+2025-12-05 16:36:09,382 - INFO - 📊 Fetching ALL historical candles for MATICUSDT (1d)
+2025-12-05 16:36:09,382 - INFO -    Period: 2022-12-06 ~ 2025-12-05
+2025-12-05 16:36:09,483 - ERROR - Bitget API error: [40309] The symbol has been removed | Response: {'code': '40309', 'msg': 'The symbol has been removed', 'requestTime': 1764920169572, 'data': None}
+2025-12-05 16:36:09,483 - WARNING - Request failed, retrying... (attempt 1/3)
+2025-12-05 16:36:10,540 - ERROR - Bitget API error: [40309] The symbol has been removed | Response: {'code': '40309', 'msg': 'The symbol has been removed', 'requestTime': 1764920170631, 'data': None}
+2025-12-05 16:36:10,540 - WARNING - Request failed, retrying... (attempt 2/3)
+2025-12-05 16:36:11,617 - ERROR - Bitget API error: [40309] The symbol has been removed | Response: {'code': '40309', 'msg': 'The symbol has been removed', 'requestTime': 1764920171690, 'data': None}
+2025-12-05 16:36:11,617 - ERROR - Unexpected error: Bitget API 에러: The symbol has been removed
+Traceback (most recent call last):
+  File "/Users/mr.joo/Desktop/auto-dashboard/backend/src/services/bitget_rest.py", line 221, in _request
+    raise exception
+src.utils.bitget_exceptions.BitgetAPIError: Bitget API 에러: The symbol has been removed
+2025-12-05 16:36:11,618 - ERROR -    Error fetching batch 1: 예상치 못한 에러: Bitget API 에러: The symbol has been removed
+2025-12-05 16:36:11,618 - INFO - ✅ Total 0 candles fetched for MATICUSDT (1d)
+2025-12-05 16:36:11,618 - INFO -    Period: 2022-12-06 ~ 2025-12-05 (1 API calls)
+2025-12-05 16:36:11,618 - INFO -    🌐 Fetched 0 candles from Bitget API
+2025-12-05 16:36:11,618 - WARNING -    ⚠️ No data returned
+2025-12-05 16:36:11,618 - INFO -    Progress: 30/30 (100.0%)
+2025-12-05 16:36:11,618 - INFO - --------------------------------------------------
+2025-12-05 16:36:11,618 - INFO - ✅ Download complete: 27/30 succeeded
+2025-12-05 16:36:11,618 - WARNING - ❌ Failed: MATICUSDT_1h, MATICUSDT_4h, MATICUSDT_1d
+2025-12-05 16:36:11,624 - INFO - 
+📊 Cache Summary:
+2025-12-05 16:36:11,624 - INFO -    Total files: 28
+2025-12-05 16:36:11,624 - INFO -    - DOTUSDT_4h: 0.05 MB, 1084 candles
+2025-12-05 16:36:11,624 - INFO -    - AVAXUSDT_1d: 0.07 MB, 1441 candles
+2025-12-05 16:36:11,624 - INFO -    - SOLUSDT_1d: 0.08 MB, 1441 candles
+2025-12-05 16:36:11,624 - INFO -    - LINKUSDT_1d: 0.07 MB, 1441 candles
+2025-12-05 16:36:11,624 - INFO -    - XRPUSDT_1h: 0.05 MB, 1019 candles
+2025-12-05 16:36:11,624 - INFO -    - BTCUSDT_4h: 0.06 MB, 1084 candles
+2025-12-05 16:36:11,624 - INFO -    - DOGEUSDT_4h: 0.06 MB, 1084 candles
+2025-12-05 16:36:11,624 - INFO -    - ETHUSDT_1h: 0.05 MB, 1019 candles
+2025-12-05 16:36:11,624 - INFO -    - LINKUSDT_4h: 0.06 MB, 1084 candles
+2025-12-05 16:36:11,624 - INFO -    - DOTUSDT_1d: 0.07 MB, 1441 candles
+2025-12-05 16:36:11,624 - INFO -    - ADAUSDT_1h: 0.05 MB, 1019 candles
+2025-12-05 16:36:11,624 - INFO -    - AVAXUSDT_4h: 0.06 MB, 1084 candles
+2025-12-05 16:36:11,624 - INFO -    - SOLUSDT_4h: 0.06 MB, 1084 candles
+2025-12-05 16:36:11,624 - INFO -    - BTCUSDT_1d: 0.08 MB, 1441 candles
+2025-12-05 16:36:11,624 - INFO -    - ETHUSDT_1m: 2.24 MB, 44091 candles
+2025-12-05 16:36:11,624 - INFO -    - DOGEUSDT_1d: 0.08 MB, 1441 candles
+2025-12-05 16:36:11,624 - INFO -    - XRPUSDT_4h: 0.06 MB, 1084 candles
+2025-12-05 16:36:11,624 - INFO -    - BTCUSDT_1h: 0.06 MB, 1019 candles
+2025-12-05 16:36:11,624 - INFO -    - DOGEUSDT_1h: 0.06 MB, 1019 candles
+2025-12-05 16:36:11,624 - INFO -    - DOTUSDT_1h: 0.05 MB, 1019 candles
+2025-12-05 16:36:11,624 - INFO -    - ADAUSDT_1d: 0.08 MB, 1441 candles
+2025-12-05 16:36:11,624 - INFO -    - ETHUSDT_1d: 0.08 MB, 1441 candles
+2025-12-05 16:36:11,624 - INFO -    - XRPUSDT_1d: 0.08 MB, 1441 candles
+2025-12-05 16:36:11,624 - INFO -    - ETHUSDT_4h: 0.06 MB, 1084 candles
+2025-12-05 16:36:11,624 - INFO -    - LINKUSDT_1h: 0.05 MB, 1019 candles
+2025-12-05 16:36:11,624 - INFO -    - ADAUSDT_4h: 0.06 MB, 1084 candles
+2025-12-05 16:36:11,624 - INFO -    - AVAXUSDT_1h: 0.05 MB, 1019 candles
+2025-12-05 16:36:11,624 - INFO -    - SOLUSDT_1h: 0.05 MB, 1019 candles
+2025-12-05 16:36:11,649 - ERROR - Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x10b1a0d10>
+2025-12-05 16:36:11,649 - ERROR - Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x1062c80c0>, 16488.210077125)])']
+connector: <aiohttp.connector.TCPConnector object at 0x10b1a0c10>
+2025-12-05 16:36:11,649 - ERROR - Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x10b1a0750>
+2025-12-05 16:36:11,649 - ERROR - Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x10b1e8050>, 16492.444963875)])']
+connector: <aiohttp.connector.TCPConnector object at 0x10b1a0990>
+2025-12-05 16:36:11,649 - ERROR - Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x10b031fd0>
+2025-12-05 16:36:11,649 - ERROR - Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x10b1e83d0>, 16496.681672541)])']
+connector: <aiohttp.connector.TCPConnector object at 0x10b031790>
