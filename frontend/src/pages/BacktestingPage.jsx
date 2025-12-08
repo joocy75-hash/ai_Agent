@@ -34,6 +34,15 @@ const { Option } = Select;
 const { RangePicker } = DatePicker;
 
 export default function BacktestingPage() {
+    // 화면 크기 감지
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
     const [activeTab, setActiveTab] = useState('run');
 
     // 백테스트 실행 상태
@@ -277,7 +286,7 @@ export default function BacktestingPage() {
     };
     // 백테스트 실행 탭
     const renderRunTab = () => (
-        <Row gutter={24}>
+        <Row gutter={isMobile ? [8, 8] : [24, 24]}>
             <Col xs={24} lg={10}>
                 {/* 초보자 꿀팁 카드 */}
                 <BacktestTips />
@@ -795,15 +804,17 @@ export default function BacktestingPage() {
     };
 
     return (
-        <div style={{ padding: 24 }}>
-            <div style={{ marginBottom: 24 }}>
-                <Title level={2}>
-                    <ExperimentOutlined style={{ marginRight: 12 }} />
+        <div style={{ maxWidth: 1400, margin: '0 auto' }}>
+            <div style={{ marginBottom: isMobile ? 12 : 24 }}>
+                <Title level={isMobile ? 3 : 2}>
+                    <ExperimentOutlined style={{ marginRight: 8 }} />
                     백테스팅
                 </Title>
-                <Text type="secondary">
-                    과거 데이터로 전략의 성과를 검증하고 비교하세요
-                </Text>
+                {!isMobile && (
+                    <Text type="secondary">
+                        과거 데이터로 전략의 성과를 검증하고 비교하세요
+                    </Text>
+                )}
             </div>
 
             <Tabs

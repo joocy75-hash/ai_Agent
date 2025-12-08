@@ -17,6 +17,15 @@ const { RangePicker } = DatePicker;
 const { Option } = Select;
 
 export default function TradingHistory() {
+    // 화면 크기 감지
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
     const [loading, setLoading] = useState(false);
     const [orders, setOrders] = useState([]);
     const [filteredOrders, setFilteredOrders] = useState([]);
@@ -292,20 +301,22 @@ export default function TradingHistory() {
     ];
 
     return (
-        <div style={{ padding: 24 }}>
+        <div style={{ maxWidth: 1400, margin: '0 auto' }}>
             {/* 페이지 헤더 */}
-            <div style={{ marginBottom: 24 }}>
-                <Title level={2}>
-                    <HistoryOutlined style={{ marginRight: 12 }} />
+            <div style={{ marginBottom: isMobile ? 12 : 24 }}>
+                <Title level={isMobile ? 3 : 2}>
+                    <HistoryOutlined style={{ marginRight: 8 }} />
                     거래 내역
                 </Title>
-                <p style={{ color: '#888', margin: 0 }}>
-                    전체 주문 이력을 조회하고 분석하세요
-                </p>
+                {!isMobile && (
+                    <p style={{ color: '#888', margin: 0 }}>
+                        전체 주문 이력을 조회하고 분석하세요
+                    </p>
+                )}
             </div>
 
             {/* 통계 카드 */}
-            <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+            <Row gutter={isMobile ? [8, 8] : [16, 16]} style={{ marginBottom: isMobile ? 12 : 24 }}>
                 <Col xs={12} sm={6}>
                     <Card>
                         <Statistic
@@ -351,9 +362,9 @@ export default function TradingHistory() {
             </Row>
 
             {/* 필터 및 검색 */}
-            <Card style={{ marginBottom: 24 }}>
+            <Card style={{ marginBottom: isMobile ? 12 : 24 }}>
                 <Space direction="vertical" style={{ width: '100%' }} size="middle">
-                    <Row gutter={[16, 16]}>
+                    <Row gutter={isMobile ? [8, 8] : [16, 16]}>
                         <Col xs={24} sm={12} md={8}>
                             <Input
                                 placeholder="심볼 또는 주문 ID 검색"

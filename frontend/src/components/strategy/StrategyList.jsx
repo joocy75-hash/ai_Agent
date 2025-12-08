@@ -10,6 +10,8 @@ import {
     ReloadOutlined,
 } from '@ant-design/icons';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
 export default function StrategyList({ onEdit, onNew, onStrategiesLoaded }) {
     const [strategies, setStrategies] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -29,7 +31,7 @@ export default function StrategyList({ onEdit, onNew, onStrategiesLoaded }) {
             }
 
             // AI 생성 전략 조회
-            const response = await fetch('http://localhost:8000/ai/strategies/list', {
+            const response = await fetch(`${API_BASE_URL}/ai/strategies/list`, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json',
@@ -82,7 +84,7 @@ export default function StrategyList({ onEdit, onNew, onStrategiesLoaded }) {
             const token = localStorage.getItem('token');
 
             // 백엔드 API 호출하여 실제로 상태 변경
-            const response = await fetch(`http://localhost:8000/strategy/${strategy.id}/toggle`, {
+            const response = await fetch(`${API_BASE_URL}/strategy/${strategy.id}/toggle`, {
                 method: 'PATCH',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -113,7 +115,7 @@ export default function StrategyList({ onEdit, onNew, onStrategiesLoaded }) {
         try {
             const token = localStorage.getItem('token');
 
-            const response = await fetch(`http://localhost:8000/ai/strategies/${strategyId}`, {
+            const response = await fetch(`${API_BASE_URL}/ai/strategies/${strategyId}`, {
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${token}`,

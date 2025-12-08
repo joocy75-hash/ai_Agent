@@ -394,7 +394,7 @@ export default function Login() {
             <Divider style={{ margin: '16px 0' }}>테스트 계정</Divider>
             <div style={{ padding: 14, background: '#f8f9fa', borderRadius: 8 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}><Text style={{ color: '#86868b', fontSize: 13 }}>이메일:</Text><Text strong copyable style={{ fontSize: 13 }}>admin@admin.com</Text></div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}><Text style={{ color: '#86868b', fontSize: 13 }}>비밀번호:</Text><Text strong copyable style={{ fontSize: 13 }}>admin123</Text></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}><Text style={{ color: '#86868b', fontSize: 13 }}>비밀번호:</Text><Text strong copyable style={{ fontSize: 13 }}>Admin123!</Text></div>
             </div>
           </div>
         </>

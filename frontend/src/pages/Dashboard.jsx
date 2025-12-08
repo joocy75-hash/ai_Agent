@@ -598,7 +598,7 @@ export default function Dashboard() {
   }, [isConnected, subscribe]);
 
   return (
-    <div style={{ maxWidth: 1400, margin: '0 auto', padding: isMobile ? 0 : undefined }}>
+    <div style={{ maxWidth: 1400, margin: '0 auto' }}>
 
       {/* Stats Grid - Apple Style */}
       <Row gutter={isMobile ? [8, 8] : [16, 16]} style={{ marginBottom: isMobile ? 16 : 24 }}>

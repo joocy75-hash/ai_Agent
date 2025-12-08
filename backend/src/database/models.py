@@ -1,6 +1,5 @@
 from datetime import datetime
 from enum import Enum
-from typing import Optional
 
 from sqlalchemy import (
     Boolean,
@@ -82,7 +81,7 @@ class Strategy(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     name = Column(String, nullable=False)
     description = Column(Text, nullable=True)
-    code = Column(Text, nullable=False)
+    code = Column(Text, nullable=True)  # 간단 전략 생성 시 code가 없을 수 있음
     params = Column(Text, nullable=True)
     is_active = Column(Boolean, default=False, nullable=False)
 

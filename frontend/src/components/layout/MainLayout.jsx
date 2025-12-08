@@ -443,7 +443,7 @@ export default function MainLayout({ children }) {
                 {/* Content */}
                 <Content
                     style={{
-                        padding: isMobile ? 16 : 28,
+                        padding: isMobile ? 0 : 28,
                         minHeight: 'calc(100vh - 64px)',
                         background: 'transparent',
                     }}

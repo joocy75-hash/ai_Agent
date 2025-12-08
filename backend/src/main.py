@@ -136,6 +136,10 @@ def create_app() -> FastAPI:
         "http://127.0.0.1:3003",
         "http://127.0.0.1:4000",
         "http://127.0.0.1:5173",
+        # Production servers
+        "http://158.247.245.197:3000",  # Production Frontend
+        "http://158.247.245.197:4000",  # Production Admin Frontend
+        "http://158.247.245.197",       # Production (without port)
     ]
 
     # 환경 변수로 추가 도메인 설정 가능

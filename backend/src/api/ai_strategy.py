@@ -71,7 +71,7 @@ async def generate_strategies(
                 "type": strategy_data["type"],
                 "symbol": strategy_data["symbol"],
                 "timeframe": strategy_data["timeframe"],
-                **strategy_data["parameters"]  # 추가 파라미터 병합
+                **strategy_data["parameters"],  # 추가 파라미터 병합
             }
 
             # 데이터베이스에 저장
@@ -117,13 +117,13 @@ async def list_ai_strategies(
     session: AsyncSession = Depends(get_session),
     user_id: int = Depends(get_current_user_id),
 ):
-    """사용자의 활성화된 전략만 조회"""
+    """사용자의 모든 전략 조회 (활성화/비활성화 모두)"""
     from sqlalchemy import select
 
     result = await session.execute(
         select(Strategy)
         .where(Strategy.user_id == user_id)
-        .where(Strategy.is_active == True)
+        .order_by(Strategy.id.desc())  # 최신순 정렬
     )
     strategies = result.scalars().all()
 
@@ -133,11 +133,17 @@ async def list_ai_strategies(
                 "id": s.id,
                 "name": s.name,
                 "description": s.description or "",
-                "type": json.loads(s.params).get("type", "CUSTOM") if s.params else "CUSTOM",
-                "symbol": json.loads(s.params).get("symbol", "BTC/USDT") if s.params else "BTC/USDT",
-                "timeframe": json.loads(s.params).get("timeframe", "1h") if s.params else "1h",
+                "type": json.loads(s.params).get("type", "CUSTOM")
+                if s.params
+                else "CUSTOM",
+                "symbol": json.loads(s.params).get("symbol", "BTC/USDT")
+                if s.params
+                else "BTC/USDT",
+                "timeframe": json.loads(s.params).get("timeframe", "1h")
+                if s.params
+                else "1h",
                 "parameters": json.loads(s.params) if s.params else {},
-                "is_active": s.is_active if hasattr(s, 'is_active') else False,
+                "is_active": s.is_active if hasattr(s, "is_active") else False,
                 "created_at": None,
             }
             for s in strategies

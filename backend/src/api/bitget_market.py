@@ -96,11 +96,10 @@ async def get_user_bitget_client(
 @router.get("/ticker/{symbol}")
 async def get_ticker(
     symbol: str,
-    user_id: int = Depends(get_current_user_id),
-    session: AsyncSession = Depends(get_session),
+    _user_id: int = Depends(get_current_user_id),  # Required for auth but not used
 ):
     """
-    현재가 조회
+    현재가 조회 (Public CCXT API 사용)
 
     Args:
         symbol: 거래쌍 (예: BTCUSDT)
@@ -109,27 +108,27 @@ async def get_ticker(
         현재가 정보
     """
     try:
-        client = await get_user_bitget_client(user_id, session)
-        ticker = await client.get_ticker(symbol)
-        return ticker
+        # Use public CCXT API without authentication
+        import ccxt.async_support as ccxt
+        from decimal import Decimal
+
+        exchange = ccxt.bitget()
+        ticker = await exchange.fetch_ticker(symbol)
+        await exchange.close()
+
+        return {
+            'symbol': ticker['symbol'],
+            'last': Decimal(str(ticker.get('last', 0))),
+            'bid': Decimal(str(ticker.get('bid', 0))),
+            'ask': Decimal(str(ticker.get('ask', 0))),
+            'high': Decimal(str(ticker.get('high', 0))),
+            'low': Decimal(str(ticker.get('low', 0))),
+            'volume': Decimal(str(ticker.get('volume', 0))),
+            'timestamp': ticker.get('timestamp', 0)
+        }
 
     except HTTPException:
         raise
-    except BitgetRateLimitError as e:
-        logger.warning(f"Rate limit exceeded for ticker {symbol}: {e.message}")
-        raise HTTPException(status_code=429, detail=e.message)
-    except BitgetAuthenticationError as e:
-        logger.error(f"Authentication failed for ticker {symbol}: {e.message}")
-        raise HTTPException(status_code=401, detail=e.message)
-    except BitgetNetworkError as e:
-        logger.error(f"Network error for ticker {symbol}: {e.message}")
-        raise HTTPException(status_code=503, detail=e.message)
-    except BitgetTimeoutError as e:
-        logger.error(f"Timeout for ticker {symbol}: {e.message}")
-        raise HTTPException(status_code=504, detail=e.message)
-    except BitgetAPIError as e:
-        logger.error(f"Bitget API error for ticker {symbol}: {e.message}")
-        raise HTTPException(status_code=500, detail=e.message)
     except Exception as e:
         logger.error(f"Unexpected error getting ticker {symbol}: {e}", exc_info=True)
         raise HTTPException(

@@ -4,7 +4,7 @@ import { HistoryOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 export default function RecentTrades() {
     const [trades, setTrades] = useState([]);

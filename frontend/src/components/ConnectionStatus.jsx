@@ -1,11 +1,14 @@
 import { memo } from 'react';
 import { useWebSocket } from '../context/WebSocketContext';
+import { useAuth } from '../context/AuthContext';
 
 /**
  * WebSocket 연결 상태 표시 컴포넌트
  * 화면 우측 하단에 연결 상태를 표시하고, 재연결 버튼 제공
+ * 로그인한 사용자에게만 표시됨
  */
 function ConnectionStatus() {
+    const { user, isAuthenticated } = useAuth();
     const {
         isConnected,
         connectionState,
@@ -14,6 +17,11 @@ function ConnectionStatus() {
         maxRetries,
         reconnect
     } = useWebSocket();
+
+    // 로그인하지 않은 상태에서는 표시하지 않음
+    if (!user || !isAuthenticated) {
+        return null;
+    }
 
     // 연결된 상태에서는 표시하지 않음 (선택적)
     // if (isConnected) return null;

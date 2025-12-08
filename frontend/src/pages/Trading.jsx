@@ -226,7 +226,7 @@ export default function Trading() {
     };
 
     return (
-        <div style={{ padding: isMobile ? 12 : 24 }}>
+        <div style={{ maxWidth: 1400, margin: '0 auto' }}>
             {/* Page Header */}
             <div style={{ marginBottom: isMobile ? 16 : 24 }}>
                 <Title level={isMobile ? 3 : 2} style={{ marginBottom: 4 }}>
@@ -239,7 +239,7 @@ export default function Trading() {
             <BalanceCard style={{ marginBottom: isMobile ? 12 : 20 }} />
 
             {/* Main Layout: Chart (Left) + Bot Control (Right) */}
-            <Row gutter={[20, 20]}>
+            <Row gutter={isMobile ? [8, 8] : [20, 20]}>
                 {/* Left Column - Chart */}
                 <Col xs={24} lg={17}>
                     {/* Combined Chart Card */}

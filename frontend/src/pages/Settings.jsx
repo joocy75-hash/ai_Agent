@@ -467,15 +467,27 @@ export default function Settings() {
   };
 
   return (
-    <div style={{ padding: isMobile ? '1rem' : '1.5rem', maxWidth: '1200px', margin: '0 auto' }}>
-      {/* Header */}
-      <div style={{ marginBottom: isMobile ? '1rem' : '2rem' }}>
-        <h1 style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: 'bold', margin: 0, marginBottom: '0.5rem', color: '#1d1d1f' }}>
+    <div style={{ maxWidth: 1400, margin: '0 auto' }}>
+      {/* Header - 표준 스펙 적용 */}
+      <div style={{ marginBottom: isMobile ? 12 : 24 }}>
+        <h1 style={{
+          fontSize: isMobile ? 20 : 28,
+          fontWeight: 600,
+          margin: 0,
+          marginBottom: isMobile ? 4 : 8,
+          color: '#1d1d1f',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8
+        }}>
+          <SafetyCertificateOutlined />
           설정
         </h1>
-        <p style={{ color: '#86868b', margin: 0, fontSize: isMobile ? '0.875rem' : '1rem' }}>
-          계정: {user?.email}
-        </p>
+        {!isMobile && (
+          <p style={{ color: '#86868b', margin: 0, fontSize: 14 }}>
+            계정: {user?.email}
+          </p>
+        )}
       </div>
 
       {/* Messages */}

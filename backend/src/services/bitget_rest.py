@@ -651,7 +651,10 @@ class BitgetRestClient:
             Ticker 정보
         """
         endpoint = "/api/v2/mix/market/ticker"
-        params = {"symbol": symbol}
+        params = {
+            "symbol": symbol,
+            "productType": "USDT-FUTURES"  # Bitget v2 API requires productType
+        }
 
         result = await self._request("GET", endpoint, params=params)
         logger.debug(f"Ticker for {symbol}: {result}")

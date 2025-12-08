@@ -4,7 +4,9 @@ import { useAuth } from './AuthContext';
 const WebSocketContext = createContext();
 export { WebSocketContext };
 
-const WS_BASE_URL = 'ws://localhost:8000';
+// API URL에서 WebSocket URL 생성 (http -> ws, https -> wss)
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const WS_BASE_URL = API_URL.replace(/^http/, 'ws');
 
 // 고급 재연결 설정
 const RECONNECT_CONFIG = {

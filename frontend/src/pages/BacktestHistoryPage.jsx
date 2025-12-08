@@ -17,6 +17,15 @@ import dayjs from 'dayjs';
 const { Title, Text } = Typography;
 
 export default function BacktestHistory() {
+    // 화면 크기 감지
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
     const [history, setHistory] = useState([]);
     const [loading, setLoading] = useState(false);
     const [selectedResult, setSelectedResult] = useState(null);
@@ -157,23 +166,26 @@ export default function BacktestHistory() {
     ];
 
     return (
-        <div style={{ padding: 24 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <div style={{ maxWidth: 1400, margin: '0 auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: isMobile ? 12 : 24 }}>
                 <div>
-                    <Title level={2}>
-                        <HistoryOutlined style={{ marginRight: 12 }} />
+                    <Title level={isMobile ? 3 : 2}>
+                        <HistoryOutlined style={{ marginRight: 8 }} />
                         백테스트 이력
                     </Title>
-                    <Text type="secondary">
-                        지금까지 실행한 백테스트 결과를 확인하세요
-                    </Text>
+                    {!isMobile && (
+                        <Text type="secondary">
+                            지금까지 실행한 백테스트 결과를 확인하세요
+                        </Text>
+                    )}
                 </div>
                 <Button
                     icon={<ReloadOutlined />}
                     onClick={loadHistory}
                     loading={loading}
+                    size={isMobile ? 'small' : 'middle'}
                 >
-                    새로고침
+                    {!isMobile && '새로고침'}
                 </Button>
             </div>
 

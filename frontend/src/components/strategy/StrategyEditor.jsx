@@ -5,6 +5,7 @@ import {
     SaveOutlined,
     CloseOutlined,
 } from '@ant-design/icons';
+import { strategyAPI } from '../../api/strategy';
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -26,19 +27,25 @@ export default function StrategyEditor({ strategy, onSave, onCancel }) {
     const handleSubmit = async (values) => {
         setLoading(true);
         try {
+            // 전략 데이터 구성
+            const strategyData = {
+                name: values.name,
+                description: values.description,
+                type: values.type,
+                symbol: values.symbols?.[0] || 'BTCUSDT',
+                timeframe: values.timeframe,
+                parameters: values.parameters || {}
+            };
+
             // 실제 API 호출
-            // if (strategy) {
-            //   await strategyAPI.update(strategy.id, values);
-            // } else {
-            //   await strategyAPI.create(values);
-            // }
+            await strategyAPI.createStrategy(strategyData);
 
             message.success(strategy ? '전략이 수정되었습니다' : '전략이 생성되었습니다');
             onSave && onSave(values);
             setLoading(false);
         } catch (error) {
             console.error('[StrategyEditor] Error saving strategy:', error);
-            message.error('전략 저장에 실패했습니다');
+            message.error(error.response?.data?.detail || '전략 저장에 실패했습니다');
             setLoading(false);
         }
     };

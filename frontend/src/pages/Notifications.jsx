@@ -16,6 +16,15 @@ const { Title } = Typography;
 const { Option } = Select;
 
 export default function Notifications() {
+    // 화면 크기 감지
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
     const [notifications, setNotifications] = useState([]);
     const [statistics, setStatistics] = useState({});
     const [loading, setLoading] = useState(false);
@@ -148,20 +157,22 @@ export default function Notifications() {
     });
 
     return (
-        <div style={{ padding: 24 }}>
+        <div style={{ maxWidth: 1400, margin: '0 auto' }}>
             {/* 페이지 헤더 */}
-            <div style={{ marginBottom: 24 }}>
-                <Title level={2}>
-                    <BellOutlined style={{ marginRight: 12 }} />
+            <div style={{ marginBottom: isMobile ? 12 : 24 }}>
+                <Title level={isMobile ? 3 : 2}>
+                    <BellOutlined style={{ marginRight: 8 }} />
                     알림 센터
                 </Title>
-                <p style={{ color: '#888', margin: 0 }}>
-                    시스템 알림과 거래 알림을 확인하세요
-                </p>
+                {!isMobile && (
+                    <p style={{ color: '#888', margin: 0 }}>
+                        시스템 알림과 거래 알림을 확인하세요
+                    </p>
+                )}
             </div>
 
             {/* 통계 카드 */}
-            <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+            <Row gutter={isMobile ? [8, 8] : [16, 16]} style={{ marginBottom: isMobile ? 12 : 24 }}>
                 <Col xs={12} sm={6}>
                     <Card>
                         <Statistic

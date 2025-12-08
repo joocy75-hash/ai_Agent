@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 
-const WS_URL = 'ws://localhost:8000';
+// API URL에서 WebSocket URL 생성 (http -> ws, https -> wss)
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const WS_URL = API_URL.replace(/^http/, 'ws');
 const RECONNECT_DELAY = 3000; // 3초
 const PING_INTERVAL = 30000; // 30초
 

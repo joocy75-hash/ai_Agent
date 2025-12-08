@@ -293,7 +293,8 @@ def validate_strategy_name(name: str) -> str:
     """
     전략 이름 검증
 
-    영문, 숫자, 언더스코어만 허용 (파일명으로 사용될 수 있음)
+    한글, 영문, 숫자, 공백, 언더스코어, 하이픈 허용
+    (사용자 친화적인 이름 지원)
 
     Args:
         name: 검증할 전략 이름
@@ -305,12 +306,13 @@ def validate_strategy_name(name: str) -> str:
         ValueError: 형식이 유효하지 않은 경우
     """
     name = validate_string_length(
-        name, min_length=1, max_length=50, field_name="Strategy name"
+        name, min_length=1, max_length=100, field_name="Strategy name"
     )
 
-    if not re.match(r"^[a-zA-Z0-9_]+$", name):
+    # 한글, 영문, 숫자, 공백, 언더스코어, 하이픈, 괄호, 점 허용
+    if not re.match(r"^[\w\s가-힣\-\(\)\.\,\!\@\#]+$", name, re.UNICODE):
         raise ValueError(
-            "Strategy name can only contain letters, numbers, and underscores"
+            "Strategy name can only contain letters, numbers, spaces, Korean characters, and basic punctuation"
         )
 
     return name
