@@ -26,6 +26,7 @@ from ..services.trade_executor import (
     ensure_client,
     place_market_order,
 )
+from ..services.exchanges import exchange_manager
 from ..services.bitget_rest import get_bitget_rest, OrderSide
 from ..utils.crypto_secrets import decrypt_secret
 from ..websockets.ws_server import broadcast_to_user

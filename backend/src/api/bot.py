@@ -393,6 +393,8 @@ async def bot_status(
 ):
     """봇 상태 조회 (강화 버전 - JWT 인증 필요)"""
     from datetime import datetime
+    from ..services.bot_runner import BotRunner
+    from ..workers.manager import BotManager
     from ..services.exchange_service import ExchangeService
     from ..utils.cache_manager import cache_manager, make_cache_key
 
