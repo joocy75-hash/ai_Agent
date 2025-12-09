@@ -509,13 +509,13 @@ class BotRunner:
 
                         # 새로운 전략 로더 사용 (포지션 정보 포함)
                         try:
-                            # 테스트 모드: current_position을 None으로 전달하여 항상 진입 시그널 허용
+                            # 실제 모드: 현재 포지션 상태를 전략에 전달
                             signal_result = generate_signal_with_strategy(
                                 strategy_code=strategy.code,
                                 current_price=price,
                                 candles=candles,
                                 params_json=strategy.params,
-                                current_position=None,  # 테스트 모드: 항상 새 진입 허용
+                                current_position=current_position,  # 실제 포지션 상태 전달
                             )
 
                             signal_action = signal_result.get("action", "hold")

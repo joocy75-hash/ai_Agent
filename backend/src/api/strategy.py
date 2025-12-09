@@ -45,6 +45,11 @@ async def create_strategy(
         if not strategy_code and payload.type:
             # type을 code로 매핑 (프론트엔드 호환성)
             type_to_code_map = {
+                # 3가지 대표 전략 (검증된 전략)
+                "proven_conservative": "proven_conservative",
+                "proven_balanced": "proven_balanced",
+                "proven_aggressive": "proven_aggressive",
+                # 레거시 매핑 (호환성 유지)
                 "golden_cross": "ma_cross",  # 골든크로스 → MA 크로스 전략
                 "rsi_reversal": "rsi_strategy",  # RSI 반전 → RSI 전략
                 "trend_following": "ema",  # 추세추종 → EMA 전략
