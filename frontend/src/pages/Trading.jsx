@@ -88,18 +88,17 @@ export default function Trading() {
     const loadBotData = async () => {
         setBotLoading(true);
         try {
-            const [statusData, aiStrategies, publicStrategies] = await Promise.all([
+            const [statusData, strategiesData] = await Promise.all([
                 botAPI.getBotStatus(),
-                strategyAPI.getAIStrategies(),
-                strategyAPI.getPublicStrategies()
+                strategyAPI.getAIStrategies()  // 활성화된 공용 전략 + 사용자 전략 모두 포함
             ]);
 
             setBotStatus(statusData);
 
-            const aiStrategyList = aiStrategies.strategies || [];
-            const publicStrategyList = Array.isArray(publicStrategies) ? publicStrategies : (publicStrategies.strategies || []);
-            const allStrategies = [...aiStrategyList, ...publicStrategyList];
-            setStrategies(allStrategies);
+            // 전략 목록 설정 (활성화된 전략만 표시됨)
+            const strategyList = strategiesData.strategies || [];
+            setStrategies(strategyList);
+            console.log(`[Trading] Loaded ${strategyList.length} strategies`);
 
             if (statusData.strategy_id) {
                 setSelectedStrategy(statusData.strategy_id.toString());
