@@ -2,10 +2,11 @@
  * GridBotCard Component
  *
  * 그리드 봇 전용 카드 - 미니 그리드 시각화와 실시간 통계 표시
+ * 라이트 테마 버전
  *
  * 특징:
- * - 민트/청록색 그라디언트 테마
- * - 미니 그리드 시각화 (compact mode)
+ * - 민트/청록색 그라디언트 테마 유지
+ * - 라이트 배경
  * - 실시간 수익 카운터
  * - 활성 주문 표시
  */
@@ -207,8 +208,8 @@ export default function GridBotCard({
     const gridProgress =
         gridConfig.grid_count > 0
             ? ((gridConfig.filled_buy_count + gridConfig.filled_sell_count) /
-                  (gridConfig.grid_count * 2)) *
-              100
+                (gridConfig.grid_count * 2)) *
+            100
             : 0;
 
     return (
@@ -216,14 +217,14 @@ export default function GridBotCard({
             style={{
                 borderRadius: 16,
                 border: isRunning
-                    ? '1px solid rgba(0, 229, 255, 0.3)'
-                    : '1px solid rgba(255, 255, 255, 0.08)',
-                background: 'linear-gradient(180deg, #0f1923 0%, #0a1015 100%)',
+                    ? '2px solid #34c759'
+                    : '1px solid #e5e5ea',
+                background: '#ffffff',
                 overflow: 'hidden',
                 transition: 'all 0.3s ease',
                 boxShadow: isRunning
-                    ? '0 0 30px rgba(0, 229, 255, 0.15), inset 0 1px 0 rgba(0, 229, 255, 0.1)'
-                    : '0 4px 12px rgba(0, 0, 0, 0.3)',
+                    ? '0 4px 20px rgba(52, 199, 89, 0.15)'
+                    : '0 2px 8px rgba(0, 0, 0, 0.06)',
             }}
             styles={{ body: { padding: 0 } }}
             hoverable
@@ -283,8 +284,8 @@ export default function GridBotCard({
                             gap: 6,
                             padding: '4px 10px',
                             background: isRunning
-                                ? 'rgba(0, 229, 255, 0.3)'
-                                : 'rgba(255,255,255,0.1)',
+                                ? 'rgba(255,255,255,0.3)'
+                                : 'rgba(255,255,255,0.15)',
                             borderRadius: 20,
                         }}
                     >
@@ -293,8 +294,8 @@ export default function GridBotCard({
                                 width: 8,
                                 height: 8,
                                 borderRadius: '50%',
-                                background: isRunning ? '#00E5FF' : '#6b7280',
-                                boxShadow: isRunning ? '0 0 8px #00E5FF' : 'none',
+                                background: isRunning ? '#ffffff' : 'rgba(255,255,255,0.5)',
+                                boxShadow: isRunning ? '0 0 8px rgba(255,255,255,0.8)' : 'none',
                                 animation: isRunning ? 'gridPulse 2s infinite' : 'none',
                             }}
                         />
@@ -317,16 +318,16 @@ export default function GridBotCard({
                     >
                         <Tag
                             style={{
-                                background: '#1a2a3a',
+                                background: '#e8f4fd',
                                 border: 'none',
-                                color: '#00E5FF',
+                                color: '#0071e3',
                                 fontWeight: 600,
                                 fontSize: 13,
                             }}
                         >
                             {bot.symbol}
                         </Tag>
-                        <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11 }}>
+                        <Text style={{ color: '#86868b', fontSize: 11 }}>
                             {formatPrice(gridConfig.lower_price)} ~{' '}
                             {formatPrice(gridConfig.upper_price)}
                         </Text>
@@ -344,6 +345,7 @@ export default function GridBotCard({
                             height={120}
                             compact
                             showLabels={false}
+                            lightMode={true}
                         />
                     </div>
 
@@ -359,16 +361,20 @@ export default function GridBotCard({
                         {/* 실현 수익 */}
                         <div
                             style={{
-                                background: 'linear-gradient(135deg, rgba(0, 192, 118, 0.15) 0%, rgba(0, 192, 118, 0.05) 100%)',
+                                background: animatedProfit >= 0
+                                    ? 'linear-gradient(135deg, rgba(52, 199, 89, 0.1) 0%, rgba(52, 199, 89, 0.05) 100%)'
+                                    : 'linear-gradient(135deg, rgba(255, 59, 48, 0.1) 0%, rgba(255, 59, 48, 0.05) 100%)',
                                 borderRadius: 10,
                                 padding: 10,
                                 textAlign: 'center',
-                                border: '1px solid rgba(0, 192, 118, 0.2)',
+                                border: animatedProfit >= 0
+                                    ? '1px solid rgba(52, 199, 89, 0.2)'
+                                    : '1px solid rgba(255, 59, 48, 0.2)',
                             }}
                         >
                             <Text
                                 style={{
-                                    color: 'rgba(255,255,255,0.5)',
+                                    color: '#86868b',
                                     fontSize: 10,
                                     display: 'block',
                                 }}
@@ -377,7 +383,7 @@ export default function GridBotCard({
                             </Text>
                             <Text
                                 style={{
-                                    color: animatedProfit >= 0 ? '#00C076' : '#FF4D6A',
+                                    color: animatedProfit >= 0 ? '#34c759' : '#ff3b30',
                                     fontSize: 16,
                                     fontWeight: 700,
                                     fontFamily: 'SF Mono, Monaco, monospace',
@@ -390,7 +396,7 @@ export default function GridBotCard({
                         {/* 그리드 개수 */}
                         <div
                             style={{
-                                background: '#1a1a24',
+                                background: '#f5f5f7',
                                 borderRadius: 10,
                                 padding: 10,
                                 textAlign: 'center',
@@ -398,14 +404,14 @@ export default function GridBotCard({
                         >
                             <Text
                                 style={{
-                                    color: 'rgba(255,255,255,0.5)',
+                                    color: '#86868b',
                                     fontSize: 10,
                                     display: 'block',
                                 }}
                             >
                                 그리드
                             </Text>
-                            <Text style={{ color: '#00A8FF', fontSize: 16, fontWeight: 700 }}>
+                            <Text style={{ color: '#0071e3', fontSize: 16, fontWeight: 700 }}>
                                 {gridConfig.grid_count || 0}개
                             </Text>
                         </div>
@@ -413,7 +419,7 @@ export default function GridBotCard({
                         {/* 체결 현황 */}
                         <div
                             style={{
-                                background: '#1a1a24',
+                                background: '#f5f5f7',
                                 borderRadius: 10,
                                 padding: 10,
                                 textAlign: 'center',
@@ -421,19 +427,19 @@ export default function GridBotCard({
                         >
                             <Text
                                 style={{
-                                    color: 'rgba(255,255,255,0.5)',
+                                    color: '#86868b',
                                     fontSize: 10,
                                     display: 'block',
                                 }}
                             >
                                 매수/매도
                             </Text>
-                            <Text style={{ color: '#fff', fontSize: 14, fontWeight: 600 }}>
-                                <span style={{ color: '#00C076' }}>
+                            <Text style={{ color: '#1d1d1f', fontSize: 14, fontWeight: 600 }}>
+                                <span style={{ color: '#34c759' }}>
                                     {gridConfig.filled_buy_count || 0}
                                 </span>
                                 {' / '}
-                                <span style={{ color: '#FF4D6A' }}>
+                                <span style={{ color: '#ff3b30' }}>
                                     {gridConfig.filled_sell_count || 0}
                                 </span>
                             </Text>
@@ -442,7 +448,7 @@ export default function GridBotCard({
                         {/* 투자금 */}
                         <div
                             style={{
-                                background: '#1a1a24',
+                                background: '#f5f5f7',
                                 borderRadius: 10,
                                 padding: 10,
                                 textAlign: 'center',
@@ -450,14 +456,14 @@ export default function GridBotCard({
                         >
                             <Text
                                 style={{
-                                    color: 'rgba(255,255,255,0.5)',
+                                    color: '#86868b',
                                     fontSize: 10,
                                     display: 'block',
                                 }}
                             >
                                 투자금
                             </Text>
-                            <Text style={{ color: '#F5C242', fontSize: 14, fontWeight: 600 }}>
+                            <Text style={{ color: '#ff9500', fontSize: 14, fontWeight: 600 }}>
                                 ${gridConfig.total_investment?.toLocaleString() || 0}
                             </Text>
                         </div>
@@ -472,10 +478,10 @@ export default function GridBotCard({
                                 marginBottom: 4,
                             }}
                         >
-                            <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11 }}>
+                            <Text style={{ color: '#86868b', fontSize: 11 }}>
                                 그리드 활성도
                             </Text>
-                            <Text style={{ color: '#00E5FF', fontSize: 11 }}>
+                            <Text style={{ color: '#0071e3', fontSize: 11 }}>
                                 {gridProgress.toFixed(0)}%
                             </Text>
                         </div>
@@ -483,10 +489,10 @@ export default function GridBotCard({
                             percent={gridProgress}
                             showInfo={false}
                             strokeColor={{
-                                from: '#00C076',
-                                to: '#00E5FF',
+                                from: '#34c759',
+                                to: '#0071e3',
                             }}
-                            trailColor="#1a1a24"
+                            trailColor="#e5e5ea"
                             size="small"
                         />
                     </div>
@@ -504,7 +510,7 @@ export default function GridBotCard({
                                 height: 40,
                                 borderRadius: 8,
                                 background: isRunning
-                                    ? 'linear-gradient(135deg, #FF4D6A 0%, #d63c57 100%)'
+                                    ? '#ff3b30'
                                     : 'linear-gradient(135deg, #00C076 0%, #00A8FF 100%)',
                                 border: 'none',
                                 fontWeight: 600,
@@ -522,9 +528,9 @@ export default function GridBotCard({
                                     height: 40,
                                     width: 40,
                                     borderRadius: 8,
-                                    background: '#1a2a3a',
-                                    border: 'none',
-                                    color: '#00E5FF',
+                                    background: '#f5f5f7',
+                                    border: '1px solid #e5e5ea',
+                                    color: '#0071e3',
                                 }}
                             />
                         </Tooltip>
@@ -539,9 +545,9 @@ export default function GridBotCard({
                                     height: 40,
                                     width: 40,
                                     borderRadius: 8,
-                                    background: '#2d2d44',
-                                    border: 'none',
-                                    color: isRunning ? 'rgba(255,255,255,0.3)' : '#fff',
+                                    background: '#f5f5f7',
+                                    border: '1px solid #e5e5ea',
+                                    color: isRunning ? '#d2d2d7' : '#1d1d1f',
                                 }}
                             />
                         </Tooltip>
@@ -563,8 +569,8 @@ export default function GridBotCard({
                                         height: 40,
                                         width: 40,
                                         borderRadius: 8,
-                                        background: 'rgba(255, 77, 106, 0.15)',
-                                        border: 'none',
+                                        background: 'rgba(255, 59, 48, 0.08)',
+                                        border: '1px solid rgba(255, 59, 48, 0.2)',
                                     }}
                                 />
                             </Tooltip>

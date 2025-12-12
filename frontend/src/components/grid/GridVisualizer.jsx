@@ -2,6 +2,7 @@
  * GridVisualizer Component
  *
  * 그리드 봇의 가격 레인지와 그리드 라인을 시각화하는 인터랙티브 컴포넌트
+ * 라이트/다크 모드 지원
  *
  * 특징:
  * - 세로 방향 가격 축 (위=고가, 아래=저가)
@@ -16,6 +17,7 @@
  *   gridCount={10}
  *   currentPrice={92500}
  *   orders={[{ grid_index: 0, status: 'buy_filled', ... }]}
+ *   lightMode={true}
  * />
  */
 
@@ -24,8 +26,17 @@ import { Tooltip, Typography } from 'antd';
 
 const { Text } = Typography;
 
-// 그리드 상태별 색상
-const STATUS_COLORS = {
+// 그리드 상태별 색상 (라이트 모드)
+const STATUS_COLORS_LIGHT = {
+    pending: { bg: '#f5f5f7', border: '#d2d2d7', glow: 'none' },
+    buy_placed: { bg: '#e8f4fd', border: '#0071e3', glow: '0 0 8px rgba(0, 113, 227, 0.2)' },
+    buy_filled: { bg: '#e3f9ed', border: '#34c759', glow: '0 0 12px rgba(52, 199, 89, 0.3)' },
+    sell_placed: { bg: '#fff5e6', border: '#ff9500', glow: '0 0 8px rgba(255, 149, 0, 0.2)' },
+    sell_filled: { bg: '#e8f4fd', border: '#0071e3', glow: '0 0 12px rgba(0, 113, 227, 0.3)' },
+};
+
+// 그리드 상태별 색상 (다크 모드)
+const STATUS_COLORS_DARK = {
     pending: { bg: '#2d2d44', border: '#3d3d5c', glow: 'none' },
     buy_placed: { bg: '#1a3a4a', border: '#00A8FF', glow: '0 0 8px rgba(0, 168, 255, 0.3)' },
     buy_filled: { bg: '#0d3320', border: '#00C076', glow: '0 0 12px rgba(0, 192, 118, 0.4)' },
@@ -45,7 +56,44 @@ export default function GridVisualizer({
     showLabels = true,
     compact = false,
     onGridClick,
+    lightMode = false,
 }) {
+    // 테마에 따른 색상 선택
+    const STATUS_COLORS = lightMode ? STATUS_COLORS_LIGHT : STATUS_COLORS_DARK;
+
+    // 테마 색상
+    const theme = lightMode ? {
+        background: 'linear-gradient(180deg, #f8f9fa 0%, #f0f0f5 100%)',
+        border: '1px solid #e5e5ea',
+        textPrimary: '#1d1d1f',
+        textSecondary: '#86868b',
+        axisGradient: 'linear-gradient(180deg, #34c759 0%, #0071e3 50%, #ff3b30 100%)',
+        meshGradient1: 'rgba(52, 199, 89, 0.05)',
+        meshGradient2: 'rgba(0, 113, 227, 0.05)',
+        upperColor: '#34c759',
+        lowerColor: '#ff3b30',
+        currentPriceGradient: 'linear-gradient(90deg, transparent 0%, #ff9500 20%, #ff9500 80%, transparent 100%)',
+        currentPriceGlow: 'rgba(255, 149, 0, 0.3)',
+        currentPriceBg: 'linear-gradient(135deg, #ff9500 0%, #ff6b00 100%)',
+        currentPriceText: '#ffffff',
+        legendText: '#86868b',
+    } : {
+        background: 'linear-gradient(180deg, #0f1923 0%, #0a1015 100%)',
+        border: '1px solid rgba(0, 229, 255, 0.15)',
+        textPrimary: '#ffffff',
+        textSecondary: 'rgba(255,255,255,0.5)',
+        axisGradient: 'linear-gradient(180deg, #00C076 0%, #00A8FF 50%, #FF4D6A 100%)',
+        meshGradient1: 'rgba(0, 192, 118, 0.08)',
+        meshGradient2: 'rgba(0, 168, 255, 0.08)',
+        upperColor: '#00C076',
+        lowerColor: '#FF4D6A',
+        currentPriceGradient: 'linear-gradient(90deg, transparent 0%, #F5C242 20%, #F5C242 80%, transparent 100%)',
+        currentPriceGlow: 'rgba(245, 194, 66, 0.4)',
+        currentPriceBg: 'linear-gradient(135deg, #F5C242 0%, #E5A020 100%)',
+        currentPriceText: '#000000',
+        legendText: 'rgba(255,255,255,0.5)',
+    };
+
     // 그리드 라인 계산
     const gridLines = useMemo(() => {
         const lines = [];
@@ -102,9 +150,9 @@ export default function GridVisualizer({
             style={{
                 position: 'relative',
                 height,
-                background: 'linear-gradient(180deg, #0f1923 0%, #0a1015 100%)',
+                background: theme.background,
                 borderRadius: 16,
-                border: '1px solid rgba(0, 229, 255, 0.15)',
+                border: theme.border,
                 overflow: 'hidden',
                 padding: compact ? 12 : 20,
             }}
@@ -115,8 +163,8 @@ export default function GridVisualizer({
                     position: 'absolute',
                     inset: 0,
                     background: `
-                        radial-gradient(ellipse at 20% 20%, rgba(0, 192, 118, 0.08) 0%, transparent 50%),
-                        radial-gradient(ellipse at 80% 80%, rgba(0, 168, 255, 0.08) 0%, transparent 50%)
+                        radial-gradient(ellipse at 20% 20%, ${theme.meshGradient1} 0%, transparent 50%),
+                        radial-gradient(ellipse at 80% 80%, ${theme.meshGradient2} 0%, transparent 50%)
                     `,
                     pointerEvents: 'none',
                 }}
@@ -135,12 +183,12 @@ export default function GridVisualizer({
                             gap: 6,
                         }}
                     >
-                        <Text style={{ color: '#00C076', fontSize: 12, fontWeight: 600 }}>
+                        <Text style={{ color: theme.upperColor, fontSize: 12, fontWeight: 600 }}>
                             상한
                         </Text>
                         <Text
                             style={{
-                                color: '#fff',
+                                color: theme.textPrimary,
                                 fontSize: 14,
                                 fontWeight: 700,
                                 fontFamily: 'SF Mono, Monaco, monospace',
@@ -159,12 +207,12 @@ export default function GridVisualizer({
                             gap: 6,
                         }}
                     >
-                        <Text style={{ color: '#FF4D6A', fontSize: 12, fontWeight: 600 }}>
+                        <Text style={{ color: theme.lowerColor, fontSize: 12, fontWeight: 600 }}>
                             하한
                         </Text>
                         <Text
                             style={{
-                                color: '#fff',
+                                color: theme.textPrimary,
                                 fontSize: 14,
                                 fontWeight: 700,
                                 fontFamily: 'SF Mono, Monaco, monospace',
@@ -193,8 +241,7 @@ export default function GridVisualizer({
                         top: 0,
                         bottom: 0,
                         width: 2,
-                        background:
-                            'linear-gradient(180deg, #00C076 0%, #00A8FF 50%, #FF4D6A 100%)',
+                        background: theme.axisGradient,
                         borderRadius: 1,
                         opacity: 0.6,
                     }}
@@ -217,7 +264,7 @@ export default function GridVisualizer({
                                     <div>가격: {formatPrice(grid.price)}</div>
                                     <div>상태: {grid.status}</div>
                                     {grid.order?.profit && (
-                                        <div style={{ color: '#00C076' }}>
+                                        <div style={{ color: '#34c759' }}>
                                             수익: ${grid.order.profit.toFixed(4)}
                                         </div>
                                     )}
@@ -271,7 +318,7 @@ export default function GridVisualizer({
                                             top: '50%',
                                             transform: 'translateY(-50%)',
                                             fontSize: 10,
-                                            color: 'rgba(255,255,255,0.5)',
+                                            color: theme.textSecondary,
                                             fontFamily: 'SF Mono, Monaco, monospace',
                                             whiteSpace: 'nowrap',
                                         }}
@@ -316,8 +363,7 @@ export default function GridVisualizer({
                         <div
                             style={{
                                 height: 2,
-                                background:
-                                    'linear-gradient(90deg, transparent 0%, #F5C242 20%, #F5C242 80%, transparent 100%)',
+                                background: theme.currentPriceGradient,
                                 position: 'relative',
                             }}
                         >
@@ -330,7 +376,7 @@ export default function GridVisualizer({
                                     right: 0,
                                     height: 10,
                                     background:
-                                        'linear-gradient(90deg, transparent 0%, rgba(245, 194, 66, 0.4) 50%, transparent 100%)',
+                                        `linear-gradient(90deg, transparent 0%, ${theme.currentPriceGlow} 50%, transparent 100%)`,
                                     animation: 'currentPriceGlow 3s ease-in-out infinite',
                                 }}
                             />
@@ -343,16 +389,15 @@ export default function GridVisualizer({
                                 right: compact ? -50 : -70,
                                 top: '50%',
                                 transform: 'translateY(-50%)',
-                                background:
-                                    'linear-gradient(135deg, #F5C242 0%, #E5A020 100%)',
+                                background: theme.currentPriceBg,
                                 padding: compact ? '2px 6px' : '4px 10px',
                                 borderRadius: 6,
-                                boxShadow: '0 2px 8px rgba(245, 194, 66, 0.4)',
+                                boxShadow: `0 2px 8px ${theme.currentPriceGlow}`,
                             }}
                         >
                             <Text
                                 style={{
-                                    color: '#000',
+                                    color: theme.currentPriceText,
                                     fontSize: compact ? 10 : 12,
                                     fontWeight: 700,
                                     fontFamily: 'SF Mono, Monaco, monospace',
@@ -394,7 +439,7 @@ export default function GridVisualizer({
                                     background: STATUS_COLORS[status].border,
                                 }}
                             />
-                            <Text style={{ color: 'rgba(255,255,255,0.5)' }}>{label}</Text>
+                            <Text style={{ color: theme.legendText }}>{label}</Text>
                         </div>
                     ))}
                 </div>

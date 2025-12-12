@@ -2,6 +2,7 @@
  * CreateGridBotModal Component
  *
  * 그리드 봇 생성/편집을 위한 풀스크린 모달
+ * 라이트 테마 버전
  *
  * 특징:
  * - 3단계 위저드 형식 (기본 설정 → 그리드 설정 → 확인)
@@ -312,11 +313,12 @@ export default function CreateGridBotModal({
             destroyOnClose
             styles={{
                 content: {
-                    background: 'linear-gradient(180deg, #0d0d14 0%, #0a0a10 100%)',
-                    border: '1px solid rgba(0, 229, 255, 0.2)',
+                    background: '#ffffff',
+                    border: '1px solid #f0f0f0',
                     borderRadius: 20,
                     padding: 0,
                     overflow: 'hidden',
+                    boxShadow: '0 20px 60px rgba(0, 0, 0, 0.15)',
                 },
                 header: { display: 'none' },
                 body: { padding: 0 },
@@ -356,15 +358,15 @@ export default function CreateGridBotModal({
             </div>
 
             {/* 스텝 인디케이터 */}
-            <div style={{ padding: '24px 32px 0' }}>
+            <div style={{ padding: '24px 32px 0', background: '#ffffff' }}>
                 <Steps
                     current={currentStep}
-                    items={steps.map((step) => ({
+                    items={steps.map((step, index) => ({
                         title: (
-                            <Text style={{ color: '#fff', fontSize: 13 }}>{step.title}</Text>
+                            <Text style={{ color: '#1d1d1f', fontSize: 13, fontWeight: 500 }}>{step.title}</Text>
                         ),
                         description: (
-                            <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11 }}>
+                            <Text style={{ color: '#86868b', fontSize: 11 }}>
                                 {step.description}
                             </Text>
                         ),
@@ -372,9 +374,9 @@ export default function CreateGridBotModal({
                             <div
                                 style={{
                                     color:
-                                        currentStep >= steps.indexOf(step)
+                                        currentStep >= index
                                             ? '#00C076'
-                                            : 'rgba(255,255,255,0.3)',
+                                            : '#d2d2d7',
                                 }}
                             >
                                 {step.icon}
@@ -393,7 +395,7 @@ export default function CreateGridBotModal({
                 layout="vertical"
                 onValuesChange={handleValuesChange}
                 initialValues={formValues}
-                style={{ padding: '0 32px 24px' }}
+                style={{ padding: '0 32px 24px', background: '#ffffff' }}
             >
                 {/* Step 1: 기본 설정 */}
                 {currentStep === 0 && (
@@ -403,7 +405,7 @@ export default function CreateGridBotModal({
                                 <Form.Item
                                     name="name"
                                     label={
-                                        <Text style={{ color: 'rgba(255,255,255,0.7)' }}>
+                                        <Text style={{ color: '#1d1d1f', fontWeight: 500 }}>
                                             봇 이름
                                         </Text>
                                     }
@@ -413,9 +415,10 @@ export default function CreateGridBotModal({
                                         placeholder="예: BTC 그리드 #1"
                                         size="large"
                                         style={{
-                                            background: '#1a1a24',
-                                            border: '1px solid rgba(255,255,255,0.1)',
-                                            color: '#fff',
+                                            background: '#f5f5f7',
+                                            border: '1px solid #e5e5ea',
+                                            color: '#1d1d1f',
+                                            borderRadius: 10,
                                         }}
                                     />
                                 </Form.Item>
@@ -424,7 +427,7 @@ export default function CreateGridBotModal({
                                 <Form.Item
                                     name="symbol"
                                     label={
-                                        <Text style={{ color: 'rgba(255,255,255,0.7)' }}>
+                                        <Text style={{ color: '#1d1d1f', fontWeight: 500 }}>
                                             거래 페어
                                         </Text>
                                     }
@@ -433,7 +436,6 @@ export default function CreateGridBotModal({
                                     <Select
                                         size="large"
                                         style={{ width: '100%' }}
-                                        dropdownStyle={{ background: '#1a1a24' }}
                                     >
                                         {POPULAR_SYMBOLS.map((s) => (
                                             <Option key={s.value} value={s.value}>
@@ -452,12 +454,12 @@ export default function CreateGridBotModal({
                             name="allocation_percent"
                             label={
                                 <Space>
-                                    <Text style={{ color: 'rgba(255,255,255,0.7)' }}>
+                                    <Text style={{ color: '#1d1d1f', fontWeight: 500 }}>
                                         잔고 할당
                                     </Text>
                                     <Tooltip title="전체 잔고 중 이 봇에 할당할 비율">
                                         <InfoCircleOutlined
-                                            style={{ color: 'rgba(255,255,255,0.4)' }}
+                                            style={{ color: '#86868b' }}
                                         />
                                     </Tooltip>
                                 </Space>
@@ -468,16 +470,16 @@ export default function CreateGridBotModal({
                                 min={1}
                                 max={maxAllocation}
                                 marks={{
-                                    1: '1%',
-                                    25: '25%',
-                                    50: '50%',
-                                    75: '75%',
-                                    [maxAllocation]: `${maxAllocation}%`,
+                                    1: <span style={{ color: '#1d1d1f' }}>1%</span>,
+                                    25: <span style={{ color: '#1d1d1f' }}>25%</span>,
+                                    50: <span style={{ color: '#1d1d1f' }}>50%</span>,
+                                    75: <span style={{ color: '#1d1d1f' }}>75%</span>,
+                                    [maxAllocation]: <span style={{ color: '#1d1d1f' }}>{maxAllocation}%</span>,
                                 }}
                                 tooltip={{ formatter: (v) => `${v}%` }}
                                 styles={{
-                                    track: { background: '#00C076' },
-                                    rail: { background: '#2d2d44' },
+                                    track: { background: '#0071e3' },
+                                    rail: { background: '#e5e5ea' },
                                 }}
                             />
                         </Form.Item>
@@ -486,8 +488,8 @@ export default function CreateGridBotModal({
                         {marketData && (
                             <Card
                                 style={{
-                                    background: '#1a1a24',
-                                    border: '1px solid rgba(255,255,255,0.08)',
+                                    background: '#f5f5f7',
+                                    border: '1px solid #e5e5ea',
                                     borderRadius: 12,
                                     marginTop: 24,
                                 }}
@@ -497,7 +499,7 @@ export default function CreateGridBotModal({
                                     <Col span={8}>
                                         <Text
                                             style={{
-                                                color: 'rgba(255,255,255,0.5)',
+                                                color: '#86868b',
                                                 fontSize: 12,
                                                 display: 'block',
                                             }}
@@ -506,7 +508,7 @@ export default function CreateGridBotModal({
                                         </Text>
                                         <Text
                                             style={{
-                                                color: '#F5C242',
+                                                color: '#ff9500',
                                                 fontSize: 20,
                                                 fontWeight: 700,
                                             }}
@@ -517,7 +519,7 @@ export default function CreateGridBotModal({
                                     <Col span={8}>
                                         <Text
                                             style={{
-                                                color: 'rgba(255,255,255,0.5)',
+                                                color: '#86868b',
                                                 fontSize: 12,
                                                 display: 'block',
                                             }}
@@ -526,7 +528,7 @@ export default function CreateGridBotModal({
                                         </Text>
                                         <Text
                                             style={{
-                                                color: '#00C076',
+                                                color: '#34c759',
                                                 fontSize: 20,
                                                 fontWeight: 700,
                                             }}
@@ -537,7 +539,7 @@ export default function CreateGridBotModal({
                                     <Col span={8}>
                                         <Text
                                             style={{
-                                                color: 'rgba(255,255,255,0.5)',
+                                                color: '#86868b',
                                                 fontSize: 12,
                                                 display: 'block',
                                             }}
@@ -546,7 +548,7 @@ export default function CreateGridBotModal({
                                         </Text>
                                         <Text
                                             style={{
-                                                color: '#FF4D6A',
+                                                color: '#ff3b30',
                                                 fontSize: 20,
                                                 fontWeight: 700,
                                             }}
@@ -570,7 +572,7 @@ export default function CreateGridBotModal({
                                         <Form.Item
                                             name="lower_price"
                                             label={
-                                                <Text style={{ color: '#FF4D6A' }}>
+                                                <Text style={{ color: '#ff3b30', fontWeight: 500 }}>
                                                     하한가 ($)
                                                 </Text>
                                             }
@@ -580,7 +582,8 @@ export default function CreateGridBotModal({
                                                 size="large"
                                                 style={{
                                                     width: '100%',
-                                                    background: '#1a1a24',
+                                                    background: '#f5f5f7',
+                                                    borderRadius: 10,
                                                 }}
                                                 min={0}
                                                 formatter={(v) =>
@@ -594,7 +597,7 @@ export default function CreateGridBotModal({
                                         <Form.Item
                                             name="upper_price"
                                             label={
-                                                <Text style={{ color: '#00C076' }}>
+                                                <Text style={{ color: '#34c759', fontWeight: 500 }}>
                                                     상한가 ($)
                                                 </Text>
                                             }
@@ -604,7 +607,8 @@ export default function CreateGridBotModal({
                                                 size="large"
                                                 style={{
                                                     width: '100%',
-                                                    background: '#1a1a24',
+                                                    background: '#f5f5f7',
+                                                    borderRadius: 10,
                                                 }}
                                                 min={0}
                                                 formatter={(v) =>
@@ -619,7 +623,7 @@ export default function CreateGridBotModal({
                                 <Form.Item
                                     name="grid_count"
                                     label={
-                                        <Text style={{ color: 'rgba(255,255,255,0.7)' }}>
+                                        <Text style={{ color: '#1d1d1f', fontWeight: 500 }}>
                                             그리드 개수
                                         </Text>
                                     }
@@ -629,14 +633,14 @@ export default function CreateGridBotModal({
                                         min={2}
                                         max={50}
                                         marks={{
-                                            2: '2',
-                                            10: '10',
-                                            25: '25',
-                                            50: '50',
+                                            2: <span style={{ color: '#1d1d1f' }}>2</span>,
+                                            10: <span style={{ color: '#1d1d1f' }}>10</span>,
+                                            25: <span style={{ color: '#1d1d1f' }}>25</span>,
+                                            50: <span style={{ color: '#1d1d1f' }}>50</span>,
                                         }}
                                         styles={{
-                                            track: { background: '#00A8FF' },
-                                            rail: { background: '#2d2d44' },
+                                            track: { background: '#0071e3' },
+                                            rail: { background: '#e5e5ea' },
                                         }}
                                     />
                                 </Form.Item>
@@ -644,7 +648,7 @@ export default function CreateGridBotModal({
                                 <Form.Item
                                     name="grid_mode"
                                     label={
-                                        <Text style={{ color: 'rgba(255,255,255,0.7)' }}>
+                                        <Text style={{ color: '#1d1d1f', fontWeight: 500 }}>
                                             그리드 모드
                                         </Text>
                                     }
@@ -662,7 +666,7 @@ export default function CreateGridBotModal({
                                 <Form.Item
                                     name="total_investment"
                                     label={
-                                        <Text style={{ color: 'rgba(255,255,255,0.7)' }}>
+                                        <Text style={{ color: '#1d1d1f', fontWeight: 500 }}>
                                             총 투자금 (USDT)
                                         </Text>
                                     }
@@ -670,7 +674,7 @@ export default function CreateGridBotModal({
                                 >
                                     <InputNumber
                                         size="large"
-                                        style={{ width: '100%', background: '#1a1a24' }}
+                                        style={{ width: '100%', background: '#f5f5f7', borderRadius: 10 }}
                                         min={10}
                                         max={100000}
                                         formatter={(v) =>
@@ -686,8 +690,9 @@ export default function CreateGridBotModal({
                         <Col span={12}>
                             <Text
                                 style={{
-                                    color: 'rgba(255,255,255,0.7)',
+                                    color: '#1d1d1f',
                                     fontSize: 13,
+                                    fontWeight: 500,
                                     display: 'block',
                                     marginBottom: 8,
                                 }}
@@ -702,6 +707,7 @@ export default function CreateGridBotModal({
                                 currentPrice={marketData?.price || 95000}
                                 orders={previewData?.grids || []}
                                 height={280}
+                                lightMode={true}
                             />
                         </Col>
                     </Row>
@@ -713,15 +719,15 @@ export default function CreateGridBotModal({
                         <Col span={12}>
                             <Card
                                 style={{
-                                    background: '#1a1a24',
-                                    border: '1px solid rgba(255,255,255,0.08)',
+                                    background: '#f5f5f7',
+                                    border: '1px solid #e5e5ea',
                                     borderRadius: 12,
                                 }}
                                 styles={{ body: { padding: 20 } }}
                             >
                                 <Title
                                     level={5}
-                                    style={{ color: '#fff', marginBottom: 20 }}
+                                    style={{ color: '#1d1d1f', marginBottom: 20 }}
                                 >
                                     설정 요약
                                 </Title>
@@ -733,10 +739,10 @@ export default function CreateGridBotModal({
                                             justifyContent: 'space-between',
                                         }}
                                     >
-                                        <Text style={{ color: 'rgba(255,255,255,0.5)' }}>
+                                        <Text style={{ color: '#86868b' }}>
                                             봇 이름
                                         </Text>
-                                        <Text style={{ color: '#fff', fontWeight: 600 }}>
+                                        <Text style={{ color: '#1d1d1f', fontWeight: 600 }}>
                                             {formValues.name}
                                         </Text>
                                     </div>
@@ -746,29 +752,29 @@ export default function CreateGridBotModal({
                                             justifyContent: 'space-between',
                                         }}
                                     >
-                                        <Text style={{ color: 'rgba(255,255,255,0.5)' }}>
+                                        <Text style={{ color: '#86868b' }}>
                                             거래 페어
                                         </Text>
-                                        <Text style={{ color: '#00A8FF', fontWeight: 600 }}>
+                                        <Text style={{ color: '#0071e3', fontWeight: 600 }}>
                                             {formValues.symbol}
                                         </Text>
                                     </div>
-                                    <Divider style={{ borderColor: 'rgba(255,255,255,0.1)', margin: '12px 0' }} />
+                                    <Divider style={{ borderColor: '#e5e5ea', margin: '12px 0' }} />
                                     <div
                                         style={{
                                             display: 'flex',
                                             justifyContent: 'space-between',
                                         }}
                                     >
-                                        <Text style={{ color: 'rgba(255,255,255,0.5)' }}>
+                                        <Text style={{ color: '#86868b' }}>
                                             가격 범위
                                         </Text>
-                                        <Text style={{ color: '#fff' }}>
-                                            <span style={{ color: '#FF4D6A' }}>
+                                        <Text style={{ color: '#1d1d1f' }}>
+                                            <span style={{ color: '#ff3b30' }}>
                                                 ${formValues.lower_price?.toLocaleString()}
                                             </span>
                                             {' - '}
-                                            <span style={{ color: '#00C076' }}>
+                                            <span style={{ color: '#34c759' }}>
                                                 ${formValues.upper_price?.toLocaleString()}
                                             </span>
                                         </Text>
@@ -779,10 +785,10 @@ export default function CreateGridBotModal({
                                             justifyContent: 'space-between',
                                         }}
                                     >
-                                        <Text style={{ color: 'rgba(255,255,255,0.5)' }}>
+                                        <Text style={{ color: '#86868b' }}>
                                             그리드 개수
                                         </Text>
-                                        <Text style={{ color: '#fff', fontWeight: 600 }}>
+                                        <Text style={{ color: '#1d1d1f', fontWeight: 600 }}>
                                             {formValues.grid_count}개
                                         </Text>
                                     </div>
@@ -792,10 +798,10 @@ export default function CreateGridBotModal({
                                             justifyContent: 'space-between',
                                         }}
                                     >
-                                        <Text style={{ color: 'rgba(255,255,255,0.5)' }}>
+                                        <Text style={{ color: '#86868b' }}>
                                             총 투자금
                                         </Text>
-                                        <Text style={{ color: '#F5C242', fontWeight: 600 }}>
+                                        <Text style={{ color: '#ff9500', fontWeight: 600 }}>
                                             ${formValues.total_investment?.toLocaleString()}
                                         </Text>
                                     </div>
@@ -805,10 +811,10 @@ export default function CreateGridBotModal({
                                             justifyContent: 'space-between',
                                         }}
                                     >
-                                        <Text style={{ color: 'rgba(255,255,255,0.5)' }}>
+                                        <Text style={{ color: '#86868b' }}>
                                             그리드당 투자금
                                         </Text>
-                                        <Text style={{ color: '#fff' }}>
+                                        <Text style={{ color: '#1d1d1f' }}>
                                             ${previewData?.per_grid_amount?.toFixed(2)}
                                         </Text>
                                     </div>
@@ -820,15 +826,15 @@ export default function CreateGridBotModal({
                             <Card
                                 style={{
                                     background:
-                                        'linear-gradient(135deg, rgba(0, 192, 118, 0.1) 0%, rgba(0, 168, 255, 0.1) 100%)',
-                                    border: '1px solid rgba(0, 192, 118, 0.3)',
+                                        'linear-gradient(135deg, rgba(52, 199, 89, 0.08) 0%, rgba(0, 113, 227, 0.08) 100%)',
+                                    border: '1px solid rgba(52, 199, 89, 0.3)',
                                     borderRadius: 12,
                                 }}
                                 styles={{ body: { padding: 20 } }}
                             >
                                 <Title
                                     level={5}
-                                    style={{ color: '#00C076', marginBottom: 20 }}
+                                    style={{ color: '#34c759', marginBottom: 20 }}
                                 >
                                     <ThunderboltOutlined /> 예상 수익
                                 </Title>
@@ -845,10 +851,10 @@ export default function CreateGridBotModal({
                                                 justifyContent: 'space-between',
                                             }}
                                         >
-                                            <Text style={{ color: 'rgba(255,255,255,0.5)' }}>
+                                            <Text style={{ color: '#86868b' }}>
                                                 그리드당 수익률
                                             </Text>
-                                            <Text style={{ color: '#00C076', fontWeight: 600 }}>
+                                            <Text style={{ color: '#34c759', fontWeight: 600 }}>
                                                 {expectedStats.perGridProfit}%
                                             </Text>
                                         </div>
@@ -858,10 +864,10 @@ export default function CreateGridBotModal({
                                                 justifyContent: 'space-between',
                                             }}
                                         >
-                                            <Text style={{ color: 'rgba(255,255,255,0.5)' }}>
+                                            <Text style={{ color: '#86868b' }}>
                                                 예상 일일 수익
                                             </Text>
-                                            <Text style={{ color: '#00C076', fontWeight: 600 }}>
+                                            <Text style={{ color: '#34c759', fontWeight: 600 }}>
                                                 ~${expectedStats.dailyProfit}
                                             </Text>
                                         </div>
@@ -871,12 +877,12 @@ export default function CreateGridBotModal({
                                                 justifyContent: 'space-between',
                                             }}
                                         >
-                                            <Text style={{ color: 'rgba(255,255,255,0.5)' }}>
+                                            <Text style={{ color: '#86868b' }}>
                                                 예상 월간 수익
                                             </Text>
                                             <Text
                                                 style={{
-                                                    color: '#00C076',
+                                                    color: '#34c759',
                                                     fontWeight: 700,
                                                     fontSize: 18,
                                                 }}
@@ -886,7 +892,7 @@ export default function CreateGridBotModal({
                                         </div>
                                         <Divider
                                             style={{
-                                                borderColor: 'rgba(0, 192, 118, 0.3)',
+                                                borderColor: 'rgba(52, 199, 89, 0.3)',
                                                 margin: '12px 0',
                                             }}
                                         />
@@ -896,12 +902,12 @@ export default function CreateGridBotModal({
                                                 justifyContent: 'space-between',
                                             }}
                                         >
-                                            <Text style={{ color: 'rgba(255,255,255,0.5)' }}>
+                                            <Text style={{ color: '#86868b' }}>
                                                 예상 연 수익률 (APR)
                                             </Text>
                                             <Text
                                                 style={{
-                                                    color: '#F5C242',
+                                                    color: '#ff9500',
                                                     fontWeight: 700,
                                                     fontSize: 20,
                                                 }}
@@ -917,11 +923,12 @@ export default function CreateGridBotModal({
                                     showIcon={false}
                                     style={{
                                         marginTop: 16,
-                                        background: 'rgba(0, 168, 255, 0.1)',
+                                        background: 'rgba(0, 113, 227, 0.08)',
                                         border: 'none',
+                                        borderRadius: 8,
                                     }}
                                     message={
-                                        <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 11 }}>
+                                        <Text style={{ color: '#86868b', fontSize: 11 }}>
                                             ⚠️ 예상 수익은 시장 상황에 따라 달라질 수 있습니다
                                         </Text>
                                     }
@@ -938,17 +945,20 @@ export default function CreateGridBotModal({
                     padding: '16px 32px 24px',
                     display: 'flex',
                     justifyContent: 'space-between',
+                    background: '#ffffff',
+                    borderTop: '1px solid #f0f0f0',
                 }}
             >
                 <Button
                     onClick={currentStep === 0 ? onClose : handlePrev}
                     icon={currentStep > 0 ? <ArrowLeftOutlined /> : null}
                     style={{
-                        background: '#2d2d44',
-                        border: 'none',
-                        color: '#fff',
+                        background: '#f5f5f7',
+                        border: '1px solid #e5e5ea',
+                        color: '#1d1d1f',
                         height: 44,
                         borderRadius: 10,
+                        fontWeight: 500,
                     }}
                 >
                     {currentStep === 0 ? '취소' : '이전'}
@@ -961,7 +971,7 @@ export default function CreateGridBotModal({
                         icon={<ArrowRightOutlined />}
                         iconPosition="end"
                         style={{
-                            background: 'linear-gradient(135deg, #00C076 0%, #00A8FF 100%)',
+                            background: '#0071e3',
                             border: 'none',
                             height: 44,
                             borderRadius: 10,
@@ -977,7 +987,7 @@ export default function CreateGridBotModal({
                         loading={loading}
                         icon={<RocketOutlined />}
                         style={{
-                            background: 'linear-gradient(135deg, #00C076 0%, #00A060 100%)',
+                            background: '#34c759',
                             border: 'none',
                             height: 44,
                             borderRadius: 10,
