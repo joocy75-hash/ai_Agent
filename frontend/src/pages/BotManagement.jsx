@@ -651,7 +651,7 @@ export default function BotManagement() {
             {/* AI 봇 편집 모달 */}
             <EditBotModal
                 bot={editModal.bot}
-                strategies={strategies}
+                strategies={[]}  // 템플릿 컴셉으로 사용 안함
                 maxAllocation={availableAllocation}
                 open={editModal.open}
                 onClose={() => setEditModal({ open: false, bot: null })}
