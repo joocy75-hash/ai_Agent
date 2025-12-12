@@ -1,7 +1,7 @@
 /**
  * TrendTemplateCard - AI 추세 봇 템플릿 카드
  * 
- * 라이트 모드 + 한국어 UI
+ * 라이트 모드 + 코인 로고 + Long/Short 영어
  */
 import React from 'react';
 import { Button, Tag, Tooltip } from 'antd';
@@ -13,6 +13,24 @@ import {
     SafetyOutlined
 } from '@ant-design/icons';
 import './TrendTemplateCard.css';
+
+// 코인 로고 URL 생성
+const getCoinLogoUrl = (symbol) => {
+    // BTCUSDT -> btc
+    const coin = symbol.replace('USDT', '').replace('BUSD', '').toLowerCase();
+    return `https://assets.coincap.io/assets/icons/${coin}@2x.png`;
+};
+
+// 심볼 포맷팅 (BTCUSDT -> BTC/USDT)
+const formatSymbol = (symbol) => {
+    if (symbol.endsWith('USDT')) {
+        return symbol.replace('USDT', '/USDT');
+    }
+    if (symbol.endsWith('BUSD')) {
+        return symbol.replace('BUSD', '/BUSD');
+    }
+    return symbol;
+};
 
 const TrendTemplateCard = ({
     template,
@@ -70,28 +88,30 @@ const TrendTemplateCard = ({
         }
     };
 
-    const getDirectionLabel = () => {
-        if (isBoth) return '롱/숏 양방향';
-        if (isLong) return '롱 (상승)';
-        return '숏 (하락)';
-    };
-
     return (
         <div className={`trend-template-card ${is_featured ? 'featured' : ''}`}>
             {/* 상단: 심볼 + 사용 버튼 */}
             <div className="trend-card-header">
                 <div className="trend-symbol-section">
-                    <h3 className="trend-symbol">{symbol}</h3>
+                    <div className="symbol-with-logo">
+                        <img
+                            src={getCoinLogoUrl(symbol)}
+                            alt={symbol}
+                            className="coin-logo"
+                            onError={(e) => { e.target.style.display = 'none'; }}
+                        />
+                        <h3 className="trend-symbol">{formatSymbol(symbol)}</h3>
+                    </div>
                     <div className="trend-tags">
                         <Tag className="tag-strategy">
                             <ThunderboltOutlined /> {getStrategyLabel(strategy_type)}
                         </Tag>
                         <Tag className={`tag-direction ${isLong ? 'long' : isBoth ? 'both' : 'short'}`}>
-                            {isBoth ? '양방향' :
-                                isLong ? <><ArrowUpOutlined /> 롱</> :
-                                    <><ArrowDownOutlined /> 숏</>}
+                            {isBoth ? 'Long/Short' :
+                                isLong ? <><ArrowUpOutlined /> Long</> :
+                                    <><ArrowDownOutlined /> Short</>}
                         </Tag>
-                        <Tag className="tag-leverage">{leverage}배</Tag>
+                        <Tag className="tag-leverage">{leverage}X</Tag>
                     </div>
                 </div>
 

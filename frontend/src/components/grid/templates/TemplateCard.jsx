@@ -1,13 +1,30 @@
 /**
  * TemplateCard - 그리드 봇 템플릿 카드
  * 
- * 라이트 모드 + 한국어 UI
+ * 라이트 모드 + 코인 로고 + Long/Short 영어
  */
 import React from 'react';
 import { Button, Tag, Tooltip } from 'antd';
 import { UserOutlined, RiseOutlined, ArrowUpOutlined, ArrowDownOutlined } from '@ant-design/icons';
 import MiniRoiChart from './MiniRoiChart';
 import './TemplateCard.css';
+
+// 코인 로고 URL 생성
+const getCoinLogoUrl = (symbol) => {
+    const coin = symbol.replace('USDT', '').replace('BUSD', '').toLowerCase();
+    return `https://assets.coincap.io/assets/icons/${coin}@2x.png`;
+};
+
+// 심볼 포맷팅 (BTCUSDT -> BTC/USDT)
+const formatSymbol = (symbol) => {
+    if (symbol.endsWith('USDT')) {
+        return symbol.replace('USDT', '/USDT');
+    }
+    if (symbol.endsWith('BUSD')) {
+        return symbol.replace('BUSD', '/BUSD');
+    }
+    return symbol;
+};
 
 const TemplateCard = ({
     template,
@@ -42,13 +59,21 @@ const TemplateCard = ({
             {/* 상단: 심볼 + 사용 버튼 */}
             <div className="template-card-header">
                 <div className="template-symbol-section">
-                    <h3 className="template-symbol">{symbol}</h3>
+                    <div className="symbol-with-logo">
+                        <img
+                            src={getCoinLogoUrl(symbol)}
+                            alt={symbol}
+                            className="coin-logo"
+                            onError={(e) => { e.target.style.display = 'none'; }}
+                        />
+                        <h3 className="template-symbol">{formatSymbol(symbol)}</h3>
+                    </div>
                     <div className="template-tags">
-                        <Tag className="tag-type">그리드 봇</Tag>
+                        <Tag className="tag-type">Grid Bot</Tag>
                         <Tag className={`tag-direction ${isLong ? 'long' : 'short'}`}>
-                            {isLong ? <><ArrowUpOutlined /> 롱</> : <><ArrowDownOutlined /> 숏</>}
+                            {isLong ? <><ArrowUpOutlined /> Long</> : <><ArrowDownOutlined /> Short</>}
                         </Tag>
-                        <Tag className="tag-leverage">{leverage}배</Tag>
+                        <Tag className="tag-leverage">{leverage}X</Tag>
                     </div>
                 </div>
 

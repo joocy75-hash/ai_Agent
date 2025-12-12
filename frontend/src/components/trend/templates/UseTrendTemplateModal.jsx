@@ -1,7 +1,7 @@
 /**
  * UseTrendTemplateModal - AI 추세 봇 생성 모달
  * 
- * 라이트 모드 + 한국어 UI
+ * 라이트 모드 + 코인 로고 + Long/Short 영어
  */
 import React, { useState, useEffect } from 'react';
 import {
@@ -28,6 +28,23 @@ const { Panel } = Collapse;
 const { Option } = Select;
 
 const LEVERAGE_OPTIONS = [1, 2, 3, 5, 10, 20, 25, 50, 75, 100, 125];
+
+// 코인 로고 URL 생성
+const getCoinLogoUrl = (symbol) => {
+    const coin = symbol.replace('USDT', '').replace('BUSD', '').toLowerCase();
+    return `https://assets.coincap.io/assets/icons/${coin}@2x.png`;
+};
+
+// 심볼 포맷팅 (BTCUSDT -> BTC/USDT)
+const formatSymbol = (symbol) => {
+    if (symbol.endsWith('USDT')) {
+        return symbol.replace('USDT', '/USDT');
+    }
+    if (symbol.endsWith('BUSD')) {
+        return symbol.replace('BUSD', '/BUSD');
+    }
+    return symbol;
+};
 
 const UseTrendTemplateModal = ({
     visible,
@@ -121,9 +138,9 @@ const UseTrendTemplateModal = ({
     };
 
     const getDirectionText = () => {
-        if (isBoth) return '롱/숏 양방향';
-        if (isLong) return '롱 (상승 시 수익)';
-        return '숏 (하락 시 수익)';
+        if (isBoth) return 'Long/Short (상승/하락 모두)';
+        if (isLong) return 'Long (상승 시 수익)';
+        return 'Short (하락 시 수익)';
     };
 
     return (
@@ -139,17 +156,25 @@ const UseTrendTemplateModal = ({
             <div className="modal-content">
                 {/* 헤더 */}
                 <div className="modal-header">
-                    <h2>{template.symbol}</h2>
+                    <div className="symbol-with-logo">
+                        <img
+                            src={getCoinLogoUrl(template.symbol)}
+                            alt={template.symbol}
+                            className="coin-logo-large"
+                            onError={(e) => { e.target.style.display = 'none'; }}
+                        />
+                        <h2>{formatSymbol(template.symbol)}</h2>
+                    </div>
                     <div className="header-tags">
                         <span className="tag strategy">
                             <ThunderboltOutlined /> {getStrategyLabel(template.strategy_type)}
                         </span>
                         <span className={`tag ${template.direction}`}>
-                            {isBoth ? '양방향' :
-                                isLong ? <><ArrowUpOutlined /> 롱</> :
-                                    <><ArrowDownOutlined /> 숏</>}
+                            {isBoth ? 'Long/Short' :
+                                isLong ? <><ArrowUpOutlined /> Long</> :
+                                    <><ArrowDownOutlined /> Short</>}
                         </span>
-                        <span className="tag">{template.leverage}배 레버리지</span>
+                        <span className="tag">{template.leverage}X</span>
                     </div>
                 </div>
 
@@ -215,7 +240,7 @@ const UseTrendTemplateModal = ({
                                 style={{ width: '100%' }}
                             >
                                 {LEVERAGE_OPTIONS.map((lev) => (
-                                    <Option key={lev} value={lev}>{lev}배</Option>
+                                    <Option key={lev} value={lev}>{lev}X</Option>
                                 ))}
                             </Select>
                         </div>
