@@ -1,20 +1,20 @@
-/* GridBotTabs.css - AI 추천 템플릿 스타일 */
+/* TrendBotTabs.css - AI 추세 봇 탭 스타일 */
 
-.grid-bot-tabs {
+.trend-bot-tabs {
     width: 100%;
 }
 
-.ai-tab-header {
+.ai-trend-header {
     display: flex;
     align-items: center;
     font-size: 18px;
     font-weight: 600;
-    color: #00b894;
+    color: #5856d6;
     margin-bottom: 20px;
     padding: 12px 0;
-    border-bottom: 2px solid #00b894;
+    border-bottom: 2px solid #5856d6;
 }
 
-.ai-tab-header .anticon {
+.ai-trend-header .anticon {
     font-size: 20px;
 }

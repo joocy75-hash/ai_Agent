@@ -1,10 +1,10 @@
 /**
- * UseTemplateModal - 투자금액 입력 모달
+ * UseTrendTemplateModal - AI 추세 봇 템플릿 사용 모달
  *
  * - USDT 정수 금액 입력
  * - 레버리지 선택
  * - 가용 잔액 표시
- * - 파라미터 펼치기
+ * - 전략 정보 표시
  */
 import React, { useState, useEffect } from 'react';
 import {
@@ -15,17 +15,24 @@ import {
     Collapse,
     Descriptions,
     message,
+    Tag,
 } from 'antd';
-import { DownOutlined } from '@ant-design/icons';
-import { gridTemplateAPI } from '../../../api/gridTemplate';
-import './UseTemplateModal.css';
+import {
+    DownOutlined,
+    ThunderboltOutlined,
+    SafetyOutlined,
+    ArrowUpOutlined,
+    ArrowDownOutlined,
+} from '@ant-design/icons';
+import { trendTemplateAPI } from '../../../api/trendTemplate';
+import './UseTrendTemplateModal.css';
 
 const { Panel } = Collapse;
 const { Option } = Select;
 
 const LEVERAGE_OPTIONS = [1, 2, 3, 5, 10, 20, 25, 50, 75, 100, 125];
 
-const UseTemplateModal = ({
+const UseTrendTemplateModal = ({
     visible,
     template,
     onClose,
@@ -39,7 +46,7 @@ const UseTemplateModal = ({
     // 템플릿 변경 시 초기값 설정
     useEffect(() => {
         if (template) {
-            const minInv = Math.ceil(parseFloat(template.min_investment) || 0);
+            const minInv = Math.ceil(parseFloat(template.min_investment) || 50);
             setInvestmentAmount(minInv);
             setLeverage(template.leverage || 5);
         }
@@ -67,16 +74,16 @@ const UseTemplateModal = ({
 
         setLoading(true);
         try {
-            const result = await gridTemplateAPI.useTemplate(template.id, {
+            const result = await trendTemplateAPI.useTemplate(template.id, {
                 investment_amount: investmentAmount,
                 leverage: leverage,
             });
 
-            message.success('그리드 봇이 생성되었습니다!');
+            message.success('AI 추세 봇이 생성되었습니다!');
             onSuccess?.(result);
             onClose();
         } catch (error) {
-            console.error('Failed to create bot:', error);
+            console.error('Failed to create trend bot:', error);
             message.error(error.response?.data?.detail || '봇 생성 실패');
         } finally {
             setLoading(false);
@@ -85,8 +92,39 @@ const UseTemplateModal = ({
 
     if (!template) return null;
 
-    const minInvestment = Math.ceil(parseFloat(template.min_investment) || 0);
+    const minInvestment = Math.ceil(parseFloat(template.min_investment) || 50);
     const roiValue = template.backtest_roi_30d || 0;
+    const winRate = template.backtest_win_rate || 0;
+    const isLong = template.direction === 'long';
+    const isBoth = template.direction === 'both';
+
+    const getRiskLabel = (level) => {
+        switch (level) {
+            case 'low': return '저위험';
+            case 'medium': return '중위험';
+            case 'high': return '고위험';
+            default: return level;
+        }
+    };
+
+    const getRiskColor = (level) => {
+        switch (level) {
+            case 'low': return '#34c759';
+            case 'medium': return '#ff9500';
+            case 'high': return '#ff3b30';
+            default: return '#86868b';
+        }
+    };
+
+    const getStrategyLabel = (type) => {
+        switch (type) {
+            case 'ema_crossover': return 'EMA 크로스오버';
+            case 'rsi_divergence': return 'RSI 다이버전스';
+            case 'macd_trend': return 'MACD 추세';
+            case 'bollinger_bands': return '볼린저밴드';
+            default: return type;
+        }
+    };
 
     return (
         <Modal
@@ -94,7 +132,7 @@ const UseTemplateModal = ({
             onCancel={onClose}
             footer={null}
             width={500}
-            className="use-template-modal"
+            className="use-trend-template-modal"
             title={null}
             closable={true}
         >
@@ -103,9 +141,13 @@ const UseTemplateModal = ({
                 <div className="modal-header">
                     <h2>{template.symbol}</h2>
                     <div className="header-tags">
-                        <span className="tag">Futures grid</span>
+                        <span className="tag strategy">
+                            <ThunderboltOutlined /> {getStrategyLabel(template.strategy_type)}
+                        </span>
                         <span className={`tag ${template.direction}`}>
-                            {template.direction === 'long' ? 'Long' : 'Short'}
+                            {isBoth ? '양방향' :
+                                isLong ? <><ArrowUpOutlined /> Long</> :
+                                    <><ArrowDownOutlined /> Short</>}
                         </span>
                         <span className="tag">{template.leverage}x</span>
                     </div>
@@ -114,19 +156,32 @@ const UseTemplateModal = ({
                 {/* 통계 정보 */}
                 <div className="modal-stats">
                     <div className="stat-item">
-                        <span className="stat-label">30일 백테스트 수익률</span>
+                        <span className="stat-label">30일 백테스트 ROI</span>
                         <span className={`stat-value ${roiValue >= 0 ? 'positive' : 'negative'}`}>
                             {roiValue >= 0 ? '+' : ''}{roiValue.toFixed(2)}%
                         </span>
                     </div>
                     <div className="stat-item">
-                        <span className="stat-label">30일 최대 손실</span>
-                        <span className="stat-value">{(template.backtest_max_drawdown || 0).toFixed(2)}%</span>
+                        <span className="stat-label">승률</span>
+                        <span className={`stat-value ${winRate >= 50 ? 'positive' : 'negative'}`}>
+                            {winRate.toFixed(1)}%
+                        </span>
                     </div>
                     <div className="stat-item">
-                        <span className="stat-label">사용자</span>
-                        <span className="stat-value">{template.active_users || 0}</span>
+                        <span className="stat-label">최대 손실</span>
+                        <span className="stat-value">{(template.backtest_max_drawdown || 0).toFixed(2)}%</span>
                     </div>
+                </div>
+
+                {/* 리스크 레벨 */}
+                <div className="risk-level-section">
+                    <SafetyOutlined style={{ color: getRiskColor(template.risk_level) }} />
+                    <span style={{ color: getRiskColor(template.risk_level) }}>
+                        {getRiskLabel(template.risk_level)}
+                    </span>
+                    <Tag color="default" className="risk-tags">
+                        SL: {template.stop_loss_percent}% / TP: {template.take_profit_percent}%
+                    </Tag>
                 </div>
 
                 {/* 투자금액 입력 */}
@@ -171,11 +226,6 @@ const UseTemplateModal = ({
                         <span className="balance-label">가용 잔액</span>
                         <span className="balance-value">{Math.floor(availableBalance)} USDT</span>
                     </div>
-
-                    <div className="balance-row">
-                        <span className="balance-label">예상 청산가</span>
-                        <span className="balance-value">--</span>
-                    </div>
                 </div>
 
                 {/* 파라미터 펼치기 */}
@@ -184,22 +234,27 @@ const UseTemplateModal = ({
                     expandIcon={({ isActive }) => <DownOutlined rotate={isActive ? 180 : 0} />}
                     className="parameters-collapse"
                 >
-                    <Panel header="상세 파라미터" key="1">
+                    <Panel header="전략 상세 정보" key="1">
                         <Descriptions column={1} size="small">
-                            <Descriptions.Item label="하한가">
-                                {parseFloat(template.lower_price).toFixed(4)} USDT
+                            <Descriptions.Item label="전략 타입">
+                                {getStrategyLabel(template.strategy_type)}
                             </Descriptions.Item>
-                            <Descriptions.Item label="상한가">
-                                {parseFloat(template.upper_price).toFixed(4)} USDT
+                            <Descriptions.Item label="방향">
+                                {isBoth ? '양방향' : isLong ? 'Long (매수)' : 'Short (매도)'}
                             </Descriptions.Item>
-                            <Descriptions.Item label="그리드 수">
-                                {template.grid_count}개
+                            <Descriptions.Item label="손절">
+                                {template.stop_loss_percent}%
                             </Descriptions.Item>
-                            <Descriptions.Item label="그리드 모드">
-                                {template.grid_mode === 'arithmetic' ? '등차' : '등비'}
+                            <Descriptions.Item label="익절">
+                                {template.take_profit_percent}%
                             </Descriptions.Item>
                             <Descriptions.Item label="최소 투자금">
                                 {minInvestment} USDT
+                            </Descriptions.Item>
+                            <Descriptions.Item label="리스크 레벨">
+                                <span style={{ color: getRiskColor(template.risk_level) }}>
+                                    {getRiskLabel(template.risk_level)}
+                                </span>
                             </Descriptions.Item>
                         </Descriptions>
                     </Panel>
@@ -216,11 +271,11 @@ const UseTemplateModal = ({
                     className="confirm-button"
                     style={{ marginTop: 20 }}
                 >
-                    봇 생성
+                    AI 추세 봇 생성
                 </Button>
             </div>
         </Modal>
     );
 };
 
-export default UseTemplateModal;
+export default UseTrendTemplateModal;

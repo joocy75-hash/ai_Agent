@@ -49,6 +49,7 @@ from .api import (
     two_factor,
     telegram,
     user_backtest,  # 일반 회원용 캐시 백테스트 (NEW)
+    trend_template,  # AI 추세 템플릿 사용자 API (NEW)
 )
 from .config import settings
 from .database import db
@@ -248,6 +249,7 @@ def create_app() -> FastAPI:
     app.include_router(grid_template.router)  # Grid Template 사용자 API (NEW)
     app.include_router(admin_grid_template.router)  # Grid Template 관리자 API (NEW)
     app.include_router(user_backtest.router)  # 일반 회원용 캐시 백테스트 (NEW)
+    app.include_router(trend_template.router)  # AI 추세 템플릿 사용자 API (NEW)
     app.include_router(ws_server.router)
 
     # Note: Startup logic has been moved to lifespan in db.py

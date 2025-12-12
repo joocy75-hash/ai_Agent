@@ -114,35 +114,40 @@ class ExitReason(str, Enum):
 
 class BotType(str, Enum):
     """봇 유형"""
+
     AI_TREND = "ai_trend"  # AI 추세 추종 봇 (기존 봇 로직)
-    GRID = "grid"          # 그리드 봇 (신규)
+    GRID = "grid"  # 그리드 봇 (신규)
 
 
 class GridMode(str, Enum):
     """그리드 간격 모드"""
+
     ARITHMETIC = "arithmetic"  # 균등 간격 (가격 차이 동일)
-    GEOMETRIC = "geometric"    # 기하 간격 (% 비율 동일)
+    GEOMETRIC = "geometric"  # 기하 간격 (% 비율 동일)
 
 
 class PositionDirection(str, Enum):
     """포지션 방향 (그리드봇 템플릿용)"""
+
     LONG = "long"
     SHORT = "short"
 
 
 class GridOrderStatus(str, Enum):
     """그리드 주문 상태"""
-    PENDING = "pending"          # 주문 대기
-    BUY_PLACED = "buy_placed"    # 매수 주문 설정됨
-    BUY_FILLED = "buy_filled"    # 매수 체결 (보유 중)
+
+    PENDING = "pending"  # 주문 대기
+    BUY_PLACED = "buy_placed"  # 매수 주문 설정됨
+    BUY_FILLED = "buy_filled"  # 매수 체결 (보유 중)
     SELL_PLACED = "sell_placed"  # 매도 주문 설정됨
     SELL_FILLED = "sell_filled"  # 매도 체결 (수익 실현)
 
 
 class TradeSource(str, Enum):
     """거래 출처"""
-    MANUAL = "manual"      # 수동 거래
-    AI_BOT = "ai_bot"      # AI 봇 거래
+
+    MANUAL = "manual"  # 수동 거래
+    AI_BOT = "ai_bot"  # AI 봇 거래
     GRID_BOT = "grid_bot"  # 그리드 봇 거래
 
 
@@ -154,20 +159,20 @@ class BotInstance(Base):
     - 각 봇은 독립적인 전략, 심볼, 잔고 할당을 가짐
     - allocation_percent: 사용자 전체 잔고 중 이 봇에 할당된 비율
     """
+
     __tablename__ = "bot_instances"
 
     __table_args__ = (
         CheckConstraint(
             "allocation_percent > 0 AND allocation_percent <= 100",
-            name="check_allocation_range"
+            name="check_allocation_range",
         ),
         CheckConstraint(
-            "max_leverage >= 1 AND max_leverage <= 100",
-            name="check_bot_leverage_range"
+            "max_leverage >= 1 AND max_leverage <= 100", name="check_bot_leverage_range"
         ),
         CheckConstraint(
             "max_positions >= 1 AND max_positions <= 20",
-            name="check_bot_positions_range"
+            name="check_bot_positions_range",
         ),
         Index("idx_bot_instances_user_id", "user_id"),
         Index("idx_bot_instances_user_running", "user_id", "is_running"),
@@ -175,8 +180,12 @@ class BotInstance(Base):
     )
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    strategy_id = Column(Integer, ForeignKey("strategies.id", ondelete="SET NULL"), nullable=True)
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    strategy_id = Column(
+        Integer, ForeignKey("strategies.id", ondelete="SET NULL"), nullable=True
+    )
 
     # 봇 정보
     name = Column(String(100), nullable=False)
@@ -215,13 +224,13 @@ class BotInstance(Base):
 
     # 타임스탬프
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    updated_at = Column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
 
     # 템플릿 참조 (그리드봇이 템플릿에서 생성된 경우)
     template_id = Column(
-        Integer,
-        ForeignKey("grid_bot_templates.id", ondelete="SET NULL"),
-        nullable=True
+        Integer, ForeignKey("grid_bot_templates.id", ondelete="SET NULL"), nullable=True
     )
 
     # Relationships
@@ -232,7 +241,7 @@ class BotInstance(Base):
         "GridBotConfig",
         back_populates="bot_instance",
         uselist=False,
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan",
     )
     # trades relationship은 Trade 모델에서 정의
 
@@ -245,11 +254,14 @@ class GridBotTemplate(Base):
     - 일반 사용자가 "Use" 버튼으로 복사하여 사용
     - Bitget AI 탭과 유사한 기능
     """
+
     __tablename__ = "grid_bot_templates"
 
     __table_args__ = (
         CheckConstraint("upper_price > lower_price", name="check_template_price_range"),
-        CheckConstraint("grid_count >= 2 AND grid_count <= 200", name="check_template_grid_count"),
+        CheckConstraint(
+            "grid_count >= 2 AND grid_count <= 200", name="check_template_grid_count"
+        ),
         CheckConstraint("min_investment > 0", name="check_template_min_investment"),
         Index("ix_grid_bot_templates_symbol", "symbol"),
         Index("ix_grid_bot_templates_is_active", "is_active"),
@@ -263,7 +275,7 @@ class GridBotTemplate(Base):
     symbol = Column(String(20), nullable=False)  # "SOLUSDT", "BTCUSDT"
     direction = Column(
         SQLEnum(PositionDirection, values_callable=lambda e: [x.value for x in e]),
-        nullable=False
+        nullable=False,
     )  # LONG, SHORT
     leverage = Column(Integer, default=5, nullable=False)  # 기본 레버리지
 
@@ -274,7 +286,7 @@ class GridBotTemplate(Base):
     grid_mode = Column(
         SQLEnum(GridMode, values_callable=lambda e: [x.value for x in e]),
         default=GridMode.ARITHMETIC,
-        nullable=False
+        nullable=False,
     )
 
     # ===== 투자 제한 =====
@@ -297,24 +309,34 @@ class GridBotTemplate(Base):
     # ===== 사용 통계 =====
     active_users = Column(Integer, default=0, nullable=False)  # 현재 사용 중인 유저 수
     total_users = Column(Integer, default=0, nullable=False)  # 누적 사용자 수
-    total_funds_in_use = Column(Numeric(20, 8), default=0, nullable=False)  # 총 운용 자금 (USDT)
+    total_funds_in_use = Column(
+        Numeric(20, 8), default=0, nullable=False
+    )  # 총 운용 자금 (USDT)
 
     # ===== 상태 =====
     is_active = Column(Boolean, default=True, nullable=False)  # 공개 여부
-    is_featured = Column(Boolean, default=False, nullable=False)  # 추천 표시 (상단 노출)
+    is_featured = Column(
+        Boolean, default=False, nullable=False
+    )  # 추천 표시 (상단 노출)
     sort_order = Column(Integer, default=0, nullable=False)  # 정렬 순서
 
     # ===== 관리 =====
     created_by = Column(Integer, ForeignKey("users.id"), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    updated_at = Column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
 
     # ===== 관계 =====
-    creator = relationship("User", foreign_keys=[created_by], backref="created_templates")
+    creator = relationship(
+        "User", foreign_keys=[created_by], backref="created_templates"
+    )
     instances = relationship("BotInstance", back_populates="template")
 
     def __repr__(self):
-        return f"<GridBotTemplate {self.symbol} {self.direction.value} {self.leverage}x>"
+        return (
+            f"<GridBotTemplate {self.symbol} {self.direction.value} {self.leverage}x>"
+        )
 
 
 class GridBotConfig(Base):
@@ -324,11 +346,14 @@ class GridBotConfig(Base):
     - bot_instances와 1:1 관계 (bot_type='grid'인 경우만)
     - 가격 범위, 그리드 수, 투자금 설정
     """
+
     __tablename__ = "grid_bot_configs"
 
     __table_args__ = (
         CheckConstraint("upper_price > lower_price", name="check_price_range"),
-        CheckConstraint("grid_count >= 2 AND grid_count <= 100", name="check_grid_count_range"),
+        CheckConstraint(
+            "grid_count >= 2 AND grid_count <= 100", name="check_grid_count_range"
+        ),
     )
 
     id = Column(Integer, primary_key=True, index=True)
@@ -336,23 +361,25 @@ class GridBotConfig(Base):
         Integer,
         ForeignKey("bot_instances.id", ondelete="CASCADE"),
         nullable=False,
-        unique=True
+        unique=True,
     )
 
     # 그리드 설정
-    lower_price = Column(Numeric(20, 8), nullable=False)   # 하한가
-    upper_price = Column(Numeric(20, 8), nullable=False)   # 상한가
+    lower_price = Column(Numeric(20, 8), nullable=False)  # 하한가
+    upper_price = Column(Numeric(20, 8), nullable=False)  # 상한가
     grid_count = Column(Integer, nullable=False, default=10)
     grid_mode = Column(SQLEnum(GridMode), default=GridMode.ARITHMETIC, nullable=False)
 
     # 투자 설정
     total_investment = Column(Numeric(20, 8), nullable=False)  # 총 투자금 (USDT)
-    per_grid_amount = Column(Numeric(20, 8), nullable=True)    # 그리드당 투자금 (자동 계산)
+    per_grid_amount = Column(
+        Numeric(20, 8), nullable=True
+    )  # 그리드당 투자금 (자동 계산)
 
     # 트리거 설정
     trigger_price = Column(Numeric(20, 8), nullable=True)  # 특정 가격에 시작 (선택)
-    stop_upper = Column(Numeric(20, 8), nullable=True)     # 상한 돌파 시 중지
-    stop_lower = Column(Numeric(20, 8), nullable=True)     # 하한 돌파 시 중지
+    stop_upper = Column(Numeric(20, 8), nullable=True)  # 상한 돌파 시 중지
+    stop_lower = Column(Numeric(20, 8), nullable=True)  # 하한 돌파 시 중지
 
     # 상태 추적
     current_price = Column(Numeric(20, 8), nullable=True)
@@ -364,14 +391,14 @@ class GridBotConfig(Base):
 
     # 타임스탬프
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    updated_at = Column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
 
     # Relationships
     bot_instance = relationship("BotInstance", back_populates="grid_config")
     orders = relationship(
-        "GridOrder",
-        back_populates="grid_config",
-        cascade="all, delete-orphan"
+        "GridOrder", back_populates="grid_config", cascade="all, delete-orphan"
     )
 
 
@@ -383,6 +410,7 @@ class GridOrder(Base):
     - 매수 체결 → 매도 주문 자동 설정
     - 매도 체결 → 매수 주문 재설정 (사이클 반복)
     """
+
     __tablename__ = "grid_orders"
 
     __table_args__ = (
@@ -392,19 +420,19 @@ class GridOrder(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     grid_config_id = Column(
-        Integer,
-        ForeignKey("grid_bot_configs.id", ondelete="CASCADE"),
-        nullable=False
+        Integer, ForeignKey("grid_bot_configs.id", ondelete="CASCADE"), nullable=False
     )
 
     # 그리드 정보
-    grid_index = Column(Integer, nullable=False)           # 0 ~ (grid_count-1)
-    grid_price = Column(Numeric(20, 8), nullable=False)    # 이 그리드의 가격
+    grid_index = Column(Integer, nullable=False)  # 0 ~ (grid_count-1)
+    grid_price = Column(Numeric(20, 8), nullable=False)  # 이 그리드의 가격
 
     # 주문 상태
-    buy_order_id = Column(String(100), nullable=True)      # Bitget 매수 주문 ID
-    sell_order_id = Column(String(100), nullable=True)     # Bitget 매도 주문 ID
-    status = Column(SQLEnum(GridOrderStatus), default=GridOrderStatus.PENDING, nullable=False)
+    buy_order_id = Column(String(100), nullable=True)  # Bitget 매수 주문 ID
+    sell_order_id = Column(String(100), nullable=True)  # Bitget 매도 주문 ID
+    status = Column(
+        SQLEnum(GridOrderStatus), default=GridOrderStatus.PENDING, nullable=False
+    )
 
     # 체결 정보
     buy_filled_price = Column(Numeric(20, 8), nullable=True)
@@ -419,7 +447,9 @@ class GridOrder(Base):
 
     # 타임스탬프
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    updated_at = Column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
 
     # Relationships
     grid_config = relationship("GridBotConfig", back_populates="orders")
@@ -455,20 +485,22 @@ class Trade(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # 시그널 태그 (차트 마커용)
-    enter_tag = Column(String(100), nullable=True)  # 진입 시그널 태그 (예: "rsi_oversold", "macd_cross")
-    exit_tag = Column(String(100), nullable=True)   # 청산 시그널 태그 (예: "tp_hit", "sl_triggered")
-    order_tag = Column(String(100), nullable=True)  # 주문 태그 (예: "main_entry", "dca_1")
+    enter_tag = Column(
+        String(100), nullable=True
+    )  # 진입 시그널 태그 (예: "rsi_oversold", "macd_cross")
+    exit_tag = Column(
+        String(100), nullable=True
+    )  # 청산 시그널 태그 (예: "tp_hit", "sl_triggered")
+    order_tag = Column(
+        String(100), nullable=True
+    )  # 주문 태그 (예: "main_entry", "dca_1")
 
     # 다중 봇 시스템 지원 (추가)
     bot_instance_id = Column(
-        Integer,
-        ForeignKey("bot_instances.id", ondelete="SET NULL"),
-        nullable=True
+        Integer, ForeignKey("bot_instances.id", ondelete="SET NULL"), nullable=True
     )
     trade_source = Column(
-        SQLEnum(TradeSource),
-        default=TradeSource.MANUAL,
-        nullable=False
+        SQLEnum(TradeSource), default=TradeSource.MANUAL, nullable=False
     )
 
     user = relationship("User", back_populates="trades")
@@ -497,7 +529,7 @@ class Position(Base):
     bot_instance_id = Column(
         Integer,
         ForeignKey("bot_instances.id", ondelete="SET NULL"),
-        nullable=True  # 기존 포지션과의 호환성을 위해 nullable
+        nullable=True,  # 기존 포지션과의 호환성을 위해 nullable
     )
     # 거래소 주문 ID (격리 추적용)
     exchange_order_id = Column(String(100), nullable=True)
@@ -724,12 +756,13 @@ class TradingSignal(Base):
 
 class AnnotationType(str, Enum):
     """어노테이션 유형"""
-    NOTE = "note"                    # 텍스트 메모
-    HORIZONTAL_LINE = "hline"        # 수평선 (지지/저항선)
-    VERTICAL_LINE = "vline"          # 수직선 (이벤트 마커)
-    TRENDLINE = "trendline"          # 추세선 (두 점 연결)
-    RECTANGLE = "rectangle"          # 사각형 영역
-    PRICE_LEVEL = "price_level"      # 가격 수준 (알림 설정 가능)
+
+    NOTE = "note"  # 텍스트 메모
+    HORIZONTAL_LINE = "hline"  # 수평선 (지지/저항선)
+    VERTICAL_LINE = "vline"  # 수직선 (이벤트 마커)
+    TRENDLINE = "trendline"  # 추세선 (두 점 연결)
+    RECTANGLE = "rectangle"  # 사각형 영역
+    PRICE_LEVEL = "price_level"  # 가격 수준 (알림 설정 가능)
 
 
 class ChartAnnotation(Base):
@@ -740,6 +773,7 @@ class ChartAnnotation(Base):
     - 심볼별로 저장되어 해당 심볼 차트에 표시
     - 타임프레임과 독립적으로 표시 (가격/시간 기준)
     """
+
     __tablename__ = "chart_annotations"
 
     __table_args__ = (
@@ -752,7 +786,9 @@ class ChartAnnotation(Base):
     )
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
 
     # 기본 정보
     symbol = Column(String(20), nullable=False)  # BTCUSDT, ETHUSDT 등
@@ -767,7 +803,9 @@ class ChartAnnotation(Base):
 
     # 위치 정보 (가격 기준)
     price = Column(Numeric(20, 8), nullable=True)  # HLINE, NOTE의 가격 위치
-    start_price = Column(Numeric(20, 8), nullable=True)  # TRENDLINE, RECTANGLE 시작 가격
+    start_price = Column(
+        Numeric(20, 8), nullable=True
+    )  # TRENDLINE, RECTANGLE 시작 가격
     end_price = Column(Numeric(20, 8), nullable=True)  # TRENDLINE, RECTANGLE 끝 가격
 
     # 스타일 설정 (JSON)
@@ -785,7 +823,106 @@ class ChartAnnotation(Base):
 
     # 타임스탬프
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    updated_at = Column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
 
     # Relationships
     user = relationship("User", backref="annotations")
+
+
+# ============================================================
+# AI 추세 봇 템플릿 시스템 (Trend Bot Templates)
+# 목적: 관리자가 생성한 AI 추세 봇 템플릿을 사용자에게 제공
+# ============================================================
+
+
+class TrendDirection(str, Enum):
+    """추세 방향"""
+
+    LONG = "long"
+    SHORT = "short"
+    BOTH = "both"  # 양방향
+
+
+class TrendBotTemplate(Base):
+    """
+    AI 추세 봇 템플릿
+
+    - 관리자가 생성한 AI 추세 봇 설정
+    - 백테스트 결과와 함께 저장
+    - 일반 사용자가 "Use" 버튼으로 봇 생성
+    """
+
+    __tablename__ = "trend_bot_templates"
+
+    __table_args__ = (
+        CheckConstraint("min_investment > 0", name="check_trend_min_investment"),
+        Index("ix_trend_bot_templates_symbol", "symbol"),
+        Index("ix_trend_bot_templates_is_active", "is_active"),
+        Index("ix_trend_bot_templates_is_featured", "is_featured"),
+    )
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+
+    # ===== 기본 정보 =====
+    name = Column(String(100), nullable=False)  # 템플릿 이름
+    symbol = Column(String(20), nullable=False)  # "BTCUSDT", "ETHUSDT"
+    description = Column(Text, nullable=True)  # 봇 설명
+
+    # ===== 전략 설정 =====
+    strategy_type = Column(String(50), default="ema_crossover")  # 전략 타입
+    direction = Column(
+        SQLEnum(TrendDirection, values_callable=lambda e: [x.value for x in e]),
+        default=TrendDirection.LONG,
+        nullable=False,
+    )
+    leverage = Column(Integer, default=5, nullable=False)  # 기본 레버리지
+
+    # ===== 리스크 설정 =====
+    stop_loss_percent = Column(Float, default=2.0, nullable=False)  # 손절 %
+    take_profit_percent = Column(Float, default=4.0, nullable=False)  # 익절 %
+
+    # ===== 투자 제한 =====
+    min_investment = Column(
+        Numeric(20, 8), nullable=False, default=50.0
+    )  # 최소 투자금액 (USDT)
+    recommended_investment = Column(Numeric(20, 8), nullable=True)  # 권장 투자금액
+
+    # ===== 백테스트 결과 =====
+    backtest_roi_30d = Column(Numeric(10, 4), nullable=True)  # 30일 ROI (%)
+    backtest_win_rate = Column(Numeric(10, 4), nullable=True)  # 승률 (%)
+    backtest_max_drawdown = Column(Numeric(10, 4), nullable=True)  # 최대 낙폭 (%)
+    backtest_total_trades = Column(Integer, nullable=True)  # 총 거래 수
+    backtest_updated_at = Column(DateTime, nullable=True)  # 백테스트 실행 시각
+
+    # ===== 추천 정보 =====
+    recommended_period = Column(String(50), nullable=True)  # "7-30 days"
+    risk_level = Column(String(20), default="medium")  # low, medium, high
+    tags = Column(JSON, nullable=True)  # ["trending", "btc", "stable"] 등
+
+    # ===== 사용 통계 =====
+    active_users = Column(Integer, default=0, nullable=False)  # 현재 사용 중인 유저 수
+    total_users = Column(Integer, default=0, nullable=False)  # 누적 사용자 수
+
+    # ===== 상태 =====
+    is_active = Column(Boolean, default=True, nullable=False)  # 공개 여부
+    is_featured = Column(Boolean, default=False, nullable=False)  # 추천 표시
+    sort_order = Column(Integer, default=0, nullable=False)  # 정렬 순서
+
+    # ===== 관리 =====
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
+
+    # ===== 관계 =====
+    creator = relationship(
+        "User", foreign_keys=[created_by], backref="created_trend_templates"
+    )
+
+    def __repr__(self):
+        return (
+            f"<TrendBotTemplate {self.symbol} {self.direction.value} {self.leverage}x>"
+        )

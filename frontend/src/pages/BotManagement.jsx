@@ -37,23 +37,25 @@ import {
     FallOutlined,
     ThunderboltOutlined,
     LineChartOutlined,
-    PlusOutlined,
 } from '@ant-design/icons';
 
 import botInstancesAPI from '../api/botInstances';
-import { useStrategies } from '../context/StrategyContext';
+// import { useStrategies } from '../context/StrategyContext';  // 템플릿 컴셉으로 사용 안함
 
 // AI 봇 컴포넌트
-import AllocationBar from '../components/bot/AllocationBar';
+// import AllocationBar from '../components/bot/AllocationBar';  // 잔고 할당 숨김
 import BotCard from '../components/bot/BotCard';
-import AddBotCard from '../components/bot/AddBotCard';
+// import AddBotCard from '../components/bot/AddBotCard';  // 새봇추가 숨김
 import BotStatsModal from '../components/bot/BotStatsModal';
 import EditBotModal from '../components/bot/EditBotModal';
 
 // 그리드 봇 컴포넌트
 import GridBotCard from '../components/grid/GridBotCard';
 import CreateGridBotModal from '../components/grid/CreateGridBotModal';
-import { GridBotTabs } from '../components/grid';  // 탭 컴포넌트 추가
+import { GridBotTabs } from '../components/grid';  // 그리드 템플릿 컴포넌트
+
+// AI 추세 봇 컴포넌트
+import { TrendBotTabs } from '../components/trend';  // AI 추세 템플릿 컴포넌트
 
 const { Title, Text } = Typography;
 
@@ -67,9 +69,9 @@ export default function BotManagement() {
     const [actionLoading, setActionLoading] = useState(false);
     const [activeTab, setActiveTab] = useState('all');
 
-    // 전략 컨텍스트
-    const { getActiveStrategies } = useStrategies();
-    const strategies = getActiveStrategies();
+    // 전략 컨텍스트 - 템플릿 컴셉으로 사용 안함
+    // const { getActiveStrategies } = useStrategies();
+    // const strategies = getActiveStrategies();
 
     // 모달 상태
     const [statsModal, setStatsModal] = useState({ open: false, botId: null, botName: null });
@@ -535,8 +537,8 @@ export default function BotManagement() {
                 </Col>
             </Row>
 
-            {/* 잔고 할당 시각화 */}
-            <AllocationBar bots={bots} totalAllocation={totalAllocation} />
+            {/* 잔고 할당 시각화 - 숨김 (관리자 템플릿 컴셉 사용) */}
+            {/* <AllocationBar bots={bots} totalAllocation={totalAllocation} /> */}
 
             {/* 탭 기반 봇 목록 */}
             <Tabs
@@ -548,30 +550,21 @@ export default function BotManagement() {
                     borderBottom: '1px solid #f5f5f7',
                     marginBottom: 24,
                 }}
-                tabBarExtraContent={
-                    activeTab === 'grid' ? (
-                        <Button
-                            type="primary"
-                            icon={<PlusOutlined />}
-                            onClick={() => setGridBotModal({ open: true, bot: null })}
-                            disabled={availableAllocation <= 0}
-                            style={{
-                                background: '#34c759',
-                                border: 'none',
-                                borderRadius: 8,
-                                fontWeight: 600,
-                            }}
-                        >
-                            그리드 봇 추가
-                        </Button>
-                    ) : null
-                }
+                tabBarExtraContent={null}  // 수동 봇 추가 버튼 숨김 (템플릿 컴셉 사용)
             />
 
             {/* 봇 카드 그리드 */}
             <Spin spinning={loading}>
-                {/* 그리드 탭: AI 추천 + 내 봇 탭 */}
-                {activeTab === 'grid' ? (
+                {/* AI 추세 탭: AI 추천 템플릿 */}
+                {activeTab === 'ai_trend' ? (
+                    <TrendBotTabs
+                        availableBalance={availableAllocation}
+                        onBotCreated={() => {
+                            loadBots();
+                            loadSummary();
+                        }}
+                    />
+                ) : activeTab === 'grid' ? (
                     <GridBotTabs
                         gridBots={bots.filter(b => b.bot_type === 'grid')}
                         onStartBot={handleStartBot}
@@ -597,17 +590,7 @@ export default function BotManagement() {
                             </Col>
                         ))}
 
-                        {/* 새 AI 봇 추가 카드 (AI 탭 또는 전체 탭에서만) */}
-                        {(activeTab === 'all' || activeTab === 'ai_trend') &&
-                            availableAllocation > 0 && (
-                                <Col xs={24} sm={12} lg={8} xl={6}>
-                                    <AddBotCard
-                                        maxAllocation={availableAllocation}
-                                        strategies={strategies}
-                                        onCreate={handleCreateBot}
-                                    />
-                                </Col>
-                            )}
+                        {/* 새 봇 추가 카드 숨김 (템플릿 컴셉 사용) */}
 
                         {/* 전체 빈 상태 */}
                         {bots.length === 0 && !loading && activeTab === 'all' && (
@@ -645,8 +628,8 @@ export default function BotManagement() {
                                             fontSize: 13,
                                         }}
                                     >
-                                        AI 추세 봇 또는 그리드 봇을 추가하여 자동 거래를
-                                        시작하세요
+                                        AI 추세 탭 또는 그리드 탭에서 템플릿을 선택하여
+                                        자동 거래를 시작하세요
                                     </Text>
                                 </div>
                             </Col>

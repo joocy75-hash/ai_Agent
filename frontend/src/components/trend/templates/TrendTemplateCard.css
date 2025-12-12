@@ -1,0 +1,243 @@
+/* TrendTemplateCard.css - AI 추세 봇 템플릿 카드 스타일 */
+
+.trend-template-card {
+    background: linear-gradient(145deg, #1a1a2e, #16213e);
+    border: 1px solid rgba(88, 86, 214, 0.2);
+    border-radius: 16px;
+    padding: 20px;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.trend-template-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(88, 86, 214, 0.2);
+    border-color: rgba(88, 86, 214, 0.4);
+}
+
+.trend-template-card.featured {
+    border-color: rgba(88, 86, 214, 0.5);
+    background: linear-gradient(145deg, #1a1a2e, #1e1e3f);
+}
+
+/* 헤더 */
+.trend-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+}
+
+.trend-symbol-section {
+    flex: 1;
+}
+
+.trend-symbol {
+    font-size: 20px;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0 0 8px 0;
+}
+
+.trend-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.trend-tags .ant-tag {
+    margin: 0;
+    border-radius: 4px;
+    font-size: 11px;
+    padding: 2px 8px;
+    border: none;
+}
+
+.tag-strategy {
+    background: rgba(88, 86, 214, 0.2);
+    color: #a29bfe;
+}
+
+.tag-direction {
+    font-weight: 600;
+}
+
+.tag-direction.long {
+    background: rgba(52, 199, 89, 0.2);
+    color: #34c759;
+}
+
+.tag-direction.short {
+    background: rgba(255, 59, 48, 0.2);
+    color: #ff3b30;
+}
+
+.tag-direction.both {
+    background: rgba(255, 149, 0, 0.2);
+    color: #ff9500;
+}
+
+.tag-leverage {
+    background: rgba(0, 122, 255, 0.2);
+    color: #007aff;
+}
+
+.trend-card-header .use-button {
+    background: linear-gradient(135deg, #5856d6, #6e64e3);
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    padding: 0 20px;
+    height: 36px;
+}
+
+.trend-card-header .use-button:hover {
+    background: linear-gradient(135deg, #6e64e3, #8078ea);
+}
+
+/* 바디 */
+.trend-card-body {
+    margin-bottom: 16px;
+}
+
+.stat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-item.main {
+    grid-column: 1;
+}
+
+.stat-item .stat-label {
+    display: block;
+    font-size: 11px;
+    color: #86868b;
+    margin-bottom: 4px;
+}
+
+.stat-item .stat-value {
+    display: block;
+    font-size: 18px;
+    font-weight: 700;
+    color: #ffffff;
+}
+
+.stat-item .stat-value.positive {
+    color: #34c759;
+}
+
+.stat-item .stat-value.negative {
+    color: #ff3b30;
+}
+
+/* 리스크 설정 배지 */
+.risk-settings {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.risk-badge {
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.risk-badge.sl {
+    background: rgba(255, 59, 48, 0.15);
+    color: #ff6666;
+}
+
+.risk-badge.tp {
+    background: rgba(52, 199, 89, 0.15);
+    color: #66d98a;
+}
+
+/* 푸터 */
+.trend-card-footer {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 12px;
+}
+
+.footer-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.footer-row:last-child {
+    margin-bottom: 0;
+}
+
+.footer-label {
+    font-size: 12px;
+    color: #86868b;
+}
+
+.footer-value {
+    font-size: 13px;
+    color: #ffffff;
+    font-weight: 500;
+}
+
+.footer-value.risk-level {
+    font-weight: 600;
+}
+
+.user-count {
+    font-size: 12px;
+    color: #86868b;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Featured 배지 */
+.trend-template-card .featured-badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: linear-gradient(135deg, #5856d6, #a29bfe);
+    color: white;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+    .trend-template-card {
+        padding: 16px;
+    }
+
+    .trend-symbol {
+        font-size: 18px;
+    }
+
+    .stat-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .stat-item.main {
+        grid-column: 1 / -1;
+    }
+
+    .stat-item .stat-value {
+        font-size: 16px;
+    }
+}

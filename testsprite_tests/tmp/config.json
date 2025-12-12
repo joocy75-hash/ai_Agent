@@ -1,18 +1,27 @@
 {
   "status": "commited",
-  "type": "frontend",
+  "type": "backend",
   "scope": "codebase",
-  "localEndpoint": "http://localhost:3000",
-  "loginUser": "admin@admin.com",
-  "loginPassword": "admin123",
+  "localEndpoint": "http://localhost:8000",
+  "backendAuthType": "public",
   "executionArgs": {
     "projectName": "auto-dashboard",
     "projectPath": "/Users/mr.joo/Desktop/auto-dashboard",
-    "testIds": [],
-    "additionalInstruction": "Login with email: admin@admin.com and password: admin123",
+    "testIds": [
+      "TC001",
+      "TC002",
+      "TC003",
+      "TC004",
+      "TC005",
+      "TC006",
+      "TC007",
+      "TC008",
+      "TC009",
+      "TC010"
+    ],
+    "additionalInstruction": "Please generate comprehensive tests. Note that the local database might not be running, so if possible, use mocking for DB sessions or handle connection errors gracefully. Focus on logic verification where possible.",
     "envs": {
       "API_KEY": "sk-user-P8T5oDuLwdo4-mYtN1tmXX7YlhoRkGOyXsRxnUKbogwN3rwWcksaSZCctV7_acH7vjJQQTS7VUiiGrWX2XeyW1IyGhOXCyrs2Ja8hBtpjwFUCN7LnAWntcN3dbyVrOaCcKM"
     }
-  },
-  "proxy": "http://744d7944-7080-476e-a03a-22f5cde4d7f7:uiP9y34u6p84HUldqvqJBqKIwAHwo3HL@tun.testsprite.com:8080"
+  }
 }

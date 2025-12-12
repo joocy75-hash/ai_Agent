@@ -1,0 +1,232 @@
+/* UseTrendTemplateModal.css - AI 추세 봇 템플릿 사용 모달 스타일 */
+
+.use-trend-template-modal .ant-modal-content {
+    background: linear-gradient(145deg, #1a1a2e, #16213e);
+    border-radius: 16px;
+    border: 1px solid rgba(88, 86, 214, 0.3);
+}
+
+.use-trend-template-modal .ant-modal-close {
+    color: #86868b;
+}
+
+.use-trend-template-modal .ant-modal-close:hover {
+    color: #ffffff;
+}
+
+.use-trend-template-modal .modal-content {
+    padding: 4px;
+}
+
+/* 헤더 */
+.use-trend-template-modal .modal-header {
+    text-align: center;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.use-trend-template-modal .modal-header h2 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0 0 12px 0;
+}
+
+.use-trend-template-modal .header-tags {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.use-trend-template-modal .header-tags .tag {
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+}
+
+.use-trend-template-modal .header-tags .tag.strategy {
+    background: rgba(88, 86, 214, 0.2);
+    color: #a29bfe;
+}
+
+.use-trend-template-modal .header-tags .tag.long {
+    background: rgba(52, 199, 89, 0.2);
+    color: #34c759;
+}
+
+.use-trend-template-modal .header-tags .tag.short {
+    background: rgba(255, 59, 48, 0.2);
+    color: #ff3b30;
+}
+
+.use-trend-template-modal .header-tags .tag.both {
+    background: rgba(255, 149, 0, 0.2);
+    color: #ff9500;
+}
+
+/* 통계 */
+.use-trend-template-modal .modal-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+}
+
+.use-trend-template-modal .stat-item {
+    text-align: center;
+}
+
+.use-trend-template-modal .stat-label {
+    display: block;
+    font-size: 11px;
+    color: #86868b;
+    margin-bottom: 4px;
+}
+
+.use-trend-template-modal .stat-value {
+    display: block;
+    font-size: 18px;
+    font-weight: 700;
+    color: #ffffff;
+}
+
+.use-trend-template-modal .stat-value.positive {
+    color: #34c759;
+}
+
+.use-trend-template-modal .stat-value.negative {
+    color: #ff3b30;
+}
+
+/* 리스크 레벨 섹션 */
+.use-trend-template-modal .risk-level-section {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-weight: 600;
+}
+
+.use-trend-template-modal .risk-tags {
+    margin-left: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: #86868b;
+}
+
+/* 투자 섹션 */
+.use-trend-template-modal .investment-section {
+    margin-bottom: 16px;
+}
+
+.use-trend-template-modal .investment-section h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: #ffffff;
+    margin-bottom: 16px;
+}
+
+.use-trend-template-modal .margin-input label {
+    display: block;
+    font-size: 13px;
+    color: #86868b;
+    margin-bottom: 8px;
+}
+
+.use-trend-template-modal .input-row {
+    display: flex;
+    gap: 8px;
+}
+
+.use-trend-template-modal .amount-input,
+.use-trend-template-modal .leverage-select {
+    width: 100%;
+}
+
+.use-trend-template-modal .ant-input-number,
+.use-trend-template-modal .ant-select-selector {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 8px !important;
+    color: #ffffff !important;
+}
+
+.use-trend-template-modal .ant-input-number-input {
+    color: #ffffff;
+}
+
+.use-trend-template-modal .ant-select-selection-item {
+    color: #ffffff !important;
+}
+
+/* 잔액 행 */
+.use-trend-template-modal .balance-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+}
+
+.use-trend-template-modal .balance-label {
+    font-size: 13px;
+    color: #86868b;
+}
+
+.use-trend-template-modal .balance-value {
+    font-size: 13px;
+    color: #ffffff;
+    font-weight: 500;
+}
+
+/* 파라미터 */
+.use-trend-template-modal .parameters-collapse {
+    margin-top: 16px;
+}
+
+.use-trend-template-modal .parameters-collapse .ant-collapse-header {
+    color: #86868b !important;
+    padding: 12px 0 !important;
+}
+
+.use-trend-template-modal .parameters-collapse .ant-collapse-content-box {
+    padding: 0 !important;
+}
+
+.use-trend-template-modal .ant-descriptions-item-label {
+    color: #86868b !important;
+}
+
+.use-trend-template-modal .ant-descriptions-item-content {
+    color: #ffffff !important;
+}
+
+/* 확인 버튼 */
+.use-trend-template-modal .confirm-button {
+    background: linear-gradient(135deg, #5856d6, #6e64e3);
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    height: 48px;
+    font-size: 16px;
+}
+
+.use-trend-template-modal .confirm-button:hover {
+    background: linear-gradient(135deg, #6e64e3, #8078ea);
+}
+
+.use-trend-template-modal .confirm-button:disabled {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.4);
+}

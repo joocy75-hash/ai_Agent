@@ -1,52 +1,52 @@
 [
   {
     "id": "TC001",
-    "title": "health check endpoint returns system status",
-    "description": "Verify that the /health GET endpoint returns a 200 status code indicating the system is healthy."
+    "title": "user authentication including oauth login and jwt token handling",
+    "description": "Verify that the user authentication flow works correctly including login, registration, JWT token issuance and validation, and OAuth login support for Google and Kakao providers."
   },
   {
     "id": "TC002",
-    "title": "user registration with valid data",
-    "description": "Test the /auth/register POST endpoint with valid email, password, and username to ensure user is created successfully and returns 201 status."
+    "title": "dashboard displays correct portfolio and trading statistics",
+    "description": "Ensure the main dashboard correctly displays the user's portfolio overview, balance, and trading statistics reflecting the backend data accurately."
   },
   {
     "id": "TC003",
-    "title": "user login returns jwt tokens",
-    "description": "Test the /auth/login POST endpoint with valid credentials to verify it returns access_token and refresh_token with 200 status."
+    "title": "bot management create start stop and monitor bots",
+    "description": "Test the creation, starting, stopping, and monitoring of AI Trend and Grid trading bots, ensuring data persistence and correct bot state transitions."
   },
   {
     "id": "TC004",
-    "title": "two factor authentication setup and verification",
-    "description": "Verify the /2fa/setup POST endpoint returns a QR code and secret for 2FA setup, and /2fa/verify POST endpoint correctly verifies a valid TOTP code."
+    "title": "grid bot templates application and backtesting",
+    "description": "Validate that AI-recommended grid bot templates can be applied by users and backtested with accurate performance results and feedback."
   },
   {
     "id": "TC005",
-    "title": "account api keys configuration and balance retrieval",
-    "description": "Test /account/keys POST endpoint to save exchange API keys and /account/balance GET endpoint to retrieve user balance, including error when keys are not configured."
+    "title": "admin grid template manager crud and backtesting",
+    "description": "Verify that admin users can perform create, read, update, delete operations on grid bot templates and run backtests without errors."
   },
   {
     "id": "TC006",
-    "title": "bot start stop and status endpoints",
-    "description": "Verify /bot/start POST starts a trading bot with given parameters, /bot/stop POST stops the bot and closes positions, and /bot/status GET returns current bot running status."
+    "title": "backtesting engine with candle data and performance metrics",
+    "description": "Test the backtesting engine for grid trading strategies using historical candle data and ensure performance metrics are calculated and reported correctly."
   },
   {
     "id": "TC007",
-    "title": "grid bot creation and control",
-    "description": "Test /grid-bot POST to create a grid bot with parameters, /grid-bot/{bot_id}/start POST to start the grid bot, and /grid-bot/{bot_id}/stop POST to stop the grid bot."
+    "title": "real time trading interface with chart and position management",
+    "description": "Ensure the real-time trading interface displays live market data via TradingView charts and allows users to open, close, and manage positions correctly."
   },
   {
     "id": "TC008",
-    "title": "order submission and position closing",
-    "description": "Verify /order/submit POST accepts valid order parameters and submits order, and /order/close/{position_id} POST closes the specified position."
+    "title": "trading history accuracy and analytics",
+    "description": "Validate that the trading history page shows accurate past trade records and performance analytics matching the recorded trade information."
   },
   {
     "id": "TC009",
-    "title": "positions retrieval endpoint",
-    "description": "Test /positions GET endpoint returns a list of all open positions for the authenticated user."
+    "title": "strategy and alert configuration and triggering",
+    "description": "Test that trading strategy configurations and alert settings are saved correctly and trigger appropriate notifications in response to market events."
   },
   {
     "id": "TC010",
-    "title": "market chart candle data retrieval",
-    "description": "Verify /chart/candles/{symbol} GET endpoint returns candle data for the specified symbol and interval query parameter."
+    "title": "user settings api key management and preferences",
+    "description": "Verify that user settings including API key management and preferences are saved and persisted correctly with backend synchronization."
   }
 ]
