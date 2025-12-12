@@ -3,6 +3,7 @@ import { Row, Col, Card, Typography, Select, Button, message, Badge, Space, Tag,
 import {
     LineChartOutlined,
     ControlOutlined,
+    ReloadOutlined,
     PlayCircleOutlined,
     PauseCircleOutlined,
     InfoCircleOutlined,
