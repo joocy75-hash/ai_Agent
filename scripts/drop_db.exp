@@ -1,0 +1,43 @@
+#!/usr/bin/expect -f
+# Drop all tables and reset database completely
+
+set timeout 300
+set password "Vc8,xn7j_fjdnNGy"
+
+spawn ssh root@158.247.245.197 {
+cd /root/auto-dashboard
+
+echo "=== Dropping and recreating database ==="
+
+# Connect to postgres default database to drop trading_db
+docker compose --env-file .env.production exec -T postgres psql -U trading_user -d postgres -c "DROP DATABASE IF EXISTS trading_db;"
+docker compose --env-file .env.production exec -T postgres psql -U trading_user -d postgres -c "CREATE DATABASE trading_db OWNER trading_user;"
+
+echo ""
+echo "=== Restarting backend ==="
+docker compose --env-file .env.production restart backend
+
+echo ""
+echo "=== Waiting 45 seconds ==="
+sleep 45
+
+echo ""
+echo "=== Container status ==="
+docker compose --env-file .env.production ps
+
+echo ""
+echo "=== Backend logs (last 40 lines) ==="
+docker compose --env-file .env.production logs backend --tail=40
+
+echo ""
+echo "=== Creating admin user ==="
+docker exec trading-backend python -m src.scripts.create_admin_user 2>&1 || echo "Admin user info"
+}
+
+expect {
+    "*password:*" {
+        send "$password\r"
+        exp_continue
+    }
+    eof
+}

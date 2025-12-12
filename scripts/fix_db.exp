@@ -1,0 +1,36 @@
+#!/usr/bin/expect -f
+# Fix PostgreSQL and restart backend
+
+set timeout 120
+set password "Vc8,xn7j_fjdnNGy"
+
+spawn ssh root@158.247.245.197 {
+echo "Checking .env.production..."
+cd /root/auto-dashboard
+cat .env.production | grep -E "POSTGRES|DATABASE"
+
+echo ""
+echo "Setting up database with correct credentials..."
+# The issue is that the postgres container already has data with old password
+# We need to either reset the database or use the existing credentials
+
+# Check current docker-compose env vars
+docker compose --env-file .env.production exec -T postgres psql -U trading_user -d trading_db -c "SELECT 1" 2>&1 || echo "Connection failed with trading_user"
+
+# Try with postgres user to fix
+docker compose --env-file .env.production exec -T postgres psql -U postgres -d trading_db -c "ALTER USER trading_user WITH PASSWORD 'TradingBot2024!SecurePassword';" 2>&1
+
+# Restart backend
+docker compose --env-file .env.production restart backend
+
+sleep 15
+docker compose --env-file .env.production ps
+}
+
+expect {
+    "*password:*" {
+        send "$password\r"
+        exp_continue
+    }
+    eof
+}

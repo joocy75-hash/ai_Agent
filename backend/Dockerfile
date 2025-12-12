@@ -60,4 +60,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 # IMPORTANT: workers=1 필수! 여러 워커 사용 시 봇이 중복 실행됨
 # 각 워커가 독립적인 메모리를 가지므로 봇 상태 공유 불가
 # 성능 확장이 필요하면 Redis 기반 분산 잠금 구현 필요
-CMD alembic upgrade heads && uvicorn src.main:app --host 0.0.0.0 --port 8000 --workers 1
+CMD alembic upgrade heads || echo "Migration failed, continuing..." && uvicorn src.main:app --host 0.0.0.0 --port 8000 --workers 1

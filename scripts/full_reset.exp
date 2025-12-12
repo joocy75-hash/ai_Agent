@@ -1,0 +1,45 @@
+#!/usr/bin/expect -f
+# Complete reset - remove all docker volumes
+
+set timeout 300
+set password "Vc8,xn7j_fjdnNGy"
+
+spawn ssh root@158.247.245.197 {
+cd /root/auto-dashboard
+
+echo "=== Stopping all containers and removing volumes completely ==="
+docker compose --env-file .env.production down -v --remove-orphans
+
+echo ""
+echo "=== Removing any remaining volumes ==="
+docker volume ls | grep trading || echo "No trading volumes found"
+docker volume rm $(docker volume ls -q | grep trading) 2>/dev/null || echo "No volumes to remove"
+
+echo ""
+echo "=== Pruning unused volumes ==="
+docker volume prune -f
+
+echo ""
+echo "=== Starting fresh ==="
+docker compose --env-file .env.production up -d
+
+echo ""
+echo "=== Waiting 45 seconds for services ==="
+sleep 45
+
+echo ""
+echo "=== Container status ==="
+docker compose --env-file .env.production ps
+
+echo ""
+echo "=== Backend logs (last 50 lines) ==="
+docker compose --env-file .env.production logs backend --tail=50
+}
+
+expect {
+    "*password:*" {
+        send "$password\r"
+        exp_continue
+    }
+    eof
+}
