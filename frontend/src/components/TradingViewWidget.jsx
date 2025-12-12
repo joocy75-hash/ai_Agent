@@ -1,5 +1,5 @@
 import { useEffect, useRef, memo, useState } from 'react';
-import { Select, Space, Typography, Spin } from 'antd';
+import { Spin, Typography } from 'antd';
 import { DownOutlined } from '@ant-design/icons';
 
 const { Text } = Typography;
@@ -41,10 +41,9 @@ function TradingViewWidget({
     availableSymbols = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'ADAUSDT'],
     onSymbolChange,
 }) {
-    const containerRef = useRef(null);
-    const scriptRef = useRef(null);
     const [loading, setLoading] = useState(true);
     const [coinModalOpen, setCoinModalOpen] = useState(false);
+    const iframeRef = useRef(null);
     const isMobile = useIsMobile();
 
     // 코인 ID 추출
@@ -56,82 +55,22 @@ function TradingViewWidget({
         gradient: 'linear-gradient(135deg, #1890ff 0%, #40a9ff 100%)'
     };
 
-    // TradingView 위젯 로드
-    useEffect(() => {
-        if (!containerRef.current) return;
-
-        // 기존 위젯 제거
-        if (scriptRef.current) {
-            scriptRef.current.remove();
-        }
-        containerRef.current.innerHTML = '';
-        setLoading(true);
-
-        const tradingViewSymbol = TRADINGVIEW_SYMBOLS[symbol] || `BITGET:${symbol}.P`;
-
-        // TradingView Advanced Chart Widget
-        const script = document.createElement('script');
-        script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
-        script.type = 'text/javascript';
-        script.async = true;
-        script.innerHTML = JSON.stringify({
-            autosize: true,
-            symbol: tradingViewSymbol,
-            interval: '15',
-            timezone: 'Asia/Seoul',
-            theme: 'light',
-            style: '1',
-            locale: 'kr',
-            enable_publishing: false,
-            allow_symbol_change: false,
-            hide_top_toolbar: false,
-            hide_side_toolbar: isMobile,
-            withdateranges: true,
-            save_image: false,
-            calendar: false,
-            hide_volume: false,
-            support_host: 'https://www.tradingview.com',
-            container_id: 'tradingview_chart',
-        });
-
-        script.onload = () => {
-            setLoading(false);
-        };
-
-        scriptRef.current = script;
-
-        // 위젯 컨테이너 생성
-        const widgetContainer = document.createElement('div');
-        widgetContainer.className = 'tradingview-widget-container';
-        widgetContainer.style.height = '100%';
-        widgetContainer.style.width = '100%';
-
-        const innerContainer = document.createElement('div');
-        innerContainer.id = 'tradingview_chart';
-        innerContainer.style.height = '100%';
-        innerContainer.style.width = '100%';
-
-        widgetContainer.appendChild(innerContainer);
-        widgetContainer.appendChild(script);
-        containerRef.current.appendChild(widgetContainer);
-
-        // 약간의 딜레이 후 로딩 해제
-        const timer = setTimeout(() => setLoading(false), 2000);
-
-        return () => {
-            clearTimeout(timer);
-            if (scriptRef.current) {
-                scriptRef.current.remove();
-            }
-        };
-    }, [symbol, isMobile]);
+    const tradingViewSymbol = TRADINGVIEW_SYMBOLS[symbol] || `BITGET:${symbol}.P`;
 
     const handleSymbolChange = (newSymbol) => {
         if (onSymbolChange) {
             onSymbolChange(newSymbol);
         }
         setCoinModalOpen(false);
+        setLoading(true);
     };
+
+    const handleIframeLoad = () => {
+        setLoading(false);
+    };
+
+    // TradingView Widget URL (iframe 방식)
+    const widgetUrl = `https://s.tradingview.com/widgetembed/?frameElementId=tradingview_widget&symbol=${encodeURIComponent(tradingViewSymbol)}&interval=15&hidesidetoolbar=${isMobile ? 1 : 0}&symboledit=0&saveimage=0&toolbarbg=f1f3f6&studies=[]&theme=light&style=1&timezone=Asia%2FSeoul&studies_overrides={}&overrides={}&enabled_features=[]&disabled_features=[]&locale=kr&utm_source=&utm_medium=widget&utm_campaign=chart`;
 
     return (
         <div style={{ position: 'relative', width: '100%' }}>
@@ -300,9 +239,8 @@ function TradingViewWidget({
                 />
             )}
 
-            {/* TradingView Chart Container */}
+            {/* TradingView Chart Container - iframe 기반 */}
             <div
-                ref={containerRef}
                 style={{
                     width: '100%',
                     height: `${height}px`,
@@ -312,6 +250,7 @@ function TradingViewWidget({
                     borderRadius: '0 0 12px 12px',
                     overflow: 'hidden',
                     position: 'relative',
+                    background: '#fff',
                 }}
             >
                 {loading && (
@@ -324,11 +263,26 @@ function TradingViewWidget({
                         flexDirection: 'column',
                         alignItems: 'center',
                         gap: '12px',
+                        zIndex: 10,
                     }}>
                         <Spin size="large" />
                         <Text type="secondary">차트 로딩 중...</Text>
                     </div>
                 )}
+                <iframe
+                    ref={iframeRef}
+                    key={symbol} // 심볼 변경 시 iframe 재생성
+                    src={widgetUrl}
+                    style={{
+                        width: '100%',
+                        height: '100%',
+                        border: 'none',
+                        display: loading ? 'none' : 'block',
+                    }}
+                    onLoad={handleIframeLoad}
+                    title={`TradingView Chart - ${symbol}`}
+                    allowFullScreen
+                />
             </div>
         </div>
     );
