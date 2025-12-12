@@ -82,34 +82,6 @@ export default function Trading() {
         console.log(`[Trading] Strategy list updated: ${strategies.length} active strategies available`);
     }, [lastUpdated, strategies, selectedStrategy]);
 
-    // Reload on symbol change (timeframe is fixed at 15m)
-    useEffect(() => {
-        console.log(`[Trading] useEffect triggered - Symbol: ${symbol}, Timeframe: ${timeframe}`);
-        loadChartData();
-    }, [symbol, loadChartData]);
-
-    // WebSocket for real-time candle updates
-    useEffect(() => {
-        if (!isConnected) return;
-
-        const unsubscribe = subscribe('candle_update', (data) => {
-            if (data.symbol === symbol && data.current_candle) {
-                if (wsUpdateCallback) {
-                    wsUpdateCallback(data.current_candle);
-                }
-                setCandles(prev => {
-                    const newCandles = [...prev];
-                    if (newCandles.length > 0) {
-                        newCandles[newCandles.length - 1] = data.current_candle;
-                    }
-                    return newCandles;
-                });
-            }
-        });
-
-        return () => unsubscribe();
-    }, [isConnected, symbol, subscribe, wsUpdateCallback]);
-
     // WebSocket for price alerts
     useEffect(() => {
         if (!isConnected) return;
@@ -132,13 +104,6 @@ export default function Trading() {
                 duration: 8,
                 style: { marginTop: '20vh' },
             });
-
-            // 트리거된 알림을 annotations 상태에서 업데이트
-            setAnnotations(prev => prev.map(a =>
-                a.id === alertData.id
-                    ? { ...a, alert_triggered: true }
-                    : a
-            ));
         });
 
         return () => unsubscribe();
