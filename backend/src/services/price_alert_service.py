@@ -76,19 +76,28 @@ class PriceAlertService:
         try:
             async with AsyncSessionLocal() as session:
                 # 해당 심볼의 활성화된 가격 알림 조회
-                # annotation_type을 문자열로 비교 (DB enum 소문자와 일치)
+                # annotation_type은 Python에서 필터링 (DB enum 대소문자 이슈 우회)
                 result = await session.execute(
                     select(ChartAnnotation).where(
                         and_(
                             ChartAnnotation.symbol == symbol.upper(),
-                            ChartAnnotation.annotation_type == "price_level",
                             ChartAnnotation.is_active == True,
                             ChartAnnotation.alert_enabled == True,
                             ChartAnnotation.alert_triggered == False,
                         )
                     )
                 )
-                alerts = result.scalars().all()
+                all_alerts = result.scalars().all()
+                # Python에서 price_level 타입만 필터링
+                alerts = [
+                    a
+                    for a in all_alerts
+                    if str(a.annotation_type).lower() == "price_level"
+                    or (
+                        hasattr(a.annotation_type, "value")
+                        and a.annotation_type.value == "price_level"
+                    )
+                ]
 
                 for alert in alerts:
                     if alert.id in self.triggered_alerts:
