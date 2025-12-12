@@ -164,16 +164,8 @@ export default function Trading() {
         }
     };
 
-    const handleCandleUpdateCallback = useCallback((updateFn) => {
-        setWsUpdateCallback(() => updateFn);
-    }, []);
-
     const isRunning = botStatus?.is_running || false;
     const selectedStrategyObj = strategies.find(s => s.id === parseInt(selectedStrategy));
-    const latestCandle = candles.length > 0 ? candles[candles.length - 1] : null;
-    const priceChange = latestCandle && candles.length > 1
-        ? ((latestCandle.close - candles[0].open) / candles[0].open * 100).toFixed(2)
-        : 0;
 
     // 환율 (실시간 API 연동 가능, 현재는 고정 환율 사용)
     const USD_KRW_RATE = 1460; // 1 USD = 1,460 KRW
