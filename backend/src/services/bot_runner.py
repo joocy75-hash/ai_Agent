@@ -1344,8 +1344,39 @@ class BotRunner:
         - 전략 실행 에러 격리
         - 주문 실행 에러 격리
         - Graceful shutdown
+        - 에이전트 시스템 통합 (MarketRegime, SignalValidator, RiskMonitor)
         """
         logger.info(f"Starting bot loop for user {user_id}")
+
+        # ===== Agent System 시작 (한 번만) =====
+        # Market Regime Agent 시작
+        if self.market_regime._state != "RUNNING":
+            try:
+                await self.market_regime.start()
+                logger.info("✅ MarketRegime Agent started (legacy bot)")
+            except Exception as e:
+                logger.error(f"Failed to start MarketRegime Agent: {e}")
+
+        # Signal Validator Agent 시작
+        if self.signal_validator._state != "RUNNING":
+            try:
+                await self.signal_validator.start()
+                logger.info("✅ SignalValidator Agent started (legacy bot)")
+            except Exception as e:
+                logger.error(f"Failed to start SignalValidator Agent: {e}")
+
+        # Risk Monitor Agent 시작
+        if self.risk_monitor._state != "RUNNING":
+            try:
+                await self.risk_monitor.start()
+                logger.info("✅ RiskMonitor Agent started (legacy bot)")
+            except Exception as e:
+                logger.error(f"Failed to start RiskMonitor Agent: {e}")
+
+        # 주기적 에이전트 태스크 시작 (한 번만)
+        # Note: Legacy bot은 user_id를 bot_instance_id로 사용
+        pseudo_bot_id = user_id * 1000  # user 1 -> 1000, user 2 -> 2000
+        await self._start_periodic_agents(pseudo_bot_id, user_id)
 
         try:
             async with session_factory() as session:
