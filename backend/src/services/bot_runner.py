@@ -55,6 +55,10 @@ from ..services.telegram import (
     TakeProfitInfo,
     RiskAlertInfo,
 )
+from ..agents.signal_validator import SignalValidatorAgent, ValidationResult
+from ..agents.risk_monitor import RiskMonitorAgent, RiskLevel
+from ..agents.market_regime import MarketRegimeAgent, MarketRegime, RegimeType
+from ..agents.base import AgentTask, TaskPriority
 
 logger = logging.getLogger(__name__)
 
@@ -81,6 +85,48 @@ class BotRunner:
         # 다중 봇 시스템: bot_instance_id 기반 (NEW)
         self.instance_tasks: Dict[int, asyncio.Task] = {}  # bot_instance_id → Task
         self.user_bots: Dict[int, Set[int]] = {}  # user_id → Set[bot_instance_id]
+
+        # Market Regime Agent (Day 2) - 시장 환경 분석
+        self.market_regime = MarketRegimeAgent(
+            agent_id="market_regime_main",
+            name="Main Market Regime Analyzer",
+            config={
+                "symbol": "BTCUSDT",
+                "timeframe": "1h",
+                "candle_limit": 200
+            },
+            bitget_client=None,  # 실행 시점에 설정
+            candle_cache=None,   # 실행 시점에 설정
+            redis_client=None    # Redis 연동 시 설정 필요
+        )
+
+        # Signal Validator Agent (Day 3)
+        self.signal_validator = SignalValidatorAgent(
+            agent_id="signal_validator_main",
+            name="Main Signal Validator",
+            redis_client=None  # Redis 연동 시 설정 필요
+        )
+
+        # Risk Monitor Agent (Day 4)
+        self.risk_monitor = RiskMonitorAgent(
+            agent_id="risk_monitor_main",
+            name="Main Risk Monitor",
+            config={
+                "max_position_loss_percent": 5.0,  # 포지션 손실 5% 초과 시 청산
+                "max_daily_loss": 1000.0,  # 일일 손실 $1000 초과 시 거래 중지
+                "max_drawdown_percent": 10.0,  # 최대 낙폭 10%
+                "liquidation_warning_percent": 10.0  # 청산가 10% 이내 접근 시 경고
+            }
+        )
+
+        # 최근 신호 기록 (bot_instance_id → deque of signals)
+        self._recent_signals: Dict[int, deque] = {}  # 최근 10개 신호 저장
+
+        # 5분 캔들 가격 기록 (symbol → deque of prices)
+        self._price_history: Dict[str, deque] = {}  # 최근 6개 캔들 (30분치)
+
+        # 주기적 에이전트 태스크
+        self._periodic_tasks: Dict[str, asyncio.Task] = {}  # 백그라운드 태스크 추적
 
     async def check_daily_loss_limit(
         self, session: AsyncSession, user_id: int
@@ -458,6 +504,34 @@ class BotRunner:
         """
         logger.info(f"Starting bot instance loop: bot_id={bot_instance_id}, user_id={user_id}")
 
+        # Market Regime Agent 시작 (한 번만)
+        if self.market_regime._state != "RUNNING":
+            try:
+                # TODO: Bitget 클라이언트 설정 (bot loop에서)
+                await self.market_regime.start()
+                logger.info("✅ MarketRegime Agent started")
+            except Exception as e:
+                logger.error(f"Failed to start MarketRegime Agent: {e}")
+
+        # Signal Validator Agent 시작 (한 번만)
+        if self.signal_validator._state != "RUNNING":
+            try:
+                await self.signal_validator.start()
+                logger.info("✅ SignalValidator Agent started")
+            except Exception as e:
+                logger.error(f"Failed to start SignalValidator Agent: {e}")
+
+        # Risk Monitor Agent 시작 (한 번만)
+        if self.risk_monitor._state != "RUNNING":
+            try:
+                await self.risk_monitor.start()
+                logger.info("✅ RiskMonitor Agent started")
+            except Exception as e:
+                logger.error(f"Failed to start RiskMonitor Agent: {e}")
+
+        # 주기적 에이전트 태스크 시작 (한 번만)
+        await self._start_periodic_agents(bot_instance_id, user_id)
+
         try:
             async with session_factory() as session:
                 # 1. 봇 인스턴스 설정 로드
@@ -575,6 +649,86 @@ class BotRunner:
                         candle_buffer.append(new_candle)
                         candles = list(candle_buffer)
 
+                        # === Risk Monitor (Day 4) - 포지션 보유 시 실시간 리스크 체크 ===
+                        if current_position:
+                            try:
+                                # 현재 포지션 데이터 구성
+                                entry_price = current_position.get("entry_price", price)
+                                position_size = current_position.get("size", 0)
+                                position_side = current_position.get("side", "long")
+
+                                # PnL 계산
+                                if position_side == "long":
+                                    unrealized_pnl = (price - entry_price) * position_size
+                                    unrealized_pnl_percent = ((price - entry_price) / entry_price) * 100
+                                else:  # short
+                                    unrealized_pnl = (entry_price - price) * position_size
+                                    unrealized_pnl_percent = ((entry_price - price) / entry_price) * 100
+
+                                # 청산가 계산 (간단한 추정)
+                                leverage = bot_instance.max_leverage
+                                if position_side == "long":
+                                    liquidation_price = entry_price * (1 - 0.9 / leverage)
+                                else:
+                                    liquidation_price = entry_price * (1 + 0.9 / leverage)
+
+                                distance_to_liquidation = abs((price - liquidation_price) / price) * 100
+
+                                # RiskMonitor에 포지션 제출
+                                risk_task = AgentTask(
+                                    task_id=f"risk_{bot_instance_id}_{datetime.utcnow().timestamp()}",
+                                    task_type="monitor_position",
+                                    priority=TaskPriority.HIGH,
+                                    params={
+                                        "position": {
+                                            "symbol": symbol,
+                                            "side": position_side,
+                                            "size": position_size,
+                                            "entry_price": entry_price,
+                                            "current_price": price,
+                                            "unrealized_pnl": unrealized_pnl,
+                                            "unrealized_pnl_percent": unrealized_pnl_percent,
+                                            "leverage": leverage,
+                                            "liquidation_price": liquidation_price,
+                                            "distance_to_liquidation": distance_to_liquidation
+                                        },
+                                        "bitget_client": bitget_client,
+                                        "auto_execute": True  # 자동 조치 활성화
+                                    },
+                                    timeout=1.0
+                                )
+
+                                await self.risk_monitor.submit_task(risk_task)
+                                await asyncio.sleep(0.05)  # 처리 대기
+
+                                # 리스크 알림 확인
+                                risk_alerts = risk_task.result
+                                if risk_alerts:
+                                    for alert in risk_alerts:
+                                        if alert.is_critical():
+                                            logger.error(
+                                                f"🚨 CRITICAL RISK: {alert.message}\n"
+                                                f"  Position: {symbol} {position_side}\n"
+                                                f"  Action: {alert.recommended_action.value}"
+                                            )
+                                            # 치명적 리스크 시 포지션 강제 청산
+                                            if alert.recommended_action.value in {"close_position", "emergency_shutdown"}:
+                                                logger.warning(f"🛑 Force closing position due to critical risk")
+                                                await self._close_instance_position(
+                                                    session, bitget_client, bot_instance, user_id,
+                                                    current_position, price, f"Risk alert: {alert.message}"
+                                                )
+                                                current_position = None
+                                                continue
+                                        else:
+                                            logger.warning(
+                                                f"⚠️ Risk Alert: {alert.message} "
+                                                f"(Action: {alert.recommended_action.value})"
+                                            )
+
+                            except Exception as e:
+                                logger.error(f"Risk monitoring error: {e}")
+
                         # 전략 실행
                         if strategy:
                             try:
@@ -597,6 +751,127 @@ class BotRunner:
                             signal_action = "hold"
                             signal_confidence = 0
                             signal_reason = "No strategy"
+
+                        # === Signal Validator (Day 3) ===
+                        if signal_action in {"buy", "sell", "close"} and signal_action != "hold":
+                            # 1. 가격 변동률 계산 (최근 5분)
+                            price_change_5min = self._calculate_price_change(symbol, price)
+
+                            # 2. 현재 포지션 방향
+                            current_position_side = None
+                            if current_position:
+                                current_position_side = current_position.side  # "long" or "short"
+
+                            # 3. 최근 신호 목록
+                            recent_signals = self._get_recent_signals(bot_instance_id)
+
+                            # 4. 주문 금액 계산
+                            leverage = bot_instance.max_leverage
+                            available = await allocation_manager.get_available_balance(
+                                user_id, bot_instance_id, bitget_client, session
+                            )
+                            position_value = available * 0.95
+                            order_size_usd = position_value
+
+                            # 5. Market Regime 조회 (Day 2)
+                            market_regime_type = None
+                            market_volatility = None
+                            try:
+                                # MarketRegimeAgent에서 현재 시장 환경 조회
+                                regime_task = AgentTask(
+                                    task_id=f"regime_{bot_instance_id}_{datetime.utcnow().timestamp()}",
+                                    task_type="get_current_regime",
+                                    priority=TaskPriority.HIGH,
+                                    params={},
+                                    timeout=0.5
+                                )
+                                await self.market_regime.submit_task(regime_task)
+                                await asyncio.sleep(0.05)  # 조회 대기
+
+                                regime = regime_task.result
+                                if regime:
+                                    market_regime_type = regime.regime_type.value  # "trending", "ranging", etc.
+                                    market_volatility = regime.volatility_level  # "low", "medium", "high"
+                                    logger.debug(
+                                        f"📊 Market Regime: {market_regime_type}, "
+                                        f"Volatility: {market_volatility}"
+                                    )
+                            except Exception as e:
+                                logger.warning(f"Failed to get market regime: {e}")
+                                # 실패 시 None으로 유지 (validation은 계속 진행)
+
+                            # 6. SignalValidator 호출
+                            try:
+                                validation_task = AgentTask(
+                                    task_id=f"validate_{bot_instance_id}_{datetime.utcnow().timestamp()}",
+                                    task_type="validate_signal",
+                                    priority=TaskPriority.HIGH,
+                                    params={
+                                        "signal_id": f"{bot_instance_id}_{datetime.utcnow().timestamp()}",
+                                        "symbol": symbol,
+                                        "action": signal_action,
+                                        "confidence": signal_confidence,
+                                        "current_price": price,
+                                        "price_change_5min": price_change_5min,
+                                        "current_position_side": current_position_side,
+                                        "recent_signals": recent_signals,
+                                        "order_size_usd": order_size_usd,
+                                        "available_balance": available,
+                                        "market_regime": market_regime_type,  # 🆕 Market Regime 정보 추가
+                                        "market_volatility": market_volatility,  # 🆕 변동성 정보 추가
+                                        "support_level": None,  # TODO: 지지선 계산
+                                        "resistance_level": None,  # TODO: 저항선 계산
+                                        "recent_trades_count": 0,  # TODO: 거래 빈도 체크
+                                        "current_drawdown": 0.0,  # TODO: 낙폭 계산
+                                    },
+                                    timeout=1.0
+                                )
+
+                                await self.signal_validator.submit_task(validation_task)
+                                await asyncio.sleep(0.1)  # 검증 완료 대기 (최대 1초)
+
+                                # 검증 결과 확인
+                                validation = validation_task.result
+                                if validation:
+                                    if validation.is_rejected():
+                                        logger.warning(
+                                            f"🚫 Signal REJECTED by validator: {symbol} {signal_action} "
+                                            f"(confidence: {signal_confidence:.2f})\n"
+                                            f"  Reasons: {', '.join(validation.warnings)}"
+                                        )
+                                        # 최근 신호 기록 (거부된 신호도 기록)
+                                        self._record_signal(bot_instance_id, "rejected")
+                                        continue  # 신호 거부 - 주문 실행하지 않음
+
+                                    # WARNING (조건부 승인) - 포지션 축소 적용
+                                    position_adjustment = validation.metadata.get("position_adjustment", 1.0)
+                                    order_size_adjustment = validation.metadata.get("order_size_adjustment", order_size_usd)
+
+                                    if position_adjustment < 1.0 or order_size_adjustment < order_size_usd:
+                                        logger.info(
+                                            f"⚠️ Signal APPROVED with adjustments: {symbol} {signal_action}\n"
+                                            f"  Position: {position_adjustment*100:.0f}%"
+                                            f"  Order size: ${order_size_usd:.2f} → ${order_size_adjustment:.2f}"
+                                        )
+                                        # 주문 금액 조정
+                                        position_value = order_size_adjustment
+
+                                    else:
+                                        logger.info(
+                                            f"✅ Signal APPROVED: {symbol} {signal_action} "
+                                            f"(confidence: {signal_confidence:.2f}, score: {validation.confidence_score:.2f})"
+                                        )
+
+                                    # 최근 신호 기록
+                                    self._record_signal(bot_instance_id, signal_action)
+
+                                else:
+                                    logger.error("Validation result is None - rejecting signal for safety")
+                                    continue
+
+                            except Exception as e:
+                                logger.error(f"Signal validation error: {e} - REJECTING signal for safety")
+                                continue
 
                         # 포지션 청산
                         if signal_action == "close" and current_position:
@@ -2014,3 +2289,188 @@ class BotRunner:
 
         # 기본값
         return "manual_close"
+
+    # === Signal Validator Helper Methods (Day 3) ===
+
+    def _calculate_price_change(self, symbol: str, current_price: float) -> float:
+        """
+        최근 5분간 가격 변동률 계산
+
+        Args:
+            symbol: 심볼
+            current_price: 현재 가격
+
+        Returns:
+            가격 변동률 (%)
+        """
+        # 가격 히스토리 초기화
+        if symbol not in self._price_history:
+            self._price_history[symbol] = deque(maxlen=6)  # 5분 = 6개 캔들 (5분 간격)
+
+        # 현재 가격 추가
+        self._price_history[symbol].append(current_price)
+
+        # 최소 2개 가격이 필요
+        if len(self._price_history[symbol]) < 2:
+            return 0.0
+
+        # 5분 전 가격 (가장 오래된 가격)
+        old_price = self._price_history[symbol][0]
+
+        # 변동률 계산
+        if old_price > 0:
+            change_percent = (current_price - old_price) / old_price * 100
+            return change_percent
+
+        return 0.0
+
+    def _get_recent_signals(self, bot_instance_id: int) -> list:
+        """
+        최근 신호 목록 조회
+
+        Args:
+            bot_instance_id: 봇 인스턴스 ID
+
+        Returns:
+            최근 신호 목록 (최신순, 최대 10개)
+        """
+        if bot_instance_id not in self._recent_signals:
+            self._recent_signals[bot_instance_id] = deque(maxlen=10)
+
+        return list(self._recent_signals[bot_instance_id])
+
+    def _record_signal(self, bot_instance_id: int, signal_action: str):
+        """
+        신호 기록
+
+        Args:
+            bot_instance_id: 봇 인스턴스 ID
+            signal_action: 신호 액션 (buy/sell/close/rejected)
+        """
+        if bot_instance_id not in self._recent_signals:
+            self._recent_signals[bot_instance_id] = deque(maxlen=10)
+
+        self._recent_signals[bot_instance_id].append(signal_action)
+
+    # === Periodic Agent Tasks (주기적 에이전트 실행) ===
+
+    async def _start_periodic_agents(self, bot_instance_id: int, user_id: int):
+        """
+        주기적 에이전트 태스크 시작
+
+        - MarketRegimeAgent: 1분마다 시장 환경 분석
+        - RiskMonitorAgent: 30초마다 리스크 체크
+
+        각 태스크는 봇이 실행 중일 때만 동작하고, 봇 종료 시 자동으로 정지됩니다.
+        """
+        # 이미 실행 중이면 중복 시작 방지
+        if "market_regime_periodic" in self._periodic_tasks:
+            logger.debug("Periodic agents already running")
+            return
+
+        # MarketRegime 주기적 실행 (1분마다)
+        market_task = asyncio.create_task(
+            self._periodic_market_regime_analysis(bot_instance_id)
+        )
+        self._periodic_tasks["market_regime_periodic"] = market_task
+        logger.info("🔄 Started periodic MarketRegime analysis (every 1min)")
+
+        # RiskMonitor 주기적 실행 (30초마다)
+        risk_task = asyncio.create_task(
+            self._periodic_risk_monitoring(bot_instance_id, user_id)
+        )
+        self._periodic_tasks["risk_monitor_periodic"] = risk_task
+        logger.info("🔄 Started periodic RiskMonitor checks (every 30sec)")
+
+    async def _periodic_market_regime_analysis(self, bot_instance_id: int):
+        """
+        MarketRegimeAgent 주기적 실행 (1분마다)
+
+        시장 환경을 분석하여 Redis에 저장합니다.
+        다른 컴포넌트(SignalValidator 등)에서 참조 가능합니다.
+        """
+        while bot_instance_id in self.instance_tasks:
+            try:
+                # 시장 환경 분석 태스크 생성
+                regime_task = AgentTask(
+                    task_id=f"periodic_regime_{datetime.utcnow().timestamp()}",
+                    task_type="analyze_market",
+                    priority=TaskPriority.NORMAL,
+                    params={
+                        "symbol": "BTCUSDT",  # TODO: 봇별 심볼 가져오기
+                        "timeframe": "1h"
+                    },
+                    timeout=5.0
+                )
+
+                # 에이전트에 태스크 제출
+                await self.market_regime.submit_task(regime_task)
+                await asyncio.sleep(0.1)  # 처리 대기
+
+                # 결과 로깅
+                if regime_task.result:
+                    regime = regime_task.result
+                    logger.debug(
+                        f"📊 Periodic Market Analysis: "
+                        f"regime={regime.regime_type.value}, "
+                        f"volatility={regime.volatility_level}"
+                    )
+
+            except Exception as e:
+                logger.error(f"Periodic market regime analysis error: {e}")
+
+            # 1분 대기
+            await asyncio.sleep(60)
+
+        logger.info("Periodic MarketRegime analysis stopped (bot stopped)")
+
+    async def _periodic_risk_monitoring(self, bot_instance_id: int, user_id: int):
+        """
+        RiskMonitorAgent 주기적 실행 (30초마다)
+
+        계좌 리스크를 지속적으로 감시합니다:
+        - 일일 손익 체크
+        - 포지션 크기 체크
+        - 연속 손실 체크
+        - 청산가 접근 경고
+        """
+        while bot_instance_id in self.instance_tasks:
+            try:
+                # TODO: 실제 계좌 데이터 수집
+                # 현재는 placeholder로 동작
+
+                risk_task = AgentTask(
+                    task_id=f"periodic_risk_{datetime.utcnow().timestamp()}",
+                    task_type="check_risk",
+                    priority=TaskPriority.HIGH,
+                    params={
+                        "user_id": user_id,
+                        "bot_instance_id": bot_instance_id,
+                        "daily_pnl": 0.0,  # TODO: DB에서 조회
+                        "position_size": 0.0,  # TODO: 거래소에서 조회
+                        "consecutive_losses": 0,  # TODO: DB에서 조회
+                        "auto_execute": False  # 조회만 (조치 안 함)
+                    },
+                    timeout=2.0
+                )
+
+                # 에이전트에 태스크 제출
+                await self.risk_monitor.submit_task(risk_task)
+                await asyncio.sleep(0.1)  # 처리 대기
+
+                # 결과 확인 (경고가 있으면 로깅)
+                if risk_task.result:
+                    alerts = risk_task.result
+                    if alerts:
+                        for alert in alerts:
+                            logger.warning(
+                                f"⚠️ Periodic Risk Alert: {alert.severity.value} - {alert.message}"
+                            )
+
+            except Exception as e:
+                logger.error(f"Periodic risk monitoring error: {e}")
+
+            # 30초 대기
+            await asyncio.sleep(30)
+
+        logger.info("Periodic RiskMonitor checks stopped (bot stopped)")
