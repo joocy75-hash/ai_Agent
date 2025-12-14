@@ -105,20 +105,49 @@ class RedisClient:
             raise
 
     async def disconnect(self):
-        """Redis 연결 종료"""
+        """
+        Redis 연결 종료 및 리소스 정리
+
+        적절한 순서로 정리하여 리소스 누수 방지:
+        1. Pub/Sub 채널 정리
+        2. 클라이언트 연결 종료 및 대기
+        3. 연결 풀 정리
+        """
+        # 1. Pub/Sub 정리
         if self._pubsub:
-            await self._pubsub.close()
-            self._pubsub = None
+            try:
+                # 모든 채널에서 unsubscribe
+                await self._pubsub.unsubscribe()
+                await self._pubsub.close()
+                logger.info("Pub/Sub connection closed")
+            except Exception as e:
+                logger.error(f"Error closing Pub/Sub: {e}")
+            finally:
+                self._pubsub = None
 
+        # 2. 클라이언트 정리 (연결 드레이닝)
         if self._client:
-            await self._client.close()
-            self._client = None
+            try:
+                # close()는 즉시 반환, aclose()는 대기
+                await self._client.aclose()
+                logger.info("Redis client closed")
+            except Exception as e:
+                logger.error(f"Error closing Redis client: {e}")
+            finally:
+                self._client = None
 
+        # 3. 연결 풀 정리 (모든 연결 해제)
         if self._pool:
-            await self._pool.disconnect()
-            self._pool = None
+            try:
+                # disconnect()는 풀의 모든 연결을 정리
+                await self._pool.disconnect()
+                logger.info("Redis connection pool disconnected")
+            except Exception as e:
+                logger.error(f"Error disconnecting Redis pool: {e}")
+            finally:
+                self._pool = None
 
-        logger.info("Redis disconnected")
+        logger.info("✅ Redis fully disconnected and cleaned up")
 
     def _ensure_connected(self):
         """연결 상태 확인"""

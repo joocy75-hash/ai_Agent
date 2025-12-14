@@ -343,18 +343,24 @@ class BaseAgent(ABC):
         """
         작업 실행 (내부 메서드)
 
+        Race condition 방지를 위해 task_id를 전체 실행 주기 동안 running_tasks에서 관리합니다.
+
         Args:
             task: 처리할 작업
 
         Returns:
             성공 여부
         """
-        # 중복 실행 방지
+        # 중복 실행 방지 - 원자적 체크 및 추가
         async with self._task_lock:
             if task.task_id in self.running_tasks:
                 logger.warning(f"Task '{task.task_id}' is already running")
                 return False
             self.running_tasks.add(task.task_id)
+
+        # 작업 실행 전체를 try-finally로 감싸서 cleanup 보장
+        task_succeeded = False
+        should_retry = False
 
         try:
             logger.info(
@@ -372,35 +378,45 @@ class BaseAgent(ABC):
                 result = await self.process_task(task)
 
             logger.info(f"✅ Task '{task.task_id}' completed successfully")
+            task_succeeded = True
             return True
 
         except asyncio.TimeoutError:
             logger.error(f"Task '{task.task_id}' timed out after {task.timeout}s")
 
-            # 재시도 가능하면 큐에 다시 추가
+            # 재시도 가능 여부 확인
             if task.can_retry():
                 task.increment_retry()
                 logger.info(f"Retrying task '{task.task_id}' ({task.retry_count}/{task.max_retries})")
-                await self.task_queue.put(task)
+                should_retry = True
 
             return False
 
         except Exception as e:
             logger.error(f"Task '{task.task_id}' failed: {e}", exc_info=True)
 
-            # 재시도 가능하면 큐에 다시 추가
+            # 재시도 가능 여부 확인
             if task.can_retry():
                 task.increment_retry()
                 logger.info(f"Retrying task '{task.task_id}' ({task.retry_count}/{task.max_retries})")
-                await asyncio.sleep(1.0)  # 재시도 전 대기
-                await self.task_queue.put(task)
+                should_retry = True
 
             return False
 
         finally:
-            # 실행 중인 작업 목록에서 제거
+            # 반드시 실행 중인 작업 목록에서 제거 (cleanup 보장)
             async with self._task_lock:
                 self.running_tasks.discard(task.task_id)
+
+            # 재시도가 필요한 경우, cleanup 후에 큐에 추가
+            # (이렇게 하면 같은 task_id가 running_tasks에서 제거된 후 재시도됨)
+            if should_retry:
+                try:
+                    if not task_succeeded:  # 타임아웃이나 에러로 인한 재시도만
+                        await asyncio.sleep(1.0)  # 재시도 전 대기
+                        await self.task_queue.put(task)
+                except Exception as retry_error:
+                    logger.error(f"Failed to requeue task '{task.task_id}': {retry_error}")
 
     @abstractmethod
     async def process_task(self, task: AgentTask) -> Any:

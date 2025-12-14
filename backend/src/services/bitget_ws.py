@@ -51,6 +51,9 @@ class BitgetWebSocket:
         self.message_count = 0
         self.error_count = 0
 
+        # 백그라운드 작업 추적 (리소스 관리)
+        self.background_tasks: list[asyncio.Task] = []
+
         # 구독 채널
         self.subscribed_symbols = set()
 
@@ -95,8 +98,9 @@ class BitgetWebSocket:
             self.is_public_connected = True
             logger.info(f"✅ Public WebSocket connected: {self.public_url}")
 
-            # Ping-Pong 설정
-            asyncio.create_task(self._ping_loop(self.public_ws, "public"))
+            # Ping-Pong 설정 (태스크 추적)
+            ping_task = asyncio.create_task(self._ping_loop(self.public_ws, "public"))
+            self.background_tasks.append(ping_task)
 
         except Exception as e:
             logger.error(f"❌ Public WebSocket connection failed: {e}")
@@ -113,8 +117,9 @@ class BitgetWebSocket:
             # 로그인
             await self._login(self.private_ws)
 
-            # Ping-Pong 설정
-            asyncio.create_task(self._ping_loop(self.private_ws, "private"))
+            # Ping-Pong 설정 (태스크 추적)
+            ping_task = asyncio.create_task(self._ping_loop(self.private_ws, "private"))
+            self.background_tasks.append(ping_task)
 
         except Exception as e:
             logger.error(f"❌ Private WebSocket connection failed: {e}")
@@ -425,10 +430,22 @@ class BitgetWebSocket:
             raise
 
     async def stop(self):
-        """WebSocket 중지"""
+        """WebSocket 중지 및 리소스 정리"""
         logger.info("🛑 Stopping Bitget WebSocket client...")
         self.is_running = False
 
+        # 1. 모든 백그라운드 태스크 취소 (즉시 정리)
+        logger.info(f"Cancelling {len(self.background_tasks)} background tasks...")
+        for task in self.background_tasks:
+            if not task.done():
+                task.cancel()
+
+        # 2. 태스크 취소 대기 (예외 무시)
+        if self.background_tasks:
+            await asyncio.gather(*self.background_tasks, return_exceptions=True)
+            logger.info("All background tasks cancelled")
+
+        # 3. WebSocket 연결 종료
         if self.public_ws and not self.public_ws.closed:
             await self.public_ws.close()
             logger.info("Public WebSocket closed")
@@ -436,6 +453,9 @@ class BitgetWebSocket:
         if self.private_ws and not self.private_ws.closed:
             await self.private_ws.close()
             logger.info("Private WebSocket closed")
+
+        # 4. 태스크 목록 초기화
+        self.background_tasks.clear()
 
     def get_status(self) -> Dict[str, Any]:
         """WebSocket 상태 조회"""
