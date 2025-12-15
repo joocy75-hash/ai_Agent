@@ -78,6 +78,13 @@ async def lifespan(app):
     print("✅ Cache manager initialized")
     logger.info("✅ Cache manager initialized")
 
+    # Initialize AI Cost Optimization Service
+    from ..services import initialize_ai_service
+
+    await initialize_ai_service()
+    print("✅ AI Cost Optimization Service initialized")
+    logger.info("✅ AI Cost Optimization Service initialized")
+
     # Bootstrap bot manager
     await bot_manager.bootstrap()
     print("✅ Bot manager bootstrapped")
@@ -118,6 +125,12 @@ async def lifespan(app):
 
         await price_alert_service.stop()
         logger.info("✅ Price alert service stopped")
+
+        # Shutdown AI Cost Optimization Service
+        from ..services import shutdown_ai_service
+
+        await shutdown_ai_service()
+        logger.info("✅ AI Cost Optimization Service stopped")
 
         # Close cache manager
         from ..utils.cache_manager import cache_manager

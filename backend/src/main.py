@@ -23,6 +23,7 @@ from .api import (
     admin_analytics,
     admin_logs,
     admin_grid_template,  # 그리드 템플릿 관리자 API (NEW)
+    ai_cost,  # AI 비용 최적화 API (NEW)
     annotations,  # 차트 어노테이션 API (NEW)
     auth,
     oauth,
@@ -129,6 +130,10 @@ def create_app() -> FastAPI:
             },
             {"name": "strategy", "description": "트레이딩 전략 관리"},
             {"name": "ai_strategy", "description": "AI 기반 전략 생성 (DeepSeek)"},
+            {
+                "name": "AI Cost Optimization",
+                "description": "AI 비용 최적화: 통계, 모니터링, 설정 관리 (DeepSeek-V3.2)",
+            },
             {"name": "backtest", "description": "백테스트 실행 및 결과 조회"},
             {"name": "chart", "description": "시장 차트 및 캔들 데이터"},
             {"name": "trades", "description": "거래 기록 관리"},
@@ -261,6 +266,9 @@ def create_app() -> FastAPI:
     api_v1_router.include_router(telegram.router)
     api_v1_router.include_router(upload.router)
     api_v1_router.include_router(api_status.router)
+
+    # AI 비용 최적화
+    api_v1_router.include_router(ai_cost.router)  # AI Cost Optimization
 
     # 관리자 전용
     api_v1_router.include_router(admin_diagnostics.router)

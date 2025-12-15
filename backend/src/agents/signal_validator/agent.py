@@ -2,10 +2,16 @@
 Signal Validator Agent (시그널 검증 에이전트)
 
 전략 시그널을 검증하여 거래 허용 여부 결정
+
+AI Enhancement:
+- DeepSeek-V3.2 API를 사용한 AI 기반 시그널 검증
+- 규칙 기반 + AI 분석 결합으로 false signal 감소
+- 비용 최적화 (Prompt Caching, Response Caching, Smart Sampling)
 """
 
 import logging
 import asyncio
+import json
 from typing import Any, Dict, List, Optional
 
 from ..base import BaseAgent, AgentTask
@@ -35,12 +41,17 @@ class SignalValidatorAgent(BaseAgent):
         agent_id: str,
         name: str,
         config: dict = None,
-        redis_client=None
+        redis_client=None,
+        ai_service=None
     ):
         super().__init__(agent_id, name, config)
         self.rules_engine = ValidationRules()
         self._validation_rules = self._init_rules()
         self.redis_client = redis_client
+        self.ai_service = ai_service  # IntegratedAIService
+        self.enable_ai = config.get("enable_ai", True) if config else True  # AI 활성화
+
+        logger.info(f"SignalValidatorAgent initialized with AI={self.enable_ai}")
 
     def _init_rules(self) -> List[ValidationRule]:
         """검증 규칙 초기화"""
@@ -280,24 +291,54 @@ class SignalValidatorAgent(BaseAgent):
                 failed_rules.append(rule.rule_id)
                 warnings.append(f"Rule execution error: {rule.name}")
 
-        # 신뢰도 점수 계산
+        # 신뢰도 점수 계산 (규칙 기반)
         total_weight = sum(r.weight for r in self._validation_rules)
         confidence_score = sum(rule_scores) / total_weight if total_weight > 0 else 0.0
 
-        # 검증 결과 결정
+        # 검증 결과 결정 (규칙 기반)
         validation_result = self._determine_result(
             passed_rules=passed_rules,
             failed_rules=failed_rules,
             confidence_score=confidence_score
         )
 
-        # SignalValidation 객체 생성
+        # AI 기반 검증 (선택적)
+        ai_validation_result = validation_result
+        ai_confidence_score = confidence_score
+
+        if self.enable_ai and self.ai_service:
+            try:
+                ai_result = await self._validate_with_ai(
+                    signal_id=signal_id,
+                    symbol=symbol,
+                    action=action,
+                    confidence=confidence,
+                    current_price=current_price,
+                    market_regime=market_regime,
+                    rule_based_result=validation_result.value,
+                    rule_based_score=confidence_score,
+                    failed_rules=failed_rules
+                )
+
+                if ai_result:
+                    ai_validation_result = ai_result.get("validation_result", validation_result)
+                    ai_confidence_score = ai_result.get("confidence_score", confidence_score)
+
+                    logger.info(
+                        f"🤖 AI Validation: {signal_id} -> {ai_validation_result.value if hasattr(ai_validation_result, 'value') else ai_validation_result} "
+                        f"(rule: {validation_result.value}, AI conf: {ai_confidence_score:.2f})"
+                    )
+
+            except Exception as e:
+                logger.warning(f"AI validation failed, using rule-based result: {e}")
+
+        # SignalValidation 객체 생성 (AI 또는 규칙 기반)
         validation = SignalValidation(
             signal_id=signal_id,
             symbol=symbol,
             action=action,
-            validation_result=validation_result,
-            confidence_score=confidence_score,
+            validation_result=ai_validation_result if isinstance(ai_validation_result, ValidationResult) else validation_result,
+            confidence_score=ai_confidence_score,
             passed_rules=passed_rules,
             failed_rules=failed_rules,
             warnings=warnings,
@@ -308,6 +349,7 @@ class SignalValidatorAgent(BaseAgent):
                 "position_adjustment": position_adjustment,
                 "order_size_adjustment": order_size_adjustment,
                 "original_order_size": order_size_usd,
+                "ai_enhanced": self.enable_ai and self.ai_service is not None,
             }
         )
 
@@ -404,6 +446,126 @@ class SignalValidatorAgent(BaseAgent):
             return ValidationResult.WARNING  # 조건부 승인
         else:
             return ValidationResult.REJECTED
+
+    async def _validate_with_ai(
+        self,
+        signal_id: str,
+        symbol: str,
+        action: str,
+        confidence: float,
+        current_price: float,
+        market_regime: dict,
+        rule_based_result: str,
+        rule_based_score: float,
+        failed_rules: List[str]
+    ) -> Optional[dict]:
+        """
+        AI 기반 시그널 검증 (DeepSeek-V3.2)
+
+        Args:
+            signal_id: 시그널 ID
+            symbol: 심볼
+            action: 거래 액션 (buy/sell/hold)
+            confidence: 시그널 신뢰도
+            current_price: 현재가
+            market_regime: 시장 환경 정보
+            rule_based_result: 규칙 기반 검증 결과
+            rule_based_score: 규칙 기반 신뢰도 점수
+            failed_rules: 실패한 규칙 목록
+
+        Returns:
+            {"validation_result": ValidationResult, "confidence_score": float} 또는 None
+        """
+        if not self.ai_service:
+            return None
+
+        # 시스템 프롬프트
+        system_prompt = """You are an expert trading signal validator AI.
+
+Validate trading signals and determine if they should be:
+- APPROVED: High confidence, all checks passed
+- WARNING: Moderate confidence, proceed with caution
+- REJECTED: Low confidence or critical issues detected
+
+Return ONLY a valid JSON object:
+{"validation_result": "APPROVED|WARNING|REJECTED", "confidence_score": 0.0-1.0, "reason": "brief explanation"}"""
+
+        # 사용자 프롬프트
+        user_prompt = f"""Validate trading signal for {symbol}:
+
+Signal ID: {signal_id}
+Action: {action}
+Signal Confidence: {confidence:.2f}
+Current Price: ${current_price:,.2f}
+
+Market Regime:
+- Type: {market_regime.get('regime_type', 'unknown')}
+- Volatility: {market_regime.get('volatility', 0.0):.2f}%
+- Trend Strength: {market_regime.get('trend_strength', 0.0):.2f}
+
+Rule-based Validation:
+- Result: {rule_based_result}
+- Confidence Score: {rule_based_score:.2f}
+- Failed Rules: {', '.join(failed_rules) if failed_rules else 'None'}
+
+Provide your AI-based signal validation. Return JSON only:"""
+
+        try:
+            # AI API 호출 (비용 최적화 적용)
+            result = await self.ai_service.call_ai(
+                agent_type="signal_validator",
+                prompt=user_prompt,
+                context={
+                    "symbol": symbol,
+                    "action": action,
+                    "confidence": confidence,
+                    "market_regime": market_regime.get("regime_type"),
+                },
+                system_prompt=system_prompt,
+                response_type="signal_validation",
+                temperature=0.2,
+                max_tokens=150,
+                enable_caching=True,
+                enable_sampling=True
+            )
+
+            response_text = result.get("response", "")
+
+            if not response_text:
+                return None
+
+            # JSON 파싱
+            import re
+            json_match = re.search(r'\{[^{}]*\}', response_text)
+
+            if json_match:
+                ai_validation = json.loads(json_match.group())
+
+                result_str = ai_validation.get("validation_result", "WARNING").upper()
+                ai_confidence = float(ai_validation.get("confidence_score", 0.5))
+
+                # ValidationResult로 변환
+                try:
+                    ai_result = ValidationResult(result_str)
+                except ValueError:
+                    ai_result = ValidationResult.WARNING
+
+                logger.debug(
+                    f"AI validation result: {result_str}, confidence: {ai_confidence:.2f}, "
+                    f"reason: {ai_validation.get('reason', 'N/A')}"
+                )
+
+                return {
+                    "validation_result": ai_result,
+                    "confidence_score": ai_confidence,
+                    "reason": ai_validation.get("reason", "")
+                }
+
+            return None
+
+        except Exception as e:
+            logger.error(f"AI validation error: {e}", exc_info=True)
+            return None
 
     async def _get_market_regime_from_redis(self, symbol: str) -> dict:
         """

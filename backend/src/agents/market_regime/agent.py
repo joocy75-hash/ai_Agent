@@ -2,10 +2,16 @@
 Market Regime Agent (시장 환경 분석 에이전트)
 
 실제 Bitget API 데이터를 사용하여 시장 환경을 분석하고 Redis에 저장
+
+AI Enhancement:
+- DeepSeek-V3.2 API를 사용한 AI 기반 시장 분석
+- 규칙 기반 + AI 분석 결합으로 정확도 향상
+- 비용 최적화 (Prompt Caching, Response Caching, Smart Sampling)
 """
 
 import logging
 import asyncio
+import json
 from typing import Any, Optional
 from datetime import datetime
 
@@ -43,7 +49,8 @@ class MarketRegimeAgent(BaseAgent):
         config: dict = None,
         bitget_client=None,
         candle_cache=None,
-        redis_client=None
+        redis_client=None,
+        ai_service=None
     ):
         super().__init__(agent_id, name, config)
         self.indicators = RegimeIndicators()
@@ -53,11 +60,13 @@ class MarketRegimeAgent(BaseAgent):
         self.bitget_client = bitget_client
         self.candle_cache = candle_cache
         self.redis_client = redis_client
+        self.ai_service = ai_service  # IntegratedAIService
 
         # 설정 (config에서 가져오거나 기본값)
         self.symbol = config.get("symbol", "BTCUSDT") if config else "BTCUSDT"
         self.timeframe = config.get("timeframe", "1h") if config else "1h"
         self.candle_limit = config.get("candle_limit", 200) if config else 200
+        self.enable_ai = config.get("enable_ai", True) if config else True  # AI 활성화
 
         # 임계값
         self.trending_adx_threshold = 25.0
@@ -67,7 +76,7 @@ class MarketRegimeAgent(BaseAgent):
 
         logger.info(
             f"MarketRegimeAgent initialized: {self.symbol} @ {self.timeframe}, "
-            f"candle_limit={self.candle_limit}"
+            f"candle_limit={self.candle_limit}, AI={self.enable_ai}"
         )
 
     async def process_task(self, task: AgentTask) -> Any:
@@ -179,7 +188,7 @@ class MarketRegimeAgent(BaseAgent):
 
         avg_atr = sum(atr_history) / len(atr_history) if atr_history else atr
 
-        # 4. 시장 환경 판단
+        # 4. 시장 환경 판단 (규칙 기반)
         regime_type, confidence = self._determine_regime_enhanced(
             current_price=current_price,
             adx=adx,
@@ -195,11 +204,48 @@ class MarketRegimeAgent(BaseAgent):
             avg_volume=avg_volume
         )
 
-        # 5. MarketRegime 객체 생성
+        # 4.5. AI 기반 분석 (선택적)
+        ai_regime_type = regime_type
+        ai_confidence = confidence
+
+        if self.enable_ai and self.ai_service:
+            try:
+                ai_result = await self._analyze_with_ai(
+                    symbol=symbol,
+                    current_price=current_price,
+                    indicators={
+                        "atr": atr,
+                        "adx": adx,
+                        "volatility": volatility,
+                        "bb_width": bb_width,
+                        "ema_20": ema_20,
+                        "ema_50": ema_50,
+                        "upper_bb": upper_bb,
+                        "lower_bb": lower_bb,
+                        "current_volume": current_volume,
+                        "avg_volume": avg_volume,
+                    },
+                    rule_based_regime=regime_type.value,
+                    rule_based_confidence=confidence
+                )
+
+                if ai_result:
+                    ai_regime_type = ai_result.get("regime_type", regime_type)
+                    ai_confidence = ai_result.get("confidence", confidence)
+
+                    logger.info(
+                        f"🤖 AI Analysis: {symbol} -> {ai_regime_type.value if hasattr(ai_regime_type, 'value') else ai_regime_type} "
+                        f"(rule: {regime_type.value}, AI conf: {ai_confidence:.2f})"
+                    )
+
+            except Exception as e:
+                logger.warning(f"AI analysis failed, using rule-based result: {e}")
+
+        # 5. MarketRegime 객체 생성 (AI 또는 규칙 기반)
         regime = MarketRegime(
             symbol=symbol,
-            regime_type=regime_type,
-            confidence=confidence,
+            regime_type=ai_regime_type if isinstance(ai_regime_type, RegimeType) else regime_type,
+            confidence=ai_confidence,
             volatility=volatility,
             trend_strength=adx,
             support_level=support,
@@ -372,6 +418,122 @@ class MarketRegimeAgent(BaseAgent):
             volatility=0.0,
             trend_strength=0.0
         )
+
+    async def _analyze_with_ai(
+        self,
+        symbol: str,
+        current_price: float,
+        indicators: dict,
+        rule_based_regime: str,
+        rule_based_confidence: float
+    ) -> Optional[dict]:
+        """
+        AI 기반 시장 환경 분석 (DeepSeek-V3.2)
+
+        Args:
+            symbol: 심볼
+            current_price: 현재가
+            indicators: 기술적 지표 딕셔너리
+            rule_based_regime: 규칙 기반 판단 결과
+            rule_based_confidence: 규칙 기반 신뢰도
+
+        Returns:
+            {"regime_type": RegimeType, "confidence": float} 또는 None
+        """
+        if not self.ai_service:
+            return None
+
+        # 시스템 프롬프트
+        system_prompt = f"""You are an expert cryptocurrency market regime analyzer.
+
+Analyze technical indicators and classify the market regime into one of these categories:
+- TRENDING_UP: Strong upward trend (ADX > 25, price above EMAs)
+- TRENDING_DOWN: Strong downward trend (ADX > 25, price below EMAs)
+- RANGING: Sideways market (ADX < 20)
+- VOLATILE: High volatility (ATR spike, wide Bollinger Bands)
+- LOW_VOLUME: Low trading activity
+- UNKNOWN: Unclear market state
+
+Return ONLY a valid JSON object:
+{{"regime_type": "TRENDING_UP|TRENDING_DOWN|RANGING|VOLATILE|LOW_VOLUME|UNKNOWN", "confidence": 0.0-1.0, "reason": "brief explanation"}}"""
+
+        # 사용자 프롬프트
+        user_prompt = f"""Analyze {symbol} market regime:
+
+Current Price: ${current_price:,.2f}
+
+Technical Indicators:
+- ATR: {indicators['atr']:.2f}
+- ADX: {indicators['adx']:.2f}
+- Volatility: {indicators['volatility']:.2f}%
+- Bollinger Width: {indicators['bb_width']:.2f}%
+- EMA 20: ${indicators['ema_20']:,.2f}
+- EMA 50: ${indicators['ema_50']:,.2f}
+- BB Upper: ${indicators['upper_bb']:,.2f}
+- BB Lower: ${indicators['lower_bb']:,.2f}
+- Current Volume: {indicators['current_volume']:.0f}
+- Avg Volume: {indicators['avg_volume']:.0f}
+
+Rule-based Analysis: {rule_based_regime} (confidence: {rule_based_confidence:.2f})
+
+Provide your AI-based market regime analysis. Return JSON only:"""
+
+        try:
+            # AI API 호출 (비용 최적화 적용)
+            result = await self.ai_service.call_ai(
+                agent_type="market_regime",
+                prompt=user_prompt,
+                context={
+                    "symbol": symbol,
+                    "price": current_price,
+                    "adx": indicators['adx'],
+                    "atr": indicators['atr'],
+                },
+                system_prompt=system_prompt,
+                response_type="market_analysis",
+                temperature=0.3,
+                max_tokens=200,
+                enable_caching=True,
+                enable_sampling=True
+            )
+
+            response_text = result.get("response", "")
+
+            if not response_text:
+                return None
+
+            # JSON 파싱
+            import re
+            json_match = re.search(r'\{[^{}]*\}', response_text)
+
+            if json_match:
+                ai_analysis = json.loads(json_match.group())
+
+                regime_str = ai_analysis.get("regime_type", "UNKNOWN").upper()
+                ai_confidence = float(ai_analysis.get("confidence", 0.5))
+
+                # RegimeType으로 변환
+                try:
+                    ai_regime = RegimeType(regime_str)
+                except ValueError:
+                    ai_regime = RegimeType.UNKNOWN
+
+                logger.debug(
+                    f"AI analysis result: {regime_str}, confidence: {ai_confidence:.2f}, "
+                    f"reason: {ai_analysis.get('reason', 'N/A')}"
+                )
+
+                return {
+                    "regime_type": ai_regime,
+                    "confidence": ai_confidence,
+                    "reason": ai_analysis.get("reason", "")
+                }
+
+            return None
+
+        except Exception as e:
+            logger.error(f"AI analysis error: {e}", exc_info=True)
+            return None
 
     async def _save_to_redis(self, regime: MarketRegime):
         """Redis에 현재 시장 환경 저장"""
