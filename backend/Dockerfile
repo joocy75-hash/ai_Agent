@@ -63,11 +63,21 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 # 성능 확장이 필요하면 Redis 기반 분산 잠금 구현 필요
 CMD sh -c '\
   echo "🚀 Starting database migration..." && \
+  MIGRATION_SUCCESS=false && \
   for i in 1 2 3 4 5; do \
     echo "📊 Migration attempt $i/5..." && \
-    alembic upgrade head && break || \
-    (echo "⚠️  Migration failed, retrying in 5 seconds..." && sleep 5); \
+    if alembic upgrade head; then \
+      MIGRATION_SUCCESS=true && \
+      break; \
+    else \
+      echo "⚠️  Migration failed, retrying in 5 seconds..." && \
+      sleep 5; \
+    fi; \
   done && \
+  if [ "$MIGRATION_SUCCESS" = "false" ]; then \
+    echo "❌ Migration failed after 5 attempts. Exiting..." && \
+    exit 1; \
+  fi && \
   echo "👤 Initializing admin user..." && \
   python scripts/init_admin.py && \
   echo "✅ Starting application..." && \

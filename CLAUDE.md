@@ -356,6 +356,73 @@ docker compose build --no-cache frontend
 
 ## 문제 해결 가이드
 
+### 🚨 PostgreSQL 비밀번호 인증 실패 (가장 흔한 문제)
+
+**증상**: 백엔드 로그에 `password authentication failed for user "trading_user"` 에러
+
+**원인**: PostgreSQL Docker 볼륨은 **최초 생성 시에만** `POSTGRES_PASSWORD` 환경변수를 사용합니다.
+이미 존재하는 볼륨은 새 비밀번호를 무시하므로, .env 파일의 비밀번호와 볼륨 내 비밀번호가 불일치할 수 있습니다.
+
+**해결 방법**:
+
+```bash
+# 1. 현재 데이터 백업
+ssh -i ~/.ssh/hetzner_deploy_key root@5.161.112.248 \
+  "docker exec groupc-postgres pg_dump -U trading_user trading_prod > /root/service_c/backup_trading_prod.sql"
+
+# 2. 비밀번호 수동 변경 (데이터 보존)
+ssh -i ~/.ssh/hetzner_deploy_key root@5.161.112.248 \
+  "docker exec groupc-postgres psql -U trading_user -d trading_prod -c \"ALTER USER trading_user WITH PASSWORD 'TradingPostgres2024!';\""
+
+# 3. PostgreSQL 재시작
+ssh -i ~/.ssh/hetzner_deploy_key root@5.161.112.248 \
+  "docker restart groupc-postgres && sleep 5 && docker restart groupc-backend"
+```
+
+**또는 볼륨 재생성** (데이터 손실 주의):
+
+```bash
+# 1. 백업 먼저!
+ssh -i ~/.ssh/hetzner_deploy_key root@5.161.112.248 \
+  "docker exec groupc-postgres pg_dump -U trading_user trading_prod > /root/service_c/backup.sql"
+
+# 2. 볼륨 삭제 및 재생성
+ssh -i ~/.ssh/hetzner_deploy_key root@5.161.112.248 << 'EOF'
+cd /root/service_c/ai-trading-platform
+docker compose -f docker-compose.production.yml down
+docker volume rm ai-trading-platform_groupc_postgres_data
+docker compose -f docker-compose.production.yml up -d postgres
+sleep 10
+# 백업 복원
+cat /root/service_c/backup.sql | docker exec -i groupc-postgres psql -U trading_user -d trading_prod
+docker compose -f docker-compose.production.yml up -d
+EOF
+```
+
+**예방책**: 이 프로젝트는 PostgreSQL init 스크립트가 설정되어 있어, 컨테이너 시작 시 자동으로 비밀번호를 동기화합니다.
+
+---
+
+### 🚨 Alembic 마이그레이션 실패
+
+**증상**: 백엔드가 시작되지 않고 `Migration attempt X/5...` 반복
+
+**해결 방법**:
+
+```bash
+# 1. PostgreSQL 연결 테스트
+ssh -i ~/.ssh/hetzner_deploy_key root@5.161.112.248 \
+  "docker exec groupc-backend python -c \"import psycopg2; conn = psycopg2.connect(host='postgres', port=5432, user='trading_user', password='TradingPostgres2024!', database='trading_prod'); print('OK')\""
+
+# 2. 연결 실패 시 → 위의 PostgreSQL 비밀번호 문제 해결 참조
+
+# 3. 마이그레이션 수동 실행
+ssh -i ~/.ssh/hetzner_deploy_key root@5.161.112.248 \
+  "docker exec groupc-backend alembic upgrade head"
+```
+
+---
+
 ### 🔴 컨테이너 상태 확인
 
 ```bash
@@ -457,6 +524,10 @@ id, user_id, strategy_id, symbol, status, allocation_percent, bot_type
 
 | 날짜 | 내용 |
 |------|------|
+| 2025-12-27 | **PostgreSQL 비밀번호 문제 해결** - 볼륨 재생성 및 문서화 |
+| 2025-12-27 | **Dockerfile 개선** - 마이그레이션 실패 시 컨테이너 종료 로직 추가 |
+| 2025-12-27 | **PostgreSQL init 스크립트 추가** - 자동 초기화 설정 |
+| 2025-12-27 | **문제 해결 가이드 추가** - PostgreSQL/Alembic 에러 해결 방법 |
 | 2025-12-27 | Hetzner 신규 서버(5.161.112.248)로 이전 |
 | 2025-12-27 | GitHub Actions CI/CD 자동 배포 구축 |
 | 2025-12-27 | Group C 전용 docker-compose.production.yml 작성 |
