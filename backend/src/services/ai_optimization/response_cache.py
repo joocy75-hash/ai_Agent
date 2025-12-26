@@ -181,6 +181,13 @@ class ResponseCacheManager:
                 logger.debug(f"Response cache MISS: {response_type}")
                 return None
 
+        except RuntimeError as e:
+            # Event loop closed 에러 등 런타임 에러는 조용히 처리
+            if "Event loop is closed" in str(e):
+                logger.debug(f"Event loop closed, skipping cache read")
+            else:
+                logger.warning(f"Runtime error in cache read: {e}")
+            return None
         except Exception as e:
             logger.error(f"Failed to get cached response: {e}")
             return None

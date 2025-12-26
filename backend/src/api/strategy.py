@@ -8,6 +8,7 @@ from ..database.db import get_session
 from ..database.models import BotStatus, Strategy
 from ..schemas.strategy_schema import StrategyCreate, StrategySelect, StrategyUpdate
 from ..utils.jwt_auth import get_current_user_id
+from ..utils.auth_dependencies import require_admin
 
 logger = logging.getLogger(__name__)
 
@@ -49,6 +50,9 @@ async def create_strategy(
                 "proven_conservative": "proven_conservative",
                 "proven_balanced": "proven_balanced",
                 "proven_aggressive": "proven_aggressive",
+                # AI 전략
+                "autonomous_30pct": "autonomous_30pct",
+                "adaptive_market_regime_fighter": "adaptive_market_regime_fighter",
                 # 레거시 매핑 (호환성 유지)
                 "golden_cross": "ma_cross",  # 골든크로스 → MA 크로스 전략
                 "rsi_reversal": "rsi_strategy",  # RSI 반전 → RSI 전략
@@ -102,7 +106,7 @@ async def update_strategy(
     strategy_id: int,
     payload: StrategyUpdate,
     session: AsyncSession = Depends(get_session),
-    user_id: int = Depends(get_current_user_id),
+    admin_id: int = Depends(require_admin),
 ):
     """전략 수정 (JWT 인증 필요, 관리자 전용 - 공용 전략 수정)"""
     result = await session.execute(
@@ -113,15 +117,27 @@ async def update_strategy(
     strategy = result.scalars().first()
 
     if not strategy:
+        # 🔒 SECURITY AUDIT: 존재하지 않는 전략 수정 시도
+        logger.warning(
+            f"🔒 SECURITY AUDIT: Admin {admin_id} attempted to update non-existent or unauthorized strategy {strategy_id}"
+        )
         raise HTTPException(
             status_code=404, detail="Strategy not found or access denied"
         )
+
+    # 🔒 SECURITY AUDIT: 전략 수정 기록
+    logger.info(
+        f"🔒 SECURITY AUDIT: Admin {admin_id} updating strategy {strategy_id} (name: {strategy.name}). "
+        f"Changes: {payload.model_dump(exclude_unset=True)}"
+    )
 
     for field, value in payload.model_dump(exclude_unset=True).items():
         setattr(strategy, field, value)
 
     await session.commit()
     await session.refresh(strategy)
+
+    logger.info(f"✅ SECURITY AUDIT: Admin {admin_id} successfully updated strategy {strategy_id}")
     return strategy
 
 
@@ -217,7 +233,7 @@ async def get_strategy(
 async def delete_strategy(
     strategy_id: int,
     session: AsyncSession = Depends(get_session),
-    user_id: int = Depends(get_current_user_id),
+    admin_id: int = Depends(require_admin),
 ):
     """전략 삭제 (JWT 인증 필요, 관리자 전용 - 공용 전략 삭제)"""
     result = await session.execute(
@@ -228,13 +244,30 @@ async def delete_strategy(
     strategy = result.scalars().first()
 
     if not strategy:
+        # 🔒 SECURITY AUDIT: 존재하지 않는 전략 삭제 시도
+        logger.warning(
+            f"🔒 SECURITY AUDIT: Admin {admin_id} attempted to delete non-existent or unauthorized strategy {strategy_id}"
+        )
         raise HTTPException(
             status_code=404, detail="Strategy not found or access denied"
         )
 
+    # 🔒 SECURITY AUDIT: 전략 삭제 전 기록 (복구 가능하도록)
+    strategy_info = {
+        "id": strategy.id,
+        "name": strategy.name,
+        "description": strategy.description,
+        "code": strategy.code,
+    }
+    logger.warning(
+        f"🔒 SECURITY AUDIT: Admin {admin_id} deleting strategy {strategy_id}. "
+        f"Strategy info: {strategy_info}"
+    )
+
     await session.delete(strategy)
     await session.commit()
 
+    logger.info(f"✅ SECURITY AUDIT: Admin {admin_id} successfully deleted strategy {strategy_id}")
     return {"ok": True, "message": "Strategy deleted successfully"}
 
 

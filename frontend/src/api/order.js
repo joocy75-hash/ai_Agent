@@ -50,5 +50,5 @@ export const orderAPI = {
 // 편의 함수 export
 export const getOrders = async ({ limit = 50, offset = 0 } = {}) => {
   const response = await orderAPI.getOrderHistory(limit, offset);
-  return { orders: response.orders || [] };
+  return { orders: response.trades || [] };
 };

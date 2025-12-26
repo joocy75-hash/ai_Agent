@@ -24,6 +24,7 @@ from ..database.models import (
     BotStatus,
     BotInstance,  # 다중 봇 시스템 (NEW)
     BotType,      # 다중 봇 시스템 (NEW)
+    ExitReason,   # enum for exit_reason column
     Position,
     Strategy,
     Trade,
@@ -184,9 +185,11 @@ class BotRunner:
             return True, today_pnl, daily_limit
 
         except Exception as e:
-            logger.error(f"Error checking daily loss limit for user {user_id}: {e}")
-            # 에러 발생 시 안전하게 거래 허용
-            return True, None, None
+            logger.error(f"🔒 CRITICAL: Error checking daily loss limit for user {user_id}: {e}", exc_info=True)
+            # 🔒 SECURITY FIX: 리스크 체크 실패 시 보수적으로 거래 거부
+            # 데이터베이스 오류 등으로 손실 제한을 확인할 수 없는 경우,
+            # 사용자 보호를 위해 거래를 중단합니다.
+            return False, None, None
 
     async def check_max_positions(
         self, session: AsyncSession, user_id: int, bitget_client
@@ -243,8 +246,10 @@ class BotRunner:
             return True, current_positions, max_positions
 
         except Exception as e:
-            logger.error(f"Error checking max positions for user {user_id}: {e}")
-            return True, 0, None
+            logger.error(f"🔒 CRITICAL: Error checking max positions for user {user_id}: {e}", exc_info=True)
+            # 🔒 SECURITY FIX: 포지션 수 체크 실패 시 보수적으로 거래 거부
+            # 시스템 오류로 포지션 제한을 확인할 수 없는 경우, 사용자 보호를 위해 거래 중단
+            return False, 0, None
 
     async def check_leverage_limit(
         self, session: AsyncSession, user_id: int, requested_leverage: int = 10
@@ -289,8 +294,12 @@ class BotRunner:
             return True, requested_leverage, max_leverage
 
         except Exception as e:
-            logger.error(f"Error checking leverage limit for user {user_id}: {e}")
-            return True, requested_leverage, None
+            logger.error(f"🔒 CRITICAL: Error checking leverage limit for user {user_id}: {e}", exc_info=True)
+            # 🔒 SECURITY FIX: 레버리지 체크 실패 시 보수적으로 안전한 기본값 사용
+            # 시스템 오류로 레버리지 제한을 확인할 수 없는 경우, 낮은 레버리지(3배)로 제한하여 리스크 최소화
+            safe_leverage = 3  # 안전한 기본 레버리지
+            logger.warning(f"⚠️ User {user_id}: Leverage check failed, using safe default: {safe_leverage}x")
+            return False, safe_leverage, safe_leverage
 
     async def get_all_risk_checks(
         self,
@@ -504,10 +513,9 @@ class BotRunner:
         """
         logger.info(f"Starting bot instance loop: bot_id={bot_instance_id}, user_id={user_id}")
 
-        # Market Regime Agent 시작 (한 번만)
+        # Market Regime Agent 시작 (한 번만) - Bitget client는 나중에 설정
         if self.market_regime.state != AgentState.RUNNING:
             try:
-                # TODO: Bitget 클라이언트 설정 (bot loop에서)
                 await self.market_regime.start()
                 logger.info("✅ MarketRegime Agent started")
             except Exception as e:
@@ -585,6 +593,12 @@ class BotRunner:
                     user_id, bot_instance_id, bitget_client, session
                 )
 
+                # 4.5. MarketRegimeAgent에 Bitget 클라이언트 설정 (캔들 데이터 조회용)
+                if self.market_regime.bitget_client is None:
+                    self.market_regime.bitget_client = bitget_client
+                    self.market_regime.symbol = bot_instance.symbol
+                    logger.info(f"✅ MarketRegimeAgent: Bitget client connected for {bot_instance.symbol}")
+
                 # 5. 캔들 버퍼 초기화
                 candle_buffer = deque(maxlen=200)
                 symbol = bot_instance.symbol  # 예: "BTCUSDT"
@@ -610,10 +624,55 @@ class BotRunner:
                 except Exception as e:
                     logger.warning(f"Failed to load historical candles for bot {bot_instance_id}: {e}")
 
-                # 6. 메인 트레이딩 루프
+                # 6. 기존 포지션 동기화 (봇 시작 시 Bitget에서 조회)
+                current_position = None
+                try:
+                    positions = await bitget_client.get_positions()
+                    for pos in positions:
+                        pos_symbol = pos.get("symbol", "").replace("/", "").replace("-", "").upper()
+                        if pos_symbol == symbol.replace("/", "").replace("-", "").upper():
+                            pos_size = float(pos.get("total", 0) or pos.get("available", 0) or 0)
+                            if pos_size > 0:
+                                # 기존 포지션 발견!
+                                side = pos.get("holdSide", pos.get("side", "long")).lower()
+                                entry_price = float(pos.get("openPriceAvg", 0) or pos.get("entryPrice", 0) or 0)
+                                unrealized_pnl = float(pos.get("unrealizedPL", 0) or 0)
+                                leverage = int(pos.get("leverage", 10) or 10)
+                                margin = float(pos.get("margin", 0) or 0)
+                                liq_price = float(pos.get("liquidationPrice", 0) or 0)
+
+                                # PnL % 계산
+                                if entry_price > 0:
+                                    if side == "long":
+                                        pnl_percent = ((candle_buffer[-1]["close"] if candle_buffer else entry_price) - entry_price) / entry_price * 100 * leverage
+                                    else:
+                                        pnl_percent = (entry_price - (candle_buffer[-1]["close"] if candle_buffer else entry_price)) / entry_price * 100 * leverage
+                                else:
+                                    pnl_percent = 0
+
+                                current_position = {
+                                    "side": side,
+                                    "entry_price": entry_price,
+                                    "size": pos_size,
+                                    "pnl": unrealized_pnl,
+                                    "pnl_percent": pnl_percent,
+                                    "leverage": leverage,
+                                    "margin": margin,
+                                    "liquidation_price": liq_price,
+                                    "holding_minutes": 0,  # 정확한 시간은 알 수 없음
+                                }
+                                logger.info(
+                                    f"✅ Synced existing position for bot {bot_instance_id}: "
+                                    f"{side.upper()} {pos_size} {symbol} @ {entry_price:.2f}, "
+                                    f"PnL: {unrealized_pnl:.2f} USDT ({pnl_percent:.2f}%)"
+                                )
+                                break
+                except Exception as e:
+                    logger.warning(f"Failed to sync existing positions for bot {bot_instance_id}: {e}")
+
+                # 7. 메인 트레이딩 루프
                 consecutive_errors = 0
                 max_consecutive_errors = 10
-                current_position = None
 
                 while True:
                     try:
@@ -738,6 +797,8 @@ class BotRunner:
                                     candles=candles,
                                     params_json=strategy.params,
                                     current_position=current_position,
+                                    exchange_client=bitget_client,
+                                    user_id=user_id,
                                 )
                                 signal_action = signal_result.get("action", "hold")
                                 signal_confidence = signal_result.get("confidence", 0)
@@ -790,11 +851,18 @@ class BotRunner:
 
                                 regime = regime_task.result
                                 if regime:
-                                    market_regime_type = regime.regime_type.value  # "trending", "ranging", etc.
-                                    market_volatility = regime.volatility_level  # "low", "medium", "high"
+                                    market_regime_type = regime.regime_type.value  # "trending_up", "ranging", etc.
+                                    # volatility는 float (ATR 기반 %), 레벨로 변환
+                                    vol = regime.volatility
+                                    if vol < 1.5:
+                                        market_volatility = "low"
+                                    elif vol < 3.0:
+                                        market_volatility = "medium"
+                                    else:
+                                        market_volatility = "high"
                                     logger.debug(
                                         f"📊 Market Regime: {market_regime_type}, "
-                                        f"Volatility: {market_volatility}"
+                                        f"Volatility: {vol:.2f}% ({market_volatility})"
                                     )
                             except Exception as e:
                                 logger.warning(f"Failed to get market regime: {e}")
@@ -907,8 +975,14 @@ class BotRunner:
                             signal_size = (position_value * leverage) / price
 
                             # 최소 주문량 체크
-                            min_sizes = {"BTCUSDT": 0.001, "ETHUSDT": 0.01}
-                            min_size = min_sizes.get(symbol, 0.001)
+                            min_sizes = {
+                                "BTCUSDT": 0.001,
+                                "ETHUSDT": 0.01,
+                                "SOLUSDT": 0.1,
+                                "BNBUSDT": 0.01,
+                                "ADAUSDT": 10.0,
+                            }
+                            min_size = min_sizes.get(symbol, 0.1)
                             if signal_size < min_size:
                                 signal_size = min_size
 
@@ -1465,15 +1539,22 @@ class BotRunner:
                     )
                     return
 
-                # 3. 과거 캔들 데이터 로드 (CRITICAL: 전략 정확도 향상)
-                candle_buffer = deque(maxlen=200)
-
-                # 전략 파라미터에서 심볼과 타임프레임 미리 가져오기 (try 블록 밖에서 정의)
+                # 2.5. MarketRegimeAgent에 Bitget 클라이언트 설정 (캔들 데이터 조회용)
+                # 전략 파라미터에서 심볼과 타임프레임 미리 가져오기
                 strategy_params = json.loads(strategy.params) if strategy.params else {}
                 symbol = strategy_params.get("symbol", "BTC/USDT").replace(
                     "/", ""
                 )  # "BTCUSDT"
                 timeframe = strategy_params.get("timeframe", "1h")
+
+                if self.market_regime.bitget_client is None:
+                    self.market_regime.bitget_client = bitget_client
+                    self.market_regime.symbol = symbol
+                    self.market_regime.timeframe = timeframe
+                    logger.info(f"✅ MarketRegimeAgent: Bitget client connected for {symbol} (legacy)")
+
+                # 3. 과거 캔들 데이터 로드 (CRITICAL: 전략 정확도 향상)
+                candle_buffer = deque(maxlen=200)
 
                 try:
                     # Bitget API에서 과거 200개 캔들 가져오기
@@ -1506,10 +1587,55 @@ class BotRunner:
                         f"Continuing with empty candle buffer (strategies may have reduced accuracy)"
                     )
 
-                # 4. 메인 트레이딩 루프
+                # 4. 기존 포지션 동기화 (봇 시작 시 Bitget에서 조회)
+                current_position = None
+                try:
+                    positions = await bitget_client.get_positions()
+                    for pos in positions:
+                        pos_symbol = pos.get("symbol", "").replace("/", "").replace("-", "").upper()
+                        if pos_symbol == symbol.replace("/", "").replace("-", "").upper():
+                            pos_size = float(pos.get("total", 0) or pos.get("available", 0) or 0)
+                            if pos_size > 0:
+                                # 기존 포지션 발견!
+                                side = pos.get("holdSide", pos.get("side", "long")).lower()
+                                entry_price = float(pos.get("openPriceAvg", 0) or pos.get("entryPrice", 0) or 0)
+                                unrealized_pnl = float(pos.get("unrealizedPL", 0) or 0)
+                                leverage = int(pos.get("leverage", 10) or 10)
+                                margin = float(pos.get("margin", 0) or 0)
+                                liq_price = float(pos.get("liquidationPrice", 0) or 0)
+
+                                # PnL % 계산
+                                if entry_price > 0:
+                                    if side == "long":
+                                        pnl_percent = ((candle_buffer[-1]["close"] if candle_buffer else entry_price) - entry_price) / entry_price * 100 * leverage
+                                    else:
+                                        pnl_percent = (entry_price - (candle_buffer[-1]["close"] if candle_buffer else entry_price)) / entry_price * 100 * leverage
+                                else:
+                                    pnl_percent = 0
+
+                                current_position = {
+                                    "side": side,
+                                    "entry_price": entry_price,
+                                    "size": pos_size,
+                                    "pnl": unrealized_pnl,
+                                    "pnl_percent": pnl_percent,
+                                    "leverage": leverage,
+                                    "margin": margin,
+                                    "liquidation_price": liq_price,
+                                    "holding_minutes": 0,
+                                }
+                                logger.info(
+                                    f"✅ Synced existing position for user {user_id}: "
+                                    f"{side.upper()} {pos_size} {symbol} @ {entry_price:.2f}, "
+                                    f"PnL: {unrealized_pnl:.2f} USDT ({pnl_percent:.2f}%)"
+                                )
+                                break
+                except Exception as e:
+                    logger.warning(f"Failed to sync existing positions for user {user_id}: {e}")
+
+                # 5. 메인 트레이딩 루프
                 consecutive_errors = 0
                 max_consecutive_errors = 10
-                current_position = None  # 현재 포지션 추적
 
                 while True:
                     try:
@@ -1591,6 +1717,8 @@ class BotRunner:
                                 candles=candles,
                                 params_json=strategy.params,
                                 current_position=current_position,  # 실제 포지션 상태 전달
+                                exchange_client=bitget_client,
+                                user_id=user_id,
                             )
 
                             signal_action = signal_result.get("action", "hold")
@@ -1638,33 +1766,44 @@ class BotRunner:
                                         )
                                         signal_size = (
                                             position_value_usdt / price
-                                        )  # BTC 수량
+                                        )  # 수량 계산
 
-                                        # 최소 주문 크기 확인 (Bitget: 0.001 BTC)
-                                        if signal_size < 0.001:
-                                            signal_size = 0.001
+                                        # 심볼별 최소 주문 크기 확인
+                                        min_sizes = {
+                                            "BTCUSDT": 0.001,
+                                            "ETHUSDT": 0.01,
+                                            "SOLUSDT": 0.1,
+                                            "BNBUSDT": 0.01,
+                                            "ADAUSDT": 10.0,
+                                        }
+                                        min_size = min_sizes.get(symbol, 0.1)
+                                        if signal_size < min_size:
                                             logger.warning(
-                                                f"⚠️ Calculated size {signal_size:.6f} too small, using minimum 0.001 BTC"
+                                                f"⚠️ Calculated size {signal_size:.6f} too small, using minimum {min_size}"
                                             )
+                                            signal_size = min_size
 
                                         logger.info(
-                                            f"✅ Calculated order size for user {user_id}: {signal_size:.6f} BTC "
+                                            f"✅ Calculated order size for user {user_id}: {signal_size:.6f} "
                                             f"(balance: ${available_balance:.2f}, position: {position_size_percent * 100:.1f}%, leverage: {leverage}x)"
                                         )
                                     else:
                                         logger.warning(
                                             f"⚠️ No available balance for user {user_id}, using minimum size"
                                         )
-                                        signal_size = 0.001  # 최소 크기
+                                        min_sizes = {"BTCUSDT": 0.001, "ETHUSDT": 0.01, "SOLUSDT": 0.1, "BNBUSDT": 0.01, "ADAUSDT": 10.0}
+                                        signal_size = min_sizes.get(symbol, 0.1)
                                 except Exception as e:
                                     logger.error(
                                         f"❌ Failed to calculate order size for user {user_id}: {e}"
                                     )
-                                    signal_size = 0.001  # 에러 시 최소 크기
+                                    min_sizes = {"BTCUSDT": 0.001, "ETHUSDT": 0.01, "SOLUSDT": 0.1, "BNBUSDT": 0.01, "ADAUSDT": 10.0}
+                                    signal_size = min_sizes.get(symbol, 0.1)
                             elif signal_size_from_strategy is not None:
                                 signal_size = signal_size_from_strategy
                             else:
-                                signal_size = 0.001  # 기본 최소 크기
+                                min_sizes = {"BTCUSDT": 0.001, "ETHUSDT": 0.01, "SOLUSDT": 0.1, "BNBUSDT": 0.01, "ADAUSDT": 10.0}
+                                signal_size = min_sizes.get(symbol, 0.1)  # 심볼별 기본 최소 크기
 
                             logger.info(
                                 f"Strategy signal for user {user_id}: {signal_action} (confidence: {signal_confidence:.2f}, reason: {signal_reason})"
@@ -1958,8 +2097,11 @@ class BotRunner:
                                 min_order_sizes = {
                                     "BTCUSDT": 0.001,
                                     "ETHUSDT": 0.01,
+                                    "SOLUSDT": 0.1,   # SOL 최소 0.1개 (~$12)
+                                    "BNBUSDT": 0.01,
+                                    "ADAUSDT": 10.0,  # ADA 최소 10개 (~$3.5)
                                 }
-                                min_order_size = min_order_sizes.get(symbol, 0.001)
+                                min_order_size = min_order_sizes.get(symbol, 0.1)
                                 # 테스트 모드: 계산된 크기와 관계없이 최소 주문량 사용
                                 if signal_size != min_order_size:
                                     logger.warning(
@@ -2277,7 +2419,8 @@ class BotRunner:
                 trade.exit_price = Decimal(str(exit_price))
                 trade.pnl = Decimal(str(round(pnl, 8)))
                 trade.pnl_percent = round(pnl_percent, 2)
-                trade.exit_reason = exit_reason
+                # exit_reason은 반드시 ExitReason enum으로 변환
+                trade.exit_reason = self._map_to_exit_reason(exit_reason, pnl_percent)
                 trade.exit_tag = exit_tag  # 청산 시그널 태그 (차트 마커용)
                 await session.commit()
 
@@ -2328,6 +2471,55 @@ class BotRunner:
 
         # 기본값
         return "manual_close"
+
+    def _map_to_exit_reason(self, reason_str: str, pnl_percent: float) -> ExitReason:
+        """
+        문자열 exit_reason을 ExitReason enum으로 변환
+
+        Args:
+            reason_str: 전략에서 반환한 청산 사유 문자열
+            pnl_percent: 수익률 (%)
+
+        Returns:
+            ExitReason enum 값
+        """
+        if not reason_str:
+            return ExitReason.manual
+
+        reason_lower = reason_str.lower()
+
+        # Take Profit 관련 키워드
+        if any(kw in reason_lower for kw in [
+            "take_profit", "tp", "익절", "profit", "이익", "take profit"
+        ]):
+            return ExitReason.take_profit
+
+        # Stop Loss 관련 키워드
+        if any(kw in reason_lower for kw in [
+            "stop_loss", "sl", "손절", "stop loss", "stoploss"
+        ]):
+            return ExitReason.stop_loss
+
+        # Liquidation 관련 키워드
+        if any(kw in reason_lower for kw in [
+            "liquidation", "청산", "강제청산", "liq"
+        ]):
+            return ExitReason.liquidation
+
+        # Signal Reverse 관련 키워드
+        if any(kw in reason_lower for kw in [
+            "signal", "reverse", "반전", "시그널", "exit"
+        ]):
+            return ExitReason.signal_reverse
+
+        # PnL 기반 판단
+        if pnl_percent >= 0.5:
+            return ExitReason.take_profit
+        elif pnl_percent <= -0.5:
+            return ExitReason.stop_loss
+
+        # 기본값
+        return ExitReason.manual
 
     # === Signal Validator Helper Methods (Day 3) ===
 
@@ -2427,36 +2619,48 @@ class BotRunner:
 
         시장 환경을 분석하여 Redis에 저장합니다.
         다른 컴포넌트(SignalValidator 등)에서 참조 가능합니다.
+
+        Note: bitget_client가 설정되어 있으면 자동으로 캔들 데이터를 가져옵니다.
         """
         while bot_instance_id in self.instance_tasks:
             try:
+                # MarketRegimeAgent에 설정된 심볼과 타임프레임 사용
+                symbol = self.market_regime.symbol or "BTCUSDT"
+                timeframe = self.market_regime.timeframe or "1h"
+
                 # 시장 환경 분석 태스크 생성
+                # Note: bitget_client가 MarketRegimeAgent에 설정되어 있으면
+                #       _fetch_candles()에서 자동으로 캔들 데이터를 가져옴
                 regime_task = AgentTask(
                     task_id=f"periodic_regime_{datetime.utcnow().timestamp()}",
                     task_type="analyze_market",
                     priority=TaskPriority.NORMAL,
                     params={
-                        "symbol": "BTCUSDT",  # TODO: 봇별 심볼 가져오기
-                        "timeframe": "1h"
+                        "symbol": symbol,
+                        "timeframe": timeframe,
+                        "force_refresh": True  # 주기적 분석은 항상 최신 데이터 사용
                     },
-                    timeout=5.0
+                    timeout=10.0  # 타임아웃 증가 (API 호출 포함)
                 )
 
                 # 에이전트에 태스크 제출
                 await self.market_regime.submit_task(regime_task)
-                await asyncio.sleep(0.1)  # 처리 대기
+                await asyncio.sleep(0.5)  # 처리 대기 (API 호출 포함)
 
                 # 결과 로깅
                 if regime_task.result:
                     regime = regime_task.result
-                    logger.debug(
-                        f"📊 Periodic Market Analysis: "
+                    logger.info(
+                        f"📊 Periodic Market Analysis: {symbol} -> "
                         f"regime={regime.regime_type.value}, "
-                        f"volatility={regime.volatility_level}"
+                        f"volatility={regime.volatility:.2f}%, "
+                        f"confidence={regime.confidence:.2f}"
                     )
+                else:
+                    logger.warning(f"Periodic Market Analysis: No result for {symbol}")
 
             except Exception as e:
-                logger.error(f"Periodic market regime analysis error: {e}")
+                logger.error(f"Periodic market regime analysis error: {e}", exc_info=True)
 
             # 10분 대기
             await asyncio.sleep(600)

@@ -78,6 +78,7 @@ export default function Strategy() {
             items={[
               {
                 key: 'simple',
+                destroyInactive: true,
                 label: (
                   <span>
                     <ThunderboltOutlined />
@@ -92,10 +93,11 @@ export default function Strategy() {
               },
               {
                 key: 'list',
+                destroyInactive: true,
                 label: (
                   <span>
                     <RocketOutlined />
-                    {isMobile ? '전략 목록' : '전략 목록'}
+                    전략 목록
                   </span>
                 ),
                 children: (
@@ -107,6 +109,7 @@ export default function Strategy() {
               },
               {
                 key: 'editor',
+                destroyInactive: true,
                 label: (
                   <span>
                     <EditOutlined />

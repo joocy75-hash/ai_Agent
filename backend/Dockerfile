@@ -24,10 +24,11 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # ========================================
 FROM python:3.11-slim
 
-# Install runtime dependencies
+# Install runtime dependencies (including libgomp for LightGBM)
 RUN apt-get update && apt-get install -y \
     libpq5 \
     curl \
+    libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
 # Create non-root user for security

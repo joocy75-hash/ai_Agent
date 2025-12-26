@@ -6,7 +6,6 @@ import {
   SafetyOutlined,
   PhoneOutlined,
   IdcardOutlined,
-  MailOutlined,
   GoogleOutlined,
   UserAddOutlined,
   LockOutlined,
@@ -321,8 +320,26 @@ export default function Login() {
         registerForm.resetFields();
       }
     } catch (err) {
-      const errorDetail = err.response?.data?.detail;
-      setError(Array.isArray(errorDetail) ? errorDetail.map(e => e.msg).join(', ') : errorDetail || '회원가입 실패');
+      // 다양한 에러 응답 형식 처리
+      const detail = err.response?.data?.detail;
+      const error = err.response?.data?.error;
+
+      let errorMsg = '회원가입 실패';
+
+      if (Array.isArray(detail)) {
+        // Pydantic 검증 에러 (배열)
+        errorMsg = detail.map(e => e.message || e.msg).join(', ');
+      } else if (error?.message) {
+        // 커스텀 에러 응답
+        errorMsg = error.message;
+      } else if (error?.details?.errors) {
+        // 표준화된 에러 응답
+        errorMsg = error.details.errors.map(e => e.message).join(', ');
+      } else if (typeof detail === 'string') {
+        errorMsg = detail;
+      }
+
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -356,7 +373,23 @@ export default function Login() {
     if (value.length === 6) setTimeout(() => handle2FASubmit(), 100);
   };
 
-  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+  // 🔒 SECURITY FIX: API URL 검증 (프로덕션에서 fallback 없음)
+  const API_BASE_URL = (() => {
+    const apiUrl = import.meta.env.VITE_API_URL;
+
+    // 개발 환경에서는 localhost fallback 허용
+    if (import.meta.env.DEV) {
+      return apiUrl || 'http://localhost:8000';
+    }
+
+    // 프로덕션 환경에서는 필수
+    if (!apiUrl) {
+      throw new Error('VITE_API_URL must be set in production environment');
+    }
+
+    return apiUrl;
+  })();
+
   const handleGoogleLogin = () => { window.location.href = `${API_BASE_URL}/auth/google/login`; };
   const handleKakaoLogin = () => { window.location.href = `${API_BASE_URL}/auth/kakao/login`; };
   const openModal = () => { setIsModalOpen(true); setActiveTab('login'); setError(''); };
@@ -369,8 +402,8 @@ export default function Login() {
       children: (
         <>
           <Form form={loginForm} name="login" onFinish={handleLoginSubmit} layout="vertical" size="large">
-            <Form.Item name="email" rules={[{ required: true, message: '이메일 입력' }, { type: 'email', message: '올바른 이메일' }]}>
-              <Input prefix={<MailOutlined style={{ color: '#9ca3af' }} />} placeholder="이메일" style={{ borderRadius: 8, height: 48 }} />
+            <Form.Item name="email" rules={[{ required: true, message: '사용자명을 입력해주세요' }]}>
+              <Input prefix={<IdcardOutlined style={{ color: '#9ca3af' }} />} placeholder="사용자명" style={{ borderRadius: 8, height: 48 }} />
             </Form.Item>
             <Form.Item name="password" rules={[{ required: true, message: '비밀번호 입력' }]}>
               <Input.Password prefix={<LockOutlined style={{ color: '#9ca3af' }} />} placeholder="비밀번호" style={{ borderRadius: 8, height: 48 }} />
@@ -396,7 +429,7 @@ export default function Login() {
               <Divider style={{ margin: '16px 0' }}>테스트 계정 (개발용)</Divider>
               <div style={{ padding: 14, background: '#fff3cd', borderRadius: 8, border: '1px solid #ffc107' }}>
                 <div style={{ marginBottom: 8, color: '#856404', fontSize: 12 }}>⚠️ 개발 환경에서만 표시됩니다</div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}><Text style={{ color: '#86868b', fontSize: 13 }}>이메일:</Text><Text strong copyable style={{ fontSize: 13 }}>admin@admin.com</Text></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}><Text style={{ color: '#86868b', fontSize: 13 }}>사용자명:</Text><Text strong copyable style={{ fontSize: 13 }}>admin</Text></div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}><Text style={{ color: '#86868b', fontSize: 13 }}>비밀번호:</Text><Text strong copyable style={{ fontSize: 13 }}>admin123</Text></div>
               </div>
             </div>
@@ -409,10 +442,26 @@ export default function Login() {
       label: <span><UserAddOutlined /> 회원가입</span>,
       children: (
         <Form form={registerForm} name="register" onFinish={handleRegisterSubmit} layout="vertical" size="large">
-          <Form.Item name="email" rules={[{ required: true }, { type: 'email' }]}><Input prefix={<MailOutlined style={{ color: '#9ca3af' }} />} placeholder="이메일" style={{ borderRadius: 8, height: 48 }} /></Form.Item>
+          <Form.Item name="email" rules={[{ required: true, message: '사용자명을 입력해주세요' }, { min: 4, message: '사용자명은 최소 4자 이상이어야 합니다' }, { max: 20, message: '사용자명은 20자를 초과할 수 없습니다' }, { pattern: /^[a-zA-Z0-9_-]+$/, message: '영문자, 숫자, 밑줄(_), 하이픈(-)만 사용 가능합니다' }]}><Input prefix={<IdcardOutlined style={{ color: '#9ca3af' }} />} placeholder="사용자명 (4-20자)" style={{ borderRadius: 8, height: 48 }} /></Form.Item>
           <Form.Item name="name" rules={[{ required: true }, { min: 2 }]}><Input prefix={<IdcardOutlined style={{ color: '#9ca3af' }} />} placeholder="이름" style={{ borderRadius: 8, height: 48 }} /></Form.Item>
           <Form.Item name="phone" rules={[{ required: true }, { pattern: /^[\d-]+$/ }]}><Input prefix={<PhoneOutlined style={{ color: '#9ca3af' }} />} placeholder="전화번호" style={{ borderRadius: 8, height: 48 }} /></Form.Item>
-          <Form.Item name="password" rules={[{ required: true }, { min: 8 }]}><Input.Password prefix={<LockOutlined style={{ color: '#9ca3af' }} />} placeholder="비밀번호" style={{ borderRadius: 8, height: 48 }} /></Form.Item>
+          <Form.Item
+            name="password"
+            rules={[
+              { required: true, message: '비밀번호를 입력해주세요' },
+              { min: 8, message: '비밀번호는 최소 8자 이상이어야 합니다' },
+              { pattern: /[A-Z]/, message: '대문자를 포함해야 합니다' },
+              { pattern: /[a-z]/, message: '소문자를 포함해야 합니다' },
+              { pattern: /\d/, message: '숫자를 포함해야 합니다' },
+              { pattern: /[@$!%*?&]/, message: '특수문자(@$!%*?&)를 포함해야 합니다' }
+            ]}
+          >
+            <Input.Password
+              prefix={<LockOutlined style={{ color: '#9ca3af' }} />}
+              placeholder="비밀번호 (8자 이상, 대/소문자, 숫자, 특수문자)"
+              style={{ borderRadius: 8, height: 48 }}
+            />
+          </Form.Item>
           <Form.Item name="passwordConfirm" dependencies={['password']} rules={[{ required: true }, ({ getFieldValue }) => ({ validator(_, v) { return !v || getFieldValue('password') === v ? Promise.resolve() : Promise.reject('비밀번호 불일치'); } })]}><Input.Password prefix={<LockOutlined style={{ color: '#9ca3af' }} />} placeholder="비밀번호 확인" style={{ borderRadius: 8, height: 48 }} /></Form.Item>
           {error && activeTab === 'register' && <Alert message={error} type="error" showIcon style={{ marginBottom: 16, borderRadius: 8 }} />}
           <Form.Item><Button type="primary" htmlType="submit" loading={loading} block style={{ height: 48, borderRadius: 24, fontWeight: 600, background: BRAND_COLOR, border: 'none' }}>가입하기</Button></Form.Item>

@@ -7,10 +7,13 @@ DeepSeek AI 서비스
 - API: https://api.deepseek.com/v1/chat/completions
 """
 
+import logging
 import os
 import requests
 from typing import Dict, List, Any, Optional
 from src.config import settings
+
+logger = logging.getLogger(__name__)
 
 
 class DeepSeekAIService:
@@ -32,6 +35,7 @@ class DeepSeekAIService:
         temperature: float = 0.7,
         max_tokens: int = 2000,
         user_id: Optional[int] = None,
+        require_user_id: bool = True,
     ) -> Optional[str]:
         """
         DeepSeek API 요청 (Issue #4: Rate Limiting 추가)
@@ -40,10 +44,18 @@ class DeepSeekAIService:
             messages: API 메시지
             temperature: 온도 설정
             max_tokens: 최대 토큰 수
-            user_id: 사용자 ID (Rate Limiting용, 선택사항)
+            user_id: 사용자 ID (Rate Limiting용)
+            require_user_id: user_id 필수 여부 (기본: True)
         """
         if not self.api_key:
             raise ValueError("DeepSeek API key is not configured")
+
+        # Issue #4: Rate Limiting 우회 방지 - user_id 필수 검증
+        if require_user_id and user_id is None:
+            raise ValueError(
+                "user_id is required for DeepSeek API calls to enforce rate limiting. "
+                "This prevents unlimited API calls and potential cost explosion."
+            )
 
         # Issue #4: Rate Limiting 체크 (user_id가 있는 경우)
         if user_id:
@@ -70,11 +82,13 @@ class DeepSeekAIService:
         }
 
         try:
+            # timeout=(connect_timeout, read_timeout)
+            # connect: 5초 (연결 설정), read: 30초 (응답 대기)
             response = requests.post(
                 f"{self.base_url}/chat/completions",
                 headers=headers,
                 json=payload,
-                timeout=30,
+                timeout=(5, 30),
             )
             response.raise_for_status()
 
@@ -85,7 +99,7 @@ class DeepSeekAIService:
             return None
 
         except Exception as e:
-            print(f"DeepSeek API error: {str(e)}")
+            logger.error(f"DeepSeek API error: {str(e)}")
             raise
 
     def generate_trading_strategies(self) -> List[Dict[str, Any]]:
@@ -139,7 +153,10 @@ Return ONLY the JSON array, no additional text."""
         ]
 
         try:
-            response = self._make_request(messages, temperature=0.8, max_tokens=2000)
+            # generate_trading_strategies는 시스템 초기화 시 호출되므로 rate limit 제외
+            response = self._make_request(
+                messages, temperature=0.8, max_tokens=2000, require_user_id=False
+            )
 
             if response:
                 # JSON 추출 (마크다운 코드 블록 제거)
@@ -168,7 +185,7 @@ Return ONLY the JSON array, no additional text."""
             return self._get_default_strategies()
 
         except Exception as e:
-            print(f"Error generating strategies with AI: {str(e)}")
+            logger.warning(f"Error generating strategies with AI: {str(e)}")
             # AI 실패 시 기본 전략 반환
             return self._get_default_strategies()
 
@@ -355,7 +372,7 @@ Respond with JSON only:"""
             return self._default_hold_signal("AI 응답 파싱 실패")
 
         except Exception as e:
-            print(f"DeepSeek trading signal error: {str(e)}")
+            logger.warning(f"DeepSeek trading signal error: {str(e)}")
             return self._default_hold_signal(f"AI 오류: {str(e)}")
 
     def _calculate_rsi(self, closes: List[float], period: int = 14) -> float:
@@ -415,7 +432,10 @@ Keep the response concise and in Korean."""
         ]
 
         try:
-            response = self._make_request(messages, temperature=0.7, max_tokens=1000)
+            # analyze_market은 내부 분석용으로 rate limit 제외
+            response = self._make_request(
+                messages, temperature=0.7, max_tokens=1000, require_user_id=False
+            )
             return response or "시장 분석을 수행할 수 없습니다."
         except Exception as e:
             return f"시장 분석 중 오류 발생: {str(e)}"

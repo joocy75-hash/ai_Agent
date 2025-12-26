@@ -60,17 +60,27 @@ export default function TradingHistory() {
             const ordersData = response.trades || response.orders || [];
 
             // 데이터 형식 변환 (백엔드 응답 → 프론트엔드 형식)
-            const formattedOrders = ordersData.map(order => ({
-                order_id: order.id?.toString() || order.order_id || `order_${Date.now()}`,
-                symbol: order.symbol || order.pair || 'Unknown',
-                side: order.side?.toLowerCase() || 'unknown',
-                status: order.status?.toLowerCase() || 'filled',
-                price: parseFloat(order.entry || order.price || 0),
-                amount: parseFloat(order.size || order.amount || order.qty || 0),
-                profit: parseFloat(order.pnl?.replace(/[+%]/g, '') || 0),
-                fee: parseFloat(order.fee || 0),
-                timestamp: order.time || order.timestamp || new Date().toISOString(),
-            }));
+            const formattedOrders = ordersData.map(order => {
+                // pnl 값 파싱: 숫자면 그대로, 문자열이면 replace 후 파싱
+                let profitValue = 0;
+                if (typeof order.pnl === 'number') {
+                    profitValue = order.pnl;
+                } else if (typeof order.pnl === 'string') {
+                    profitValue = parseFloat(order.pnl.replace(/[+%]/g, '') || 0);
+                }
+
+                return {
+                    order_id: order.id?.toString() || order.order_id || `order_${Date.now()}`,
+                    symbol: order.symbol || order.pair || 'Unknown',
+                    side: order.side?.toLowerCase() || 'unknown',
+                    status: order.status?.toLowerCase() || 'filled',
+                    price: parseFloat(order.entry || order.price || 0),
+                    amount: parseFloat(order.size || order.amount || order.qty || 0),
+                    profit: profitValue,
+                    fee: parseFloat(order.fee || 0),
+                    timestamp: order.time || order.timestamp || new Date().toISOString(),
+                };
+            });
 
             setOrders(formattedOrders);
             calculateStatistics(formattedOrders);

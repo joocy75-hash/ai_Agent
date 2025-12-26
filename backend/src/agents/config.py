@@ -140,45 +140,56 @@ def set_agent_config(config: AgentSystemConfig):
     _global_config = config
 
 
-# 기본 에이전트별 설정
+# 기본 에이전트별 설정 (선물거래 최적화 - 비용 효율 + 에러 대응)
+# 여러 사용자 동시 사용 고려: 심볼별 캐싱으로 중복 호출 방지
 DEFAULT_AGENT_CONFIGS = {
     AgentType.MARKET_ANALYZER: {
         "enabled": True,
-        "interval": 60.0,  # 60초마다 시장 분석
+        "interval": 15.0,  # 15초마다 시장 분석 (비용 vs 속도 균형)
         "symbols": ["BTCUSDT", "ETHUSDT"],
-        "timeframes": ["1m", "5m", "15m", "1h"],
-        "max_concurrent_analysis": 4,
+        "timeframes": ["5m", "15m", "1h"],  # 1m 제외 (노이즈 감소)
+        "max_concurrent_analysis": 4,  # 동시 분석 (서버 부하 고려)
+        "cache_ttl_seconds": 15,  # 15초 캐시 (같은 심볼 중복 호출 방지)
+        "fallback_to_rules": True,  # AI 에러 시 규칙 기반으로 대체
     },
     AgentType.SIGNAL_GENERATOR: {
         "enabled": True,
-        "interval": 30.0,  # 30초마다 시그널 생성
-        "min_confidence": 0.7,
-        "max_signals_per_hour": 10,
+        "interval": 15.0,  # 15초마다 시그널 생성 (시장 분석과 동기화)
+        "min_confidence": 0.65,  # 신뢰도 기준 (선물 최적화)
+        "max_signals_per_hour": 20,  # 시간당 신호 (과도한 거래 방지)
+        "require_ai_confirmation": True,  # AI 확인 필수 (정확도 우선)
     },
     AgentType.RISK_MANAGER: {
         "enabled": True,
-        "interval": 10.0,  # 10초마다 리스크 체크
-        "max_drawdown_percent": 10.0,
-        "max_position_size_percent": 20.0,
-        "daily_loss_limit": 1000.0,  # USDT
+        "interval": 5.0,  # 5초마다 리스크 체크 (규칙 기반 - AI 호출 X)
+        "max_drawdown_percent": 8.0,  # 선물: 엄격한 드로다운 관리
+        "max_position_size_percent": 40.0,  # ETH 40% 전략과 일치
+        "daily_loss_limit": 500.0,  # USDT
+        "liquidation_warning_percent": 5.0,  # 청산가 5% 이내 경고
+        "use_ai": False,  # 리스크 체크는 규칙 기반 (비용 절감)
     },
     AgentType.PORTFOLIO_OPTIMIZER: {
         "enabled": True,
-        "interval": 300.0,  # 5분마다 포트폴리오 최적화
+        "interval": 120.0,  # 2분마다 포트폴리오 최적화 (비용 효율)
         "rebalance_threshold": 0.05,  # 5% 이상 차이나면 리밸런싱
+        "leverage_adjustment": True,  # 레버리지 동적 조절 활성화
+        "use_ai": True,  # AI 분석 필요
     },
     AgentType.ALERT_NOTIFIER: {
         "enabled": True,
-        "interval": 5.0,  # 5초마다 알림 체크
+        "interval": 3.0,  # 3초마다 알림 체크
         "channels": ["telegram", "websocket"],
-        "rate_limit": 60,  # 분당 최대 알림 수
+        "rate_limit": 60,  # 분당 최대 알림 수 (스팸 방지)
+        "priority_alerts": ["liquidation_risk", "stop_loss", "take_profit"],
+        "use_ai": False,  # 알림은 규칙 기반
     },
     AgentType.DATA_COLLECTOR: {
         "enabled": True,
-        "interval": 1.0,  # 1초마다 데이터 수집
+        "interval": 1.0,  # 1초마다 데이터 수집 (유지)
         "symbols": ["BTCUSDT", "ETHUSDT"],
         "save_to_redis": True,
         "save_to_db": False,  # DB 부하 방지
+        "use_ai": False,  # 데이터 수집은 AI 불필요
     },
 }
 

@@ -498,17 +498,24 @@ async def user_socket(websocket: WebSocket, user_id: int, token: str = Query(...
                 if not message or message.strip() == "":
                     continue
 
+                # Handle ping/pong keepalive (plain text)
+                if message.strip().lower() == "ping":
+                    await websocket.send_text("pong")
+                    continue
+
                 # Parse JSON
                 import json
                 try:
                     data = json.loads(message)
                 except json.JSONDecodeError as e:
-                    logger.warning(f"Invalid JSON from user {user_id}: {e}, message: {message[:100]}")
-                    await websocket.send_json({
-                        "type": "error",
-                        "message": "Invalid JSON format",
-                        "timestamp": datetime.utcnow().isoformat() + "Z",
-                    })
+                    # Only log non-ping messages as warnings
+                    if message.strip().lower() not in ["ping", "pong"]:
+                        logger.warning(f"Invalid JSON from user {user_id}: {e}, message: {message[:100]}")
+                        await websocket.send_json({
+                            "type": "error",
+                            "message": "Invalid JSON format",
+                            "timestamp": datetime.utcnow().isoformat() + "Z",
+                        })
                     continue
 
             except WebSocketDisconnect:

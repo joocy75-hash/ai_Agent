@@ -338,19 +338,143 @@ class TelegramBotHandler:
 
         await self._send_message(chat_id, msg)
 
+    async def _get_user_by_chat_id(self, session, chat_id: int):
+        """텔레그램 chat_id로 사용자 찾기"""
+        from ...database.models import UserSettings
+        from ...utils.crypto_secrets import decrypt_secret
+        from sqlalchemy import select
+
+        # 모든 UserSettings 조회하여 chat_id 매칭
+        result = await session.execute(
+            select(UserSettings).where(
+                UserSettings.encrypted_telegram_chat_id.isnot(None)
+            )
+        )
+        all_settings = result.scalars().all()
+
+        for settings in all_settings:
+            try:
+                decrypted_chat_id = decrypt_secret(settings.encrypted_telegram_chat_id)
+                if decrypted_chat_id and str(chat_id) == decrypted_chat_id:
+                    return settings.user_id
+            except Exception:
+                continue
+
+        return None
+
     async def handle_balance(self, chat_id: int):
-        """잔고 조회 (안내 메시지)"""
-        # 잔고는 사용자별 API 키가 필요하므로 안내 메시지만 표시
-        msg = """💵 <b>잔고 현황</b>
+        """잔고 조회 (실제 거래소 API 연동)"""
+        try:
+            from ...database.models import ApiKey
+            from ...utils.crypto_secrets import decrypt_secret
+            from ...services.bitget_rest import BitgetRestClient
+            from sqlalchemy import select
+
+            async with await self._get_db_session() as session:
+                # 1. chat_id로 user_id 찾기
+                user_id = await self._get_user_by_chat_id(session, chat_id)
+
+                if not user_id:
+                    msg = """💵 <b>잔고 현황</b>
 
 ━━━━━━━━━━━━━━━━━━━━━
-⚠️ 텔레그램에서 잔고를 조회하려면
-대시보드에서 Telegram Chat ID를 
-계정에 연동해야 합니다.
+⚠️ 텔레그램 계정이 연동되지 않았습니다.
 
+대시보드에서 Telegram 설정을 완료해주세요:
 💡 대시보드 → 설정 → Telegram 연동
 
 ⏰ """ + datetime.now().strftime("%H:%M:%S")
+                    await self._send_message(chat_id, msg)
+                    return
+
+                # 2. user_id로 API 키 조회
+                result = await session.execute(
+                    select(ApiKey).where(ApiKey.user_id == user_id)
+                )
+                api_key_obj = result.scalars().first()
+
+                if not api_key_obj:
+                    msg = """💵 <b>잔고 현황</b>
+
+━━━━━━━━━━━━━━━━━━━━━
+⚠️ 거래소 API 키가 설정되지 않았습니다.
+
+대시보드에서 API 키를 등록해주세요:
+💡 대시보드 → 설정 → API 키 등록
+
+⏰ """ + datetime.now().strftime("%H:%M:%S")
+                    await self._send_message(chat_id, msg)
+                    return
+
+                # 3. 거래소 API로 잔고 조회
+                api_key = decrypt_secret(api_key_obj.encrypted_api_key)
+                api_secret = decrypt_secret(api_key_obj.encrypted_secret_key)
+                passphrase = (
+                    decrypt_secret(api_key_obj.encrypted_passphrase)
+                    if api_key_obj.encrypted_passphrase
+                    else ""
+                )
+
+                client = BitgetRestClient(
+                    api_key=api_key,
+                    api_secret=api_secret,
+                    passphrase=passphrase,
+                )
+
+                try:
+                    # 선물 계좌 정보 조회
+                    account_info = await client.get_account_info(product_type="USDT-FUTURES")
+
+                    # API 응답이 직접 배열이거나 data 키 안에 배열일 수 있음
+                    accounts = (
+                        account_info
+                        if isinstance(account_info, list)
+                        else account_info.get("data", []) if isinstance(account_info, dict) else []
+                    )
+
+                    if accounts and len(accounts) > 0:
+                        acc = accounts[0]
+                        # Bitget API 필드명
+                        equity = float(acc.get("accountEquity", 0) or acc.get("equity", 0))
+                        available = float(acc.get("available", 0) or acc.get("crossedMaxAvailable", 0))
+                        used = float(acc.get("locked", 0) or acc.get("crossedMargin", 0))
+                        unrealized_pnl = float(acc.get("unrealizedPL", 0) or acc.get("crossedUnrealizedPL", 0))
+
+                        pnl_emoji = "📈" if unrealized_pnl >= 0 else "📉"
+
+                        msg = f"""💵 <b>잔고 현황</b>
+
+━━━━━━━━━━━━━━━━━━━━━
+• 총 자산: {equity:,.2f} USDT
+• 가용 잔고: {available:,.2f} USDT
+• 사용 중: {used:,.2f} USDT
+• 미실현 손익: {pnl_emoji} {unrealized_pnl:+,.2f} USDT
+
+💡 Bitget USDT-Futures
+⏰ {datetime.now().strftime("%H:%M:%S")}"""
+                    else:
+                        msg = """💵 <b>잔고 현황</b>
+
+━━━━━━━━━━━━━━━━━━━━━
+⚠️ 잔고 정보를 가져올 수 없습니다.
+거래소 API 키를 확인해주세요.
+
+⏰ """ + datetime.now().strftime("%H:%M:%S")
+
+                finally:
+                    await client.close()
+
+        except Exception as e:
+            logger.error(f"잔고 조회 실패: {e}", exc_info=True)
+            msg = f"""💵 <b>잔고 현황</b>
+
+━━━━━━━━━━━━━━━━━━━━━
+⚠️ 잔고 조회 중 오류가 발생했습니다.
+
+{str(e)[:50]}...
+
+⏰ {datetime.now().strftime("%H:%M:%S")}"""
+
         await self._send_message(chat_id, msg)
 
     async def handle_status(self, chat_id: int):
@@ -409,41 +533,116 @@ class TelegramBotHandler:
         await self._send_message(chat_id, msg)
 
     async def handle_status_table(self, chat_id: int):
-        """상태 테이블"""
+        """상태 테이블 (사용자별 + 거래소 실시간 포지션)"""
         try:
-            from ...database.models import Position
+            from ...database.models import ApiKey
+            from ...utils.crypto_secrets import decrypt_secret
+            from ...services.bitget_rest import BitgetRestClient
             from sqlalchemy import select
 
             async with await self._get_db_session() as session:
-                result = await session.execute(select(Position))
-                positions = result.scalars().all()
+                # 1. chat_id로 user_id 찾기
+                user_id = await self._get_user_by_chat_id(session, chat_id)
 
-                if positions:
-                    pos_lines = []
-                    for p in positions[:5]:  # 최대 5개만 표시
-                        pnl = float(p.unrealized_pnl or 0)
-                        emoji = "📈" if pnl >= 0 else "📉"
-                        pos_lines.append(
-                            f"• {p.symbol} | {p.side} | {emoji} {pnl:+.2f}"
-                        )
-                    pos_text = "\n".join(pos_lines)
-                    if len(positions) > 5:
-                        pos_text += f"\n... 외 {len(positions) - 5}개"
-                else:
-                    pos_text = "현재 열린 포지션이 없습니다."
+                if not user_id:
+                    msg = """📋 <b>포지션 상태표</b>
 
-                msg = f"""📋 <b>포지션 상태표</b>
+━━━━━━━━━━━━━━━━━━━━━
+⚠️ 텔레그램 계정이 연동되지 않았습니다.
+
+💡 대시보드 → 설정 → Telegram 연동
+
+⏰ """ + datetime.now().strftime("%H:%M:%S")
+                    await self._send_message(chat_id, msg)
+                    return
+
+                # 2. user_id로 API 키 조회
+                result = await session.execute(
+                    select(ApiKey).where(ApiKey.user_id == user_id)
+                )
+                api_key_obj = result.scalars().first()
+
+                if not api_key_obj:
+                    msg = """📋 <b>포지션 상태표</b>
+
+━━━━━━━━━━━━━━━━━━━━━
+⚠️ 거래소 API 키가 설정되지 않았습니다.
+
+💡 대시보드 → 설정 → API 키 등록
+
+⏰ """ + datetime.now().strftime("%H:%M:%S")
+                    await self._send_message(chat_id, msg)
+                    return
+
+                # 3. 거래소에서 실시간 포지션 조회
+                api_key = decrypt_secret(api_key_obj.encrypted_api_key)
+                api_secret = decrypt_secret(api_key_obj.encrypted_secret_key)
+                passphrase = (
+                    decrypt_secret(api_key_obj.encrypted_passphrase)
+                    if api_key_obj.encrypted_passphrase
+                    else ""
+                )
+
+                client = BitgetRestClient(
+                    api_key=api_key,
+                    api_secret=api_secret,
+                    passphrase=passphrase,
+                )
+
+                try:
+                    positions = await client.get_positions(product_type="USDT-FUTURES")
+
+                    # 실제 포지션만 필터링 (size > 0)
+                    active_positions = [
+                        p for p in positions
+                        if float(p.get("total", 0) or p.get("available", 0)) > 0
+                    ]
+
+                    if active_positions:
+                        pos_lines = []
+                        for p in active_positions[:5]:
+                            symbol = p.get("symbol", "").replace("USDT", "")
+                            side = p.get("holdSide", "").upper()
+                            size = float(p.get("total", 0) or p.get("available", 0))
+                            entry = float(p.get("openPriceAvg", 0) or p.get("averageOpenPrice", 0))
+                            pnl = float(p.get("unrealizedPL", 0) or 0)
+                            leverage = p.get("leverage", 1)
+
+                            emoji = "📈" if pnl >= 0 else "📉"
+                            side_emoji = "🟢" if side == "LONG" else "🔴"
+
+                            pos_lines.append(
+                                f"{side_emoji} {symbol} {side}\n"
+                                f"   수량: {size:.4f} | {leverage}x\n"
+                                f"   진입가: ${entry:,.2f}\n"
+                                f"   {emoji} PnL: {pnl:+,.2f} USDT"
+                            )
+
+                        pos_text = "\n\n".join(pos_lines)
+                        if len(active_positions) > 5:
+                            pos_text += f"\n\n... 외 {len(active_positions) - 5}개"
+                    else:
+                        pos_text = "현재 열린 포지션이 없습니다."
+
+                    msg = f"""📋 <b>포지션 상태표</b>
 
 ━━━━━━━━━━━━━━━━━━━━━
 {pos_text}
 
+💡 Bitget USDT-Futures (실시간)
 ⏰ {datetime.now().strftime("%H:%M:%S")}"""
 
+                finally:
+                    await client.close()
+
         except Exception as e:
-            logger.error(f"포지션 조회 실패: {e}")
+            logger.error(f"포지션 조회 실패: {e}", exc_info=True)
             msg = f"""📋 <b>포지션 상태표</b>
 
+━━━━━━━━━━━━━━━━━━━━━
 ⚠️ 조회 중 오류가 발생했습니다.
+
+{str(e)[:50]}...
 
 ⏰ {datetime.now().strftime("%H:%M:%S")}"""
 

@@ -6,7 +6,7 @@ AI Cost Optimization (AI 비용 최적화)
 
 from .prompt_cache import PromptCacheManager
 from .response_cache import ResponseCacheManager
-from .smart_sampling import SmartSamplingManager, SamplingStrategy
+from .smart_sampling import SmartSamplingManager, SamplingStrategy, get_global_sampling_manager
 from .cost_tracker import CostTracker
 from .event_driven_optimizer import (
     EventDrivenOptimizer,
@@ -22,6 +22,7 @@ __all__ = [
     "ResponseCacheManager",
     "SmartSamplingManager",
     "SamplingStrategy",
+    "get_global_sampling_manager",
     "CostTracker",
     "EventDrivenOptimizer",
     "MarketEvent",

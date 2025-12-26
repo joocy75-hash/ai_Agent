@@ -53,6 +53,11 @@ async def validate_order_request(
 
         # 1. 레버리지 검증
         if leverage > max_leverage:
+            # 🔒 SECURITY AUDIT: 레버리지 제한 초과 시도
+            logger.warning(
+                f"🔒 SECURITY AUDIT: User {user_id} attempted to use leverage {leverage}x "
+                f"(max allowed: {max_leverage}x) for {symbol}"
+            )
             return (
                 False,
                 f"레버리지가 최대 허용값({max_leverage}배)을 초과합니다. 요청: {leverage}배",
@@ -67,6 +72,11 @@ async def validate_order_request(
         current_positions = position_count_result.scalar() or 0
 
         if current_positions >= max_positions:
+            # 🔒 SECURITY AUDIT: 최대 포지션 수 초과 시도
+            logger.warning(
+                f"🔒 SECURITY AUDIT: User {user_id} attempted to exceed max positions "
+                f"(current: {current_positions}, max: {max_positions}) for {symbol}"
+            )
             return (
                 False,
                 f"최대 포지션 수({max_positions}개)에 도달했습니다. 현재: {current_positions}개",
@@ -108,10 +118,10 @@ async def validate_order_request(
         return True, None
 
     except Exception as e:
-        logger.error(f"[OrderValidation] Validation error: {e}")
-        # 검증 로직 에러 시에도 주문은 진행 (가용성 우선)
-        # 단, 로깅으로 추적 가능하도록 함
-        return True, None
+        logger.error(f"[OrderValidation] Critical validation error: {e}", exc_info=True)
+        # 🔒 SECURITY FIX: 검증 로직 에러 시 주문을 거부하여 안전성 우선
+        # 시스템 오류 시 위험한 주문이 실행되는 것을 방지
+        return False, "주문 검증 실패: 시스템 오류가 발생했습니다. 잠시 후 다시 시도해주세요."
 
 
 class ClosePositionRequest(BaseModel):
@@ -175,9 +185,12 @@ async def order_history(
                 "size": str(trade.qty),
                 "entry": float(trade.entry_price),
                 "exit": float(trade.exit_price) if trade.exit_price else None,
-                "pnl": f"{float(trade.pnl):+.2f}%",
+                "price": float(trade.entry_price),  # For dashboard compatibility
+                "timestamp": int(trade.created_at.timestamp() * 1000),  # Milliseconds for JavaScript
+                "pnl": float(trade.pnl_percent) if trade.pnl_percent is not None else 0.0,  # Numeric value
+                "pnl_text": f"{float(trade.pnl_percent):+.2f}%" if trade.pnl_percent is not None else "0.00%",
                 "time": trade.created_at.isoformat(),
-                "status": "Closed",
+                "status": "Closed" if trade.exit_price else "Open",
             }
             for trade in trades
         ],

@@ -25,7 +25,7 @@ async def register(
     """사용자 회원가입 및 JWT 토큰 발급
 
     필수 필드:
-    - email: 이메일 주소
+    - email: 사용자명/ID (4-20자, 영문자/숫자/밑줄(_)/하이픈(-) 허용)
     - password: 비밀번호 (최소 8자, 대/소문자, 숫자, 특수문자 포함)
     - password_confirm: 비밀번호 확인
     - name: 이름 (2-50자)

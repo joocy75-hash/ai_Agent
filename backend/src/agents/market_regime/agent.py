@@ -12,14 +12,63 @@ AI Enhancement:
 import logging
 import asyncio
 import json
-from typing import Any, Optional
+import threading
+import time
+from typing import Any, Optional, Dict
 from datetime import datetime
 
 from ..base import BaseAgent, AgentTask
 from .models import MarketRegime, RegimeType
 from .indicators import RegimeIndicators
+from src.ml.models import EnsemblePredictor
+from src.ml.features import FeaturePipeline
 
 logger = logging.getLogger(__name__)
+
+# 글로벌 심볼별 Market Regime 캐시 (Issue #4: 모든 사용자 공유)
+_market_regime_cache: Dict[str, dict] = {}
+_cache_lock = threading.Lock()
+_CACHE_TTL_SECONDS = 45  # 45초 캐시 유효
+
+
+def get_cached_market_regime(symbol: str) -> Optional[MarketRegime]:
+    """
+    캐시된 market regime 결과 반환
+
+    Issue #4: 동일 심볼은 모든 사용자에게 동일한 시장 환경이므로 캐시 공유
+
+    Args:
+        symbol: 거래 심볼 (예: ETHUSDT)
+
+    Returns:
+        MarketRegime 또는 None (캐시 만료/미존재)
+    """
+    with _cache_lock:
+        if symbol in _market_regime_cache:
+            cached = _market_regime_cache[symbol]
+            if time.time() - cached['timestamp'] < _CACHE_TTL_SECONDS:
+                logger.debug(f"♻️ Cache hit for market regime: {symbol}")
+                return cached['result']
+            else:
+                # 캐시 만료
+                del _market_regime_cache[symbol]
+    return None
+
+
+def set_market_regime_cache(symbol: str, result: MarketRegime):
+    """
+    market regime 결과 캐시 저장
+
+    Args:
+        symbol: 거래 심볼
+        result: MarketRegime 결과
+    """
+    with _cache_lock:
+        _market_regime_cache[symbol] = {
+            'result': result,
+            'timestamp': time.time()
+        }
+        logger.debug(f"📦 Cached market regime for {symbol}: {result.regime_type.value}")
 
 
 class MarketRegimeAgent(BaseAgent):
@@ -62,6 +111,11 @@ class MarketRegimeAgent(BaseAgent):
         self.redis_client = redis_client
         self.ai_service = ai_service  # IntegratedAIService
 
+        # ML 통합
+        self.ml_predictor = EnsemblePredictor()
+        self.feature_pipeline = FeaturePipeline()
+        self.enable_ml = config.get("enable_ml", True) if config else True
+
         # 설정 (config에서 가져오거나 기본값)
         self.symbol = config.get("symbol", "BTCUSDT") if config else "BTCUSDT"
         self.timeframe = config.get("timeframe", "1h") if config else "1h"
@@ -76,7 +130,7 @@ class MarketRegimeAgent(BaseAgent):
 
         logger.info(
             f"MarketRegimeAgent initialized: {self.symbol} @ {self.timeframe}, "
-            f"candle_limit={self.candle_limit}, AI={self.enable_ai}"
+            f"candle_limit={self.candle_limit}, AI={self.enable_ai}, ML={self.enable_ml}"
         )
 
     async def process_task(self, task: AgentTask) -> Any:
@@ -123,6 +177,8 @@ class MarketRegimeAgent(BaseAgent):
             params: {
                 "symbol": str (optional),
                 "timeframe": str (optional),
+                "exchange": BitgetRestClient (optional - 캔들 데이터 조회용),
+                "candles": list (optional - 캔들 데이터 직접 전달),
                 "force_refresh": bool (optional)
             }
 
@@ -132,12 +188,44 @@ class MarketRegimeAgent(BaseAgent):
         symbol = params.get("symbol", self.symbol)
         timeframe = params.get("timeframe", self.timeframe)
         force_refresh = params.get("force_refresh", False)
+        exchange = params.get("exchange")  # 외부에서 전달된 exchange 클라이언트
+        direct_candles = params.get("candles")  # 직접 전달된 캔들 데이터
+
+        # Issue #4: 글로벌 캐시 확인 (모든 사용자 공유)
+        if not force_refresh:
+            cached_regime = get_cached_market_regime(symbol)
+            if cached_regime is not None:
+                logger.info(f"⏭️ Using cached market regime for {symbol}: {cached_regime.regime_type.value}")
+                self._current_regime = cached_regime
+                return cached_regime
 
         logger.info(f"📊 Analyzing market regime: {symbol} @ {timeframe}")
 
-        # 1. 캔들 데이터 가져오기
+        # 1. 캔들 데이터 가져오기 (우선순위: 직접 전달 > exchange > 내부 클라이언트)
         try:
-            candles = await self._fetch_candles(symbol, timeframe, force_refresh)
+            candles = None
+
+            # 1-1. 직접 전달된 캔들 데이터 사용
+            if direct_candles and len(direct_candles) >= 50:
+                candles = direct_candles
+                logger.debug(f"✅ Using {len(candles)} directly provided candles")
+
+            # 1-2. 외부 exchange 클라이언트로 가져오기
+            elif exchange:
+                try:
+                    candles = await exchange.get_historical_candles(
+                        symbol=symbol,
+                        interval=timeframe,
+                        limit=self.candle_limit
+                    )
+                    if candles:
+                        logger.debug(f"✅ Got {len(candles)} candles from provided exchange")
+                except Exception as e:
+                    logger.warning(f"Failed to fetch from provided exchange: {e}")
+
+            # 1-3. 내부 클라이언트/캐시로 가져오기
+            if not candles or len(candles) < 50:
+                candles = await self._fetch_candles(symbol, timeframe, force_refresh)
 
             if not candles or len(candles) < 50:
                 logger.warning(
@@ -204,9 +292,48 @@ class MarketRegimeAgent(BaseAgent):
             avg_volume=avg_volume
         )
 
-        # 4.5. AI 기반 분석 (선택적)
+        # 4.5. ML 기반 변동성 검증 (선택적)
+        ml_volatility_check = None
+        ml_confidence_boost = 0.0
+
+        if self.enable_ml and self.ml_predictor:
+            try:
+                # 피처 추출
+                features_df = self.feature_pipeline.extract_features(
+                    candles_5m=candles,
+                    symbol=symbol
+                )
+
+                if not features_df.empty:
+                    # ML 예측
+                    ml_prediction = self.ml_predictor.predict(
+                        features=features_df,
+                        symbol=symbol,
+                        rule_based_signal=regime_type.value
+                    )
+
+                    ml_volatility_check = ml_prediction.volatility
+
+                    # ML과 규칙 기반 변동성 판단이 일치하면 신뢰도 향상
+                    if regime_type == RegimeType.VOLATILE and ml_volatility_check.level.value in ["high", "extreme"]:
+                        ml_confidence_boost = 0.1
+                        logger.info(f"🔬 ML confirms VOLATILE regime (level: {ml_volatility_check.level.value}, boost: +{ml_confidence_boost:.2f})")
+                    elif regime_type == RegimeType.LOW_VOLUME and ml_volatility_check.level.value == "low":
+                        ml_confidence_boost = 0.05
+                        logger.info(f"🔬 ML confirms LOW_VOLUME regime (boost: +{ml_confidence_boost:.2f})")
+
+                    logger.debug(
+                        f"🔬 ML Volatility: {ml_volatility_check.level.value}, "
+                        f"ATR ratio: {ml_volatility_check.atr_ratio:.2f}, "
+                        f"risk_score: {ml_volatility_check.risk_score:.0f}"
+                    )
+
+            except Exception as e:
+                logger.warning(f"ML volatility check failed: {e}")
+
+        # 4.6. AI 기반 분석 (선택적)
         ai_regime_type = regime_type
-        ai_confidence = confidence
+        ai_confidence = confidence + ml_confidence_boost  # ML 신뢰도 추가
 
         if self.enable_ai and self.ai_service:
             try:
@@ -231,11 +358,11 @@ class MarketRegimeAgent(BaseAgent):
 
                 if ai_result:
                     ai_regime_type = ai_result.get("regime_type", regime_type)
-                    ai_confidence = ai_result.get("confidence", confidence)
+                    ai_confidence = ai_result.get("confidence", confidence) + ml_confidence_boost
 
                     logger.info(
                         f"🤖 AI Analysis: {symbol} -> {ai_regime_type.value if hasattr(ai_regime_type, 'value') else ai_regime_type} "
-                        f"(rule: {regime_type.value}, AI conf: {ai_confidence:.2f})"
+                        f"(rule: {regime_type.value}, AI conf: {ai_confidence:.2f}, ML boost: +{ml_confidence_boost:.2f})"
                     )
 
             except Exception as e:
@@ -252,8 +379,10 @@ class MarketRegimeAgent(BaseAgent):
             resistance_level=resistance
         )
 
-        # 6. 현재 환경 저장 (메모리)
+        # 6. 현재 환경 저장 (메모리 + 글로벌 캐시)
         self._current_regime = regime
+        # Issue #4: 글로벌 캐시에 저장 (모든 사용자 공유)
+        set_market_regime_cache(symbol, regime)
 
         # 7. Redis에 저장
         if self.redis_client:
@@ -509,13 +638,17 @@ Provide your AI-based market regime analysis. Return JSON only:"""
             if json_match:
                 ai_analysis = json.loads(json_match.group())
 
-                regime_str = ai_analysis.get("regime_type", "UNKNOWN").upper()
+                regime_str = ai_analysis.get("regime_type", "UNKNOWN")
                 ai_confidence = float(ai_analysis.get("confidence", 0.5))
 
-                # RegimeType으로 변환
+                # RegimeType으로 변환 (대문자/소문자 모두 처리)
                 try:
-                    ai_regime = RegimeType(regime_str)
+                    # AI 응답은 대문자일 수 있으므로 소문자로 변환
+                    regime_str_lower = regime_str.lower()
+                    ai_regime = RegimeType(regime_str_lower)
+                    logger.debug(f"AI regime parsed: {regime_str} -> {ai_regime.value}")
                 except ValueError:
+                    logger.warning(f"Unknown regime type from AI: {regime_str}, using rule-based result")
                     ai_regime = RegimeType.UNKNOWN
 
                 logger.debug(
@@ -556,6 +689,26 @@ Provide your AI-based market regime analysis. Return JSON only:"""
     def get_current_regime(self) -> Optional[MarketRegime]:
         """현재 시장 환경 조회 (메모리)"""
         return self._current_regime
+
+    async def analyze_market_realtime(self, params: dict) -> MarketRegime:
+        """
+        실시간 시장 환경 분석 (Public 메서드)
+
+        전략에서 직접 호출할 수 있는 public wrapper 메서드.
+        내부적으로 _analyze_market_realtime()을 호출합니다.
+
+        Args:
+            params: {
+                "symbol": str (optional),
+                "timeframe": str (optional),
+                "candles": list (optional - 캔들 데이터 직접 전달),
+                "force_refresh": bool (optional)
+            }
+
+        Returns:
+            MarketRegime 객체
+        """
+        return await self._analyze_market_realtime(params)
 
     async def run_periodic_analysis(self, interval_seconds: int = 60):
         """

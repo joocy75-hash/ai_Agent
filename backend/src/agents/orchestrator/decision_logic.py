@@ -124,13 +124,8 @@ class OrchestrationDecisionLogic:
 
         elif severity == "high":
             # HIGH → 사용자 설정: 즉시 봇 중지 (안전 우선)
-            # 타입별 세부 대응
-            if anomaly_type in ["excessive_trading", "api_error_spike", "bot_stuck"]:
-                return "emergency_stop"  # 봇 오작동 → 중지 (사용자 선택)
-            elif anomaly_type in ["flash_crash", "extreme_funding"]:
-                return "emergency_stop"  # 시장 이상 → 즉시 중지 (사용자 선택: API 오류율 30% 시 즉시 중지)
-            else:
-                return "emergency_stop"  # 기타 HIGH도 즉시 중지
+            # 모든 HIGH 심각도 이상 징후는 즉시 중지
+            return "emergency_stop"
 
         elif severity == "medium":
             # MEDIUM → 모니터링 강화

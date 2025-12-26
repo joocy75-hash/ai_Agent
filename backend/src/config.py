@@ -101,10 +101,14 @@ class Settings(BaseModel):
     database_url: str = os.getenv(
         "DATABASE_URL", "postgresql+asyncpg://user:password@localhost:5432/trading"
     )
-    jwt_secret: str = os.getenv("JWT_SECRET", "")  # ⚠️ 프로덕션에서 반드시 설정 필요
+    # JWT_SECRET: 프로덕션에서 필수, 최소 32자 이상 권장
+    jwt_secret: str = os.getenv("JWT_SECRET", "")
     jwt_algorithm: str = "HS256"
     jwt_expires_seconds: int = 60 * 60 * 24
     deepseek_api_key: str = os.getenv("DEEPSEEK_API_KEY", "")
+    gemini_api_key: str = os.getenv("GEMINI_API_KEY", "")
+    # AI Provider: "gemini" or "deepseek" (기본값: deepseek - Rate Limit 없음)
+    ai_provider: str = os.getenv("AI_PROVIDER", "deepseek")
     host: str = os.getenv("HOST", "0.0.0.0")
     port: int = int(os.getenv("PORT", "8000"))
     # CORS 설정: 쉼표로 구분된 허용 도메인 목록 (예: "https://example.com,https://app.example.com")
@@ -126,6 +130,10 @@ class Settings(BaseModel):
 
     # Frontend URL (OAuth 후 리다이렉트)
     frontend_url: str = os.getenv("FRONTEND_URL", "http://localhost:5173")
+
+    def is_jwt_secret_secure(self) -> bool:
+        """JWT Secret이 보안 요구사항을 충족하는지 확인 (최소 32자)"""
+        return len(self.jwt_secret) >= 32
 
 
 settings = Settings()

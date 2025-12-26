@@ -92,8 +92,25 @@ class BitgetRestClient:
         }
 
     async def _ensure_session(self):
-        """aiohttp 세션 생성 (없으면)"""
-        if self.session is None or self.session.closed:
+        """aiohttp 세션 생성 (없거나 다른 루프에 연결된 경우)"""
+        import asyncio
+
+        current_loop = asyncio.get_running_loop()
+
+        # 세션이 없거나, 닫혔거나, 다른 루프에 연결된 경우 새로 생성
+        needs_new_session = (
+            self.session is None
+            or self.session.closed
+            or getattr(self.session, '_loop', None) is not current_loop
+        )
+
+        if needs_new_session:
+            # 기존 세션이 있으면 닫기
+            if self.session is not None and not self.session.closed:
+                try:
+                    await self.session.close()
+                except Exception:
+                    pass  # 다른 루프의 세션은 닫기 실패할 수 있음
             self.session = aiohttp.ClientSession()
 
     async def close(self):
@@ -840,6 +857,53 @@ class BitgetRestClient:
         logger.info(f"Retrieved {len(candles)} candles for {symbol} ({interval})")
         return candles
 
+    async def fetch_ohlcv(
+        self,
+        symbol: str,
+        timeframe: str = "1h",
+        since: Optional[int] = None,
+        limit: int = 200,
+        params: Optional[Dict] = None,
+    ) -> List[List]:
+        """
+        CCXT 호환 OHLCV 데이터 조회
+
+        CCXT 스타일의 fetch_ohlcv 메서드를 제공하여 기존 전략과의 호환성 유지
+
+        Args:
+            symbol: 거래쌍 (예: BTCUSDT, BTC/USDT)
+            timeframe: 캔들 간격 (1m, 5m, 15m, 30m, 1h, 4h, 1d)
+            since: 시작 타임스탬프 (ms) - 미사용, 호환성용
+            limit: 조회 개수 (최대 1000)
+            params: 추가 파라미터 - 미사용, 호환성용
+
+        Returns:
+            CCXT 형식의 OHLCV 리스트 [[timestamp, open, high, low, close, volume], ...]
+        """
+        # 심볼 정규화 (BTC/USDT -> BTCUSDT)
+        normalized_symbol = symbol.replace("/", "")
+
+        # 기존 메서드 호출
+        candles = await self.get_historical_candles(
+            symbol=normalized_symbol,
+            interval=timeframe,
+            limit=limit,
+        )
+
+        # CCXT 형식으로 변환 [[timestamp, open, high, low, close, volume], ...]
+        ohlcv = []
+        for candle in candles:
+            ohlcv.append([
+                candle["timestamp"],
+                candle["open"],
+                candle["high"],
+                candle["low"],
+                candle["close"],
+                candle["volume"],
+            ])
+
+        return ohlcv
+
     async def get_all_historical_candles(
         self,
         symbol: str,
@@ -1009,9 +1073,36 @@ _rest_clients: Dict[str, BitgetRestClient] = {}
 
 def get_bitget_rest(api_key: str, api_secret: str, passphrase: str) -> BitgetRestClient:
     """Bitget REST 클라이언트 인스턴스 반환 (캐싱)"""
-    client_id = f"{api_key}:{api_secret}"
+    # Issue #2.4: API 키를 해시하여 캐시 키로 사용 (보안 강화)
+    client_id = hashlib.sha256(f"{api_key}:{api_secret}".encode()).hexdigest()[:16]
 
     if client_id not in _rest_clients:
         _rest_clients[client_id] = BitgetRestClient(api_key, api_secret, passphrase)
 
     return _rest_clients[client_id]
+
+
+async def close_all_rest_clients():
+    """
+    모든 REST 클라이언트의 aiohttp 세션을 명시적으로 종료
+
+    Issue #2.2: 장시간 운영 시 TCP 커넥션 누수 방지를 위해
+    애플리케이션 종료 시 lifespan에서 호출되어야 함
+    """
+    global _rest_clients
+
+    if not _rest_clients:
+        logger.info("No REST clients to close")
+        return
+
+    close_count = 0
+    for client_id, client in _rest_clients.items():
+        try:
+            await client.close()
+            close_count += 1
+            logger.debug(f"Closed REST client: {client_id[:8]}...")
+        except Exception as e:
+            logger.warning(f"Error closing REST client {client_id[:8]}...: {e}")
+
+    _rest_clients.clear()
+    logger.info(f"✅ Closed {close_count} Bitget REST client(s)")

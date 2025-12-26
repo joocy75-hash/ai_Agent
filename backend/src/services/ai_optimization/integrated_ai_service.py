@@ -1,7 +1,7 @@
 """
 Integrated AI Service (통합 AI 서비스)
 
-DeepSeek-V3.2 API + 비용 최적화 통합 서비스
+Gemini 2.0 Flash Thinking / DeepSeek-V3 API + 비용 최적화 통합 서비스
 - Prompt Caching (90% 비용 절감)
 - Response Caching (중복 호출 제거)
 - Smart Sampling (API 호출 50~70% 감소)
@@ -17,19 +17,53 @@ from datetime import datetime
 
 from .prompt_cache import PromptCacheManager
 from .response_cache import ResponseCacheManager
-from .smart_sampling import SmartSamplingManager, SamplingStrategy
+from .smart_sampling import SamplingStrategy, get_global_sampling_manager
 from .cost_tracker import CostTracker
 from .event_driven_optimizer import EventDrivenOptimizer, MarketEvent, EventType, EventPriority
 from src.config import settings
+import threading
 
 logger = logging.getLogger(__name__)
+
+# 글로벌 싱글톤 인스턴스 (Issue #4: AI Rate Limit 문제 해결)
+_integrated_ai_service_instance: Optional["IntegratedAIService"] = None
+_service_lock = threading.Lock()
+
+
+def get_integrated_ai_service(redis_client=None) -> "IntegratedAIService":
+    """
+    글로벌 IntegratedAIService 싱글톤 반환
+
+    Thread-safe singleton pattern을 사용하여 전역에서 하나의
+    IntegratedAIService 인스턴스만 생성되도록 보장합니다.
+
+    Issue #4: AI Rate Limit 문제 해결
+    - 기존: 전략 인스턴스마다 새 IntegratedAIService 생성
+    - 수정: 글로벌 싱글톤으로 API 키, Rate Limit 관리 일원화
+
+    Args:
+        redis_client: Redis 클라이언트 (첫 호출 시만 사용)
+
+    Returns:
+        IntegratedAIService: 글로벌 싱글톤 인스턴스
+    """
+    global _integrated_ai_service_instance
+
+    # Double-checked locking for thread safety
+    if _integrated_ai_service_instance is None:
+        with _service_lock:
+            if _integrated_ai_service_instance is None:
+                _integrated_ai_service_instance = IntegratedAIService(redis_client)
+                logger.info("✅ Global IntegratedAIService singleton initialized")
+
+    return _integrated_ai_service_instance
 
 
 class IntegratedAIService:
     """
     통합 AI 서비스
 
-    DeepSeek-V3.2 Release API + 4가지 비용 최적화 기능 통합:
+    Gemini 2.0 Flash Thinking / DeepSeek-V3 + 4가지 비용 최적화 기능 통합:
     1. Prompt Caching: 시스템 프롬프트 캐싱 (90% 할인)
     2. Response Caching: 동일 쿼리 응답 재사용
     3. Smart Sampling: 지능적 API 호출 샘플링
@@ -40,30 +74,44 @@ class IntegratedAIService:
     - 최적화 후: $300/month (70% 절감)
     """
 
-    # DeepSeek V3.2 Release 모델
-    MODEL_VERSION = "deepseek-chat"  # DeepSeek-V3.2 호환
-    BASE_URL = "https://api.deepseek.com/v1"
+    # Gemini 모델 설정 (2025.12 기준 최신)
+    GEMINI_MODEL = "gemini-3-pro-preview"  # Gemini 3 Pro Preview (Deep Think)
+    GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta"
+
+    # DeepSeek V3.2 Release 모델 (폴백용)
+    DEEPSEEK_MODEL = "deepseek-chat"
+    DEEPSEEK_BASE_URL = "https://api.deepseek.com/v1"
 
     def __init__(self, redis_client=None):
-        # SECURITY: Validate API key without exposing it
-        self.api_key = settings.deepseek_api_key
-        if not self.api_key or self.api_key == "":
-            raise ValueError("DeepSeek API key not configured. Set DEEPSEEK_API_KEY environment variable.")
+        # AI Provider 선택 (기본값: gemini)
+        self.ai_provider = settings.ai_provider.lower()
 
-        # SECURITY: Never log the actual key, only masked version
-        masked_key = f"{'*' * 8}{self.api_key[-4:]}" if len(self.api_key) > 4 else "****"
-        logger.info(f"DeepSeek API key configured: {masked_key}")
+        if self.ai_provider == "gemini":
+            self.api_key = settings.gemini_api_key
+            if not self.api_key or self.api_key == "":
+                raise ValueError("Gemini API key not configured. Set GEMINI_API_KEY environment variable.")
+            masked_key = f"{'*' * 8}{self.api_key[-4:]}" if len(self.api_key) > 4 else "****"
+            logger.info(f"🌟 Gemini API key configured: {masked_key}")
+            logger.info(f"🧠 Using Gemini 2.0 Flash Thinking for advanced market analysis")
+        else:
+            self.api_key = settings.deepseek_api_key
+            if not self.api_key or self.api_key == "":
+                raise ValueError("DeepSeek API key not configured. Set DEEPSEEK_API_KEY environment variable.")
+            masked_key = f"{'*' * 8}{self.api_key[-4:]}" if len(self.api_key) > 4 else "****"
+            logger.info(f"DeepSeek API key configured: {masked_key}")
 
         self.redis_client = redis_client
 
         # 비용 최적화 매니저들
         self.prompt_cache = PromptCacheManager(redis_client)
         self.response_cache = ResponseCacheManager(redis_client)
-        self.sampling_manager = SmartSamplingManager(redis_client)
+        # Issue #4: 글로벌 싱글톤 SmartSamplingManager 사용 (캐시 상태 유지)
+        self.sampling_manager = get_global_sampling_manager()
         self.cost_tracker = CostTracker(redis_client)
         self.event_optimizer = EventDrivenOptimizer(redis_client)
 
-        logger.info("IntegratedAIService initialized with DeepSeek-V3.2 + event-driven cost optimization")
+        provider_name = "Gemini 2.0 Flash Thinking" if self.ai_provider == "gemini" else "DeepSeek-V3"
+        logger.info(f"IntegratedAIService initialized with {provider_name} + event-driven cost optimization")
 
     async def call_ai(
         self,
@@ -167,18 +215,28 @@ class IntegratedAIService:
                 system_prompt = cached_system
                 logger.debug(f"Prompt cache HIT for {agent_type}")
 
-        # 4. DeepSeek API 호출
+        # 4. AI API 호출 (Gemini or DeepSeek)
         try:
-            response_text, usage = await self._call_deepseek_api(
-                prompt=prompt,
-                system_prompt=system_prompt,
-                temperature=temperature,
-                max_tokens=max_tokens
-            )
+            if self.ai_provider == "gemini":
+                response_text, usage = await self._call_gemini_api(
+                    prompt=prompt,
+                    system_prompt=system_prompt,
+                    temperature=temperature,
+                    max_tokens=max_tokens
+                )
+                model_name = "gemini-2.5-pro"
+            else:
+                response_text, usage = await self._call_deepseek_api(
+                    prompt=prompt,
+                    system_prompt=system_prompt,
+                    temperature=temperature,
+                    max_tokens=max_tokens
+                )
+                model_name = "deepseek-v3"
 
             # 5. 비용 추적
             cost_info = await self.cost_tracker.track_api_call(
-                model="deepseek-v3",
+                model=model_name,
                 agent_type=agent_type,
                 input_tokens=usage.get("prompt_tokens", 0),
                 output_tokens=usage.get("completion_tokens", 0),
@@ -208,6 +266,9 @@ class IntegratedAIService:
                 f"{usage.get('total_tokens', 0)} tokens"
             )
 
+            # 성공 시 Rate Limit backoff 감소
+            self.sampling_manager.notify_success()
+
             return {
                 "response": response_text,
                 "cost_info": cost_info,
@@ -216,7 +277,16 @@ class IntegratedAIService:
             }
 
         except Exception as e:
+            error_str = str(e)
             logger.error(f"AI API call failed for {agent_type}: {e}", exc_info=True)
+
+            # Rate Limit (429) 에러 감지 및 backoff 적용
+            if "429" in error_str or "Too Many Requests" in error_str or "rate limit" in error_str.lower():
+                self.sampling_manager.notify_rate_limit()
+                logger.warning(
+                    f"🚨 Rate limit detected for {agent_type}, "
+                    f"backoff status: {self.sampling_manager.get_backoff_status()}"
+                )
 
             # 에러 시 기본 응답
             return {
@@ -224,7 +294,7 @@ class IntegratedAIService:
                 "cost_info": {"cost_usd": 0.0},
                 "cache_hit": False,
                 "sampled": True,
-                "error": str(e),
+                "error": error_str,
             }
 
     async def call_ai_with_event(
@@ -402,6 +472,94 @@ Provide a comprehensive analysis of these events and their combined implications
 
         return result
 
+    async def _call_gemini_api(
+        self,
+        prompt: str,
+        system_prompt: Optional[str] = None,
+        temperature: float = 0.7,
+        max_tokens: int = 1000
+    ) -> tuple[str, Dict[str, int]]:
+        """
+        Gemini 3 Pro (Deep Think) API 호출
+
+        Returns:
+            (response_text, usage_dict)
+        """
+        if not self.api_key:
+            raise ValueError("Gemini API key is not configured")
+
+        url = f"{self.GEMINI_BASE_URL}/models/{self.GEMINI_MODEL}:generateContent?key={self.api_key}"
+
+        headers = {
+            "Content-Type": "application/json",
+        }
+
+        # Gemini 형식으로 메시지 구성
+        contents = []
+
+        if system_prompt:
+            contents.append({
+                "role": "user",
+                "parts": [{"text": f"System Instructions: {system_prompt}"}]
+            })
+            contents.append({
+                "role": "model",
+                "parts": [{"text": "I understand. I will follow these instructions."}]
+            })
+
+        contents.append({
+            "role": "user",
+            "parts": [{"text": prompt}]
+        })
+
+        payload = {
+            "contents": contents,
+            "generationConfig": {
+                "temperature": temperature,
+                "maxOutputTokens": max_tokens,
+                "topP": 0.95,
+                "topK": 40,
+            },
+            "safetySettings": [
+                {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+                {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+                {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+                {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
+            ]
+        }
+
+        try:
+            response = requests.post(
+                url,
+                headers=headers,
+                json=payload,
+                timeout=60,  # Gemini Deep Think는 더 긴 타임아웃 필요
+            )
+            response.raise_for_status()
+
+            data = response.json()
+
+            # 응답 추출
+            response_text = ""
+            if "candidates" in data and len(data["candidates"]) > 0:
+                candidate = data["candidates"][0]
+                if "content" in candidate and "parts" in candidate["content"]:
+                    response_text = candidate["content"]["parts"][0].get("text", "")
+
+            # 사용량 추출 (Gemini 형식)
+            usage_metadata = data.get("usageMetadata", {})
+            usage = {
+                "prompt_tokens": usage_metadata.get("promptTokenCount", 0),
+                "completion_tokens": usage_metadata.get("candidatesTokenCount", 0),
+                "total_tokens": usage_metadata.get("totalTokenCount", 0),
+            }
+
+            return response_text, usage
+
+        except Exception as e:
+            logger.error(f"Gemini API error: {e}")
+            raise
+
     async def _call_deepseek_api(
         self,
         prompt: str,
@@ -410,7 +568,7 @@ Provide a comprehensive analysis of these events and their combined implications
         max_tokens: int = 1000
     ) -> tuple[str, Dict[str, int]]:
         """
-        DeepSeek API 호출
+        DeepSeek API 호출 (폴백용)
 
         Returns:
             (response_text, usage_dict)
@@ -437,7 +595,7 @@ Provide a comprehensive analysis of these events and their combined implications
         })
 
         payload = {
-            "model": self.MODEL_VERSION,
+            "model": self.DEEPSEEK_MODEL,
             "messages": messages,
             "temperature": temperature,
             "max_tokens": max_tokens,
@@ -445,7 +603,7 @@ Provide a comprehensive analysis of these events and their combined implications
 
         try:
             response = requests.post(
-                f"{self.BASE_URL}/chat/completions",
+                f"{self.DEEPSEEK_BASE_URL}/chat/completions",
                 headers=headers,
                 json=payload,
                 timeout=30,

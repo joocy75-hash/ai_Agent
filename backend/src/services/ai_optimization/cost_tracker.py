@@ -46,6 +46,18 @@ class CostTracker:
                 "cache_write": 0.27,
                 "cache_read": 0.027,  # 90% 할인
             },
+            "gemini-3-pro": {
+                "input": 1.25,  # $1.25/MTok (Gemini 3 Pro Preview)
+                "output": 5.00,  # $5.00/MTok
+                "cache_write": 1.25,
+                "cache_read": 0.125,  # 90% 할인
+            },
+            "gemini-2.5-pro": {
+                "input": 1.25,  # $1.25/MTok
+                "output": 5.00,  # $5.00/MTok
+                "cache_write": 1.25,
+                "cache_read": 0.125,
+            },
         }
 
         # 통계

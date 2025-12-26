@@ -1,6 +1,8 @@
-import { useEffect, useRef, memo, useState } from 'react';
+import { useEffect, useRef, memo, useState, useCallback } from 'react';
 import { Spin, Typography } from 'antd';
-import { DownOutlined } from '@ant-design/icons';
+import { DownOutlined, ReloadOutlined } from '@ant-design/icons';
+import { createChart } from 'lightweight-charts';
+import { bitgetAPI } from '../api/bitget';
 
 const { Text } = Typography;
 
@@ -11,15 +13,6 @@ const COIN_DATA = {
     bnb: { name: 'BNB', symbol: 'B', color: '#F3BA2F', gradient: 'linear-gradient(135deg, #F3BA2F 0%, #FFD54F 100%)' },
     sol: { name: 'Solana', symbol: 'S', color: '#9945FF', gradient: 'linear-gradient(135deg, #9945FF 0%, #14F195 100%)' },
     ada: { name: 'Cardano', symbol: 'A', color: '#0033AD', gradient: 'linear-gradient(135deg, #0033AD 0%, #3F51B5 100%)' },
-};
-
-// TradingView 심볼 매핑 (Bitget Perpetual)
-const TRADINGVIEW_SYMBOLS = {
-    BTCUSDT: 'BITGET:BTCUSDT.P',
-    ETHUSDT: 'BITGET:ETHUSDT.P',
-    BNBUSDT: 'BITGET:BNBUSDT.P',
-    SOLUSDT: 'BITGET:SOLUSDT.P',
-    ADAUSDT: 'BITGET:ADAUSDT.P',
 };
 
 // Custom hook for responsive detection
@@ -43,7 +36,12 @@ function TradingViewWidget({
 }) {
     const [loading, setLoading] = useState(true);
     const [coinModalOpen, setCoinModalOpen] = useState(false);
-    const iframeRef = useRef(null);
+    const [error, setError] = useState(null);
+    const [currentPrice, setCurrentPrice] = useState(null);
+    const [priceChange, setPriceChange] = useState(null);
+    const chartContainerRef = useRef(null);
+    const chartRef = useRef(null);
+    const candleSeriesRef = useRef(null);
     const isMobile = useIsMobile();
 
     // 코인 ID 추출
@@ -55,22 +53,135 @@ function TradingViewWidget({
         gradient: 'linear-gradient(135deg, #1890ff 0%, #40a9ff 100%)'
     };
 
-    const tradingViewSymbol = TRADINGVIEW_SYMBOLS[symbol] || `BITGET:${symbol}.P`;
-
     const handleSymbolChange = (newSymbol) => {
         if (onSymbolChange) {
             onSymbolChange(newSymbol);
         }
         setCoinModalOpen(false);
         setLoading(true);
+        setError(null);
     };
 
-    const handleIframeLoad = () => {
-        setLoading(false);
-    };
+    // 차트 데이터 로드
+    const loadChartData = useCallback(async () => {
+        if (!chartContainerRef.current) return;
 
-    // TradingView Widget URL (iframe 방식)
-    const widgetUrl = `https://s.tradingview.com/widgetembed/?frameElementId=tradingview_widget&symbol=${encodeURIComponent(tradingViewSymbol)}&interval=15&hidesidetoolbar=${isMobile ? 1 : 0}&symboledit=0&saveimage=0&toolbarbg=f1f3f6&studies=[]&theme=light&style=1&timezone=Asia%2FSeoul&studies_overrides={}&overrides={}&enabled_features=[]&disabled_features=[]&locale=kr&utm_source=&utm_medium=widget&utm_campaign=chart`;
+        try {
+            setLoading(true);
+            setError(null);
+
+            // Bitget API에서 캔들 데이터 가져오기
+            const response = await bitgetAPI.getCandles(symbol, '15m', 200);
+
+            if (!response || !response.candles || response.candles.length === 0) {
+                throw new Error('캔들 데이터가 없습니다');
+            }
+
+            // 차트가 없으면 생성
+            if (!chartRef.current) {
+                const chart = createChart(chartContainerRef.current, {
+                    width: chartContainerRef.current.clientWidth,
+                    height: height,
+                    layout: {
+                        background: { color: '#ffffff' },
+                        textColor: '#333',
+                    },
+                    grid: {
+                        vertLines: { color: '#f0f0f0' },
+                        horzLines: { color: '#f0f0f0' },
+                    },
+                    crosshair: {
+                        mode: 1,
+                    },
+                    rightPriceScale: {
+                        borderColor: '#e5e7eb',
+                    },
+                    timeScale: {
+                        borderColor: '#e5e7eb',
+                        timeVisible: true,
+                        secondsVisible: false,
+                    },
+                });
+
+                chartRef.current = chart;
+                candleSeriesRef.current = chart.addCandlestickSeries({
+                    upColor: '#26a69a',
+                    downColor: '#ef5350',
+                    borderVisible: false,
+                    wickUpColor: '#26a69a',
+                    wickDownColor: '#ef5350',
+                });
+            }
+
+            // 캔들 데이터 포맷 변환 (lightweight-charts 형식)
+            const formattedCandles = response.candles.map(candle => ({
+                time: candle.time,
+                open: parseFloat(candle.open),
+                high: parseFloat(candle.high),
+                low: parseFloat(candle.low),
+                close: parseFloat(candle.close),
+            }));
+
+            // 현재가 및 변동률 계산
+            if (formattedCandles.length > 0) {
+                const lastCandle = formattedCandles[formattedCandles.length - 1];
+                const firstCandle = formattedCandles[0];
+                setCurrentPrice(lastCandle.close);
+                const change = ((lastCandle.close - firstCandle.open) / firstCandle.open) * 100;
+                setPriceChange(change);
+            }
+
+            // 차트에 데이터 설정
+            if (candleSeriesRef.current) {
+                candleSeriesRef.current.setData(formattedCandles);
+                chartRef.current.timeScale().fitContent();
+            }
+
+            setLoading(false);
+
+        } catch (err) {
+            console.error('차트 데이터 로드 실패:', err);
+            setError(err.message || '차트 데이터를 불러올 수 없습니다');
+            setLoading(false);
+        }
+    }, [symbol, height]);
+
+    // 심볼 변경 시 차트 재로드
+    useEffect(() => {
+        // 기존 차트 제거
+        if (chartRef.current) {
+            chartRef.current.remove();
+            chartRef.current = null;
+            candleSeriesRef.current = null;
+        }
+
+        loadChartData();
+    }, [symbol, loadChartData]);
+
+    // 차트 리사이즈 처리
+    useEffect(() => {
+        const handleResize = () => {
+            if (chartRef.current && chartContainerRef.current) {
+                chartRef.current.applyOptions({
+                    width: chartContainerRef.current.clientWidth,
+                });
+            }
+        };
+
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    // 컴포넌트 언마운트 시 차트 정리
+    useEffect(() => {
+        return () => {
+            if (chartRef.current) {
+                chartRef.current.remove();
+                chartRef.current = null;
+                candleSeriesRef.current = null;
+            }
+        };
+    }, []);
 
     return (
         <div style={{ position: 'relative', width: '100%' }}>
@@ -147,16 +258,54 @@ function TradingViewWidget({
                     </div>
                 </div>
 
-                {/* Timeframe Badge */}
-                <div style={{
-                    padding: isMobile ? '6px 12px' : '8px 16px',
-                    borderRadius: isMobile ? '6px' : '8px',
-                    background: '#111827',
-                    color: '#ffffff',
-                    fontWeight: 600,
-                    fontSize: isMobile ? '11px' : '13px',
-                }}>
-                    {isMobile ? '15m' : '15분'}
+                {/* Price Display */}
+                {currentPrice && (
+                    <div style={{ textAlign: 'right' }}>
+                        <div style={{
+                            fontSize: isMobile ? '14px' : '18px',
+                            fontWeight: '700',
+                            color: '#111827',
+                        }}>
+                            ${currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </div>
+                        {priceChange !== null && (
+                            <div style={{
+                                fontSize: isMobile ? '11px' : '12px',
+                                color: priceChange >= 0 ? '#26a69a' : '#ef5350',
+                                fontWeight: '600',
+                            }}>
+                                {priceChange >= 0 ? '+' : ''}{priceChange.toFixed(2)}%
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Timeframe Badge + Refresh */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{
+                        padding: isMobile ? '6px 12px' : '8px 16px',
+                        borderRadius: isMobile ? '6px' : '8px',
+                        background: '#111827',
+                        color: '#ffffff',
+                        fontWeight: 600,
+                        fontSize: isMobile ? '11px' : '13px',
+                    }}>
+                        {isMobile ? '15m' : '15분'}
+                    </div>
+                    <div
+                        onClick={() => !loading && loadChartData()}
+                        style={{
+                            padding: '8px',
+                            borderRadius: '8px',
+                            cursor: loading ? 'not-allowed' : 'pointer',
+                            color: '#9ca3af',
+                            transition: 'all 0.2s',
+                        }}
+                        onMouseEnter={(e) => !loading && (e.currentTarget.style.background = '#f5f5f7')}
+                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                    >
+                        <ReloadOutlined spin={loading} />
+                    </div>
                 </div>
             </div>
 
@@ -239,7 +388,7 @@ function TradingViewWidget({
                 />
             )}
 
-            {/* TradingView Chart Container - iframe 기반 */}
+            {/* Lightweight Charts Container */}
             <div
                 style={{
                     width: '100%',
@@ -269,19 +418,44 @@ function TradingViewWidget({
                         <Text type="secondary">차트 로딩 중...</Text>
                     </div>
                 )}
-                <iframe
-                    ref={iframeRef}
-                    key={symbol} // 심볼 변경 시 iframe 재생성
-                    src={widgetUrl}
+                {error && (
+                    <div style={{
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '12px',
+                        zIndex: 10,
+                        textAlign: 'center',
+                        padding: '20px',
+                    }}>
+                        <Text type="danger">{error}</Text>
+                        <div
+                            onClick={loadChartData}
+                            style={{
+                                padding: '8px 16px',
+                                background: '#1890ff',
+                                color: '#fff',
+                                borderRadius: '6px',
+                                cursor: 'pointer',
+                                fontSize: '14px',
+                            }}
+                        >
+                            다시 시도
+                        </div>
+                    </div>
+                )}
+                <div
+                    ref={chartContainerRef}
                     style={{
                         width: '100%',
                         height: '100%',
-                        border: 'none',
-                        display: loading ? 'none' : 'block',
+                        opacity: loading || error ? 0 : 1,
+                        transition: 'opacity 0.3s ease',
                     }}
-                    onLoad={handleIframeLoad}
-                    title={`TradingView Chart - ${symbol}`}
-                    allowFullScreen
                 />
             </div>
         </div>

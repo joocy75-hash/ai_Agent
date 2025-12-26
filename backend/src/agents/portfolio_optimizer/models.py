@@ -3,7 +3,7 @@ Portfolio Optimization Agent 데이터 모델
 """
 
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 from datetime import datetime
 from pydantic import BaseModel, Field
 

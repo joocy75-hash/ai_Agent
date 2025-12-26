@@ -8,7 +8,9 @@ services:
     environment:
       POSTGRES_DB: trading_prod
       POSTGRES_USER: trading_user
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-this-password}
+      # 🔒 SECURITY: POSTGRES_PASSWORD must be set in .env file
+      # No default value for production security
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env file}
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -27,7 +29,8 @@ services:
   redis:
     image: redis:7-alpine
     container_name: trading-redis
-    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-change-this-redis-password}
+    # 🔒 SECURITY: REDIS_PASSWORD must be set in .env file
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD must be set in .env file}
     volumes:
       - redis_data:/data
     ports:
@@ -49,11 +52,12 @@ services:
     container_name: trading-backend
     environment:
       # Database
-      DATABASE_URL: postgresql+asyncpg://trading_user:${POSTGRES_PASSWORD:-change-this-password}@postgres:5432/trading_prod
+      DATABASE_URL: postgresql+asyncpg://trading_user:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}@postgres:5432/trading_prod
 
       # Security
-      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
-      JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-this}
+      # 🔒 SECURITY: These must be set in .env file (no defaults)
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?ENCRYPTION_KEY must be set in .env file (32+ bytes)}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set in .env file (32+ characters)}
 
       # App Settings
       DEBUG: "False"
@@ -61,7 +65,16 @@ services:
       CORS_ORIGINS: ${CORS_ORIGINS:-}
 
       # Redis
-      REDIS_URL: redis://default:${REDIS_PASSWORD:-change-this-redis-password}@redis:6379
+      REDIS_URL: redis://default:${REDIS_PASSWORD:?REDIS_PASSWORD must be set}@redis:6379
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_DB: "0"
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
+
+      # AI Service Configuration
+      AI_PROVIDER: ${AI_PROVIDER:-gemini}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
 
       # Logging
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
@@ -94,7 +107,9 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
+        # 🔒 SECURITY: VITE_API_URL must be set in .env file
+        # No default value to prevent accidental localhost builds in production
+        VITE_API_URL: ${VITE_API_URL:?VITE_API_URL must be set in .env file (e.g., https://api.ai-deepsignal.com)}
     container_name: trading-frontend
     ports:
       - "3000:3000"
@@ -116,14 +131,16 @@ services:
       context: ./admin-frontend
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
+        # 🔒 SECURITY: VITE_API_URL must be set in .env file
+        # No default value to prevent accidental localhost builds in production
+        VITE_API_URL: ${VITE_API_URL:?VITE_API_URL must be set in .env file (e.g., https://api.ai-deepsignal.com)}
     container_name: trading-admin-frontend
     ports:
       - "4000:4000"
     depends_on:
       - backend
     healthcheck:
-      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4000/health" ]
+      test: [ "CMD-SHELL", "curl -f http://127.0.0.1:4000/health || exit 1" ]
       interval: 30s
       timeout: 10s
       retries: 3

@@ -24,7 +24,7 @@ const { Option } = Select;
 export default function Trading() {
     const { user } = useAuth();
     const { isConnected, subscribe } = useWebSocket();
-    const { getActiveStrategies, loading: strategiesLoading, lastUpdated } = useStrategies();
+    const { strategies: allStrategies, loading: strategiesLoading, lastUpdated } = useStrategies();
 
     // 화면 크기 감지
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -63,8 +63,8 @@ export default function Trading() {
         }
     };
 
-    // 전역 전략 상태에서 활성화된 전략만 가져오기
-    const strategies = getActiveStrategies();
+    // 전역 전략 상태에서 모든 전략 가져오기 (사용자가 선택할 수 있도록)
+    const strategies = allStrategies;
 
     // Initial Load - Bot 데이터만 로드 (차트는 TradingView 위젯이 자동 처리)
     useEffect(() => {

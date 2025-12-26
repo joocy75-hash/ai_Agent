@@ -5,11 +5,22 @@ Redis가 없어도 In-Memory 캐시로 작동 (Graceful Degradation)
 import logging
 import asyncio
 import json
+from decimal import Decimal
 from typing import Optional, Any, Dict
 from datetime import datetime, timedelta
 from dataclasses import dataclass, field
 
 logger = logging.getLogger(__name__)
+
+
+class DecimalEncoder(json.JSONEncoder):
+    """Decimal 타입을 JSON으로 직렬화하는 커스텀 인코더"""
+    def default(self, obj):
+        if isinstance(obj, Decimal):
+            return float(obj)
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        return super().default(obj)
 
 
 @dataclass
@@ -161,9 +172,9 @@ class CacheManager:
         """캐시에 값 저장"""
         try:
             if self.use_redis and self.redis_client:
-                # JSON 직렬화
+                # JSON 직렬화 (DecimalEncoder 사용)
                 if isinstance(value, (dict, list)):
-                    value_str = json.dumps(value)
+                    value_str = json.dumps(value, cls=DecimalEncoder)
                 else:
                     value_str = str(value)
 

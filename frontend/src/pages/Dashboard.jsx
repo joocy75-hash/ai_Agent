@@ -15,9 +15,7 @@ import ErrorBoundary from '../components/ErrorBoundary';
 import PositionList from '../components/PositionList';
 import RiskGauge from '../components/RiskGauge';
 import { bitgetAPI } from '../api/bitget';
-import { botAPI } from '../api/bot';
-import { analyticsAPI } from '../api/analytics';
-import { orderAPI } from '../api/order';
+import useDashboardData from '../hooks/useDashboardData';
 
 // Apple 스타일 통계 카드 컴포넌트 (모바일 최적화 + 로딩 상태)
 const StatCard = ({ title, value, suffix, trend, trendValue, icon, delay = 0, isMobile = false, loading = false }) => {
@@ -473,24 +471,21 @@ export default function Dashboard() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // SWR 패턴: 캐시된 데이터 즉시 표시, 백그라운드에서 갱신
+  const {
+    tradeStats,
+    periodProfits,
+    botStatus,
+    recentTrades,
+    hasData,        // Skeleton 표시 여부 결정 (NOT isRefreshing)
+    isRefreshing,   // 백그라운드 갱신 중 표시용
+    revalidate,
+  } = useDashboardData();
+
   const [currentPrices, setCurrentPrices] = useState({});
-  const [botStatus, setBotStatus] = useState(null);
-  const [tradeStats, setTradeStats] = useState(null);
-  const [periodProfits, setPeriodProfits] = useState(null);
-  const [recentTrades, setRecentTrades] = useState([]);
-  const [tradesLoading, setTradesLoading] = useState(false);
-  const [initialLoading, setInitialLoading] = useState(true);
   const { subscribe, isConnected } = useWebSocket();
 
-  const loadBotStatus = async () => {
-    try {
-      const status = await botAPI.getStatus();
-      setBotStatus(status);
-    } catch (error) {
-      console.error('[Dashboard] Error loading bot status:', error);
-    }
-  };
-
+  // 가격 데이터는 별도 로드 (실시간 업데이트 필요)
   const loadPrices = async () => {
     try {
       const symbols = ['BTCUSDT'];
@@ -513,84 +508,12 @@ export default function Dashboard() {
     }
   };
 
-  // 최적화: 통합 API로 모든 기간 데이터를 한번에 로드 (5개 API -> 1개)
-  const loadAllAnalytics = async () => {
-    try {
-      // 통합 API 한번 호출로 모든 데이터 가져오기
-      const summary = await analyticsAPI.getDashboardSummary();
-
-      // tradeStats 설정
-      const perfAll = summary.performance_all || {};
-      const riskMetrics = summary.risk_metrics || {};
-
-      setTradeStats({
-        totalTrades: riskMetrics.total_trades || 0,
-        winRate: riskMetrics.win_rate || 0,
-        winningTrades: perfAll.winning_trades || 0,
-        losingTrades: perfAll.losing_trades || 0,
-        avgPnl: perfAll.total_pnl && perfAll.total_trades
-          ? (perfAll.total_pnl / perfAll.total_trades).toFixed(2)
-          : 0,
-        totalReturn: perfAll.total_return || 0,
-        bestTrade: perfAll.best_trade?.pnl_percent || 0,
-        worstTrade: perfAll.worst_trade?.pnl_percent || 0,
-        longCount: perfAll.total_trades || 0,
-        shortCount: 0,
-      });
-
-      // periodProfits 설정
-      const perfDaily = summary.performance_daily || {};
-      const perfWeekly = summary.performance_weekly || {};
-      const perfMonthly = summary.performance_monthly || {};
-
-      setPeriodProfits({
-        daily: { return: perfDaily.total_return || 0, pnl: perfDaily.total_pnl || 0 },
-        weekly: { return: perfWeekly.total_return || 0, pnl: perfWeekly.total_pnl || 0 },
-        monthly: { return: perfMonthly.total_return || 0, pnl: perfMonthly.total_pnl || 0 },
-        allTime: { return: perfAll.total_return || 0, pnl: perfAll.total_pnl || 0 },
-      });
-    } catch (error) {
-      console.error('[Dashboard] Error loading analytics:', error);
-      setTradeStats(null);
-      setPeriodProfits(null);
-    }
-  };
-
-  const loadRecentTrades = async () => {
-    try {
-      setTradesLoading(true);
-      const response = await orderAPI.getOrderHistory(10);
-      const trades = Array.isArray(response) ? response : (response?.orders || []);
-      setRecentTrades(trades.slice(0, 10));
-    } catch (error) {
-      console.error('[Dashboard] Error loading recent trades:', error);
-      setRecentTrades([]);
-    } finally {
-      setTradesLoading(false);
-    }
-  };
-
-  // 초기 데이터 병렬 로딩 (성능 최적화 - API 호출 수 10개 -> 6개로 감소)
-  const loadAllData = async () => {
-    try {
-      await Promise.all([
-        loadBotStatus(),
-        loadPrices(),
-        loadAllAnalytics(),  // 통합된 analytics 로딩
-        loadRecentTrades()
-      ]);
-    } catch (error) {
-      console.error('[Dashboard] Error loading data:', error);
-    } finally {
-      setInitialLoading(false);
-    }
-  };
-
+  // 가격만 초기 로드 및 주기적 갱신
   useEffect(() => {
-    loadAllData();
+    loadPrices();
 
     const interval = setInterval(() => {
-      loadAllData();
+      loadPrices();
     }, 30000);
 
     return () => clearInterval(interval);
@@ -615,6 +538,7 @@ export default function Dashboard() {
     <div style={{ maxWidth: 1400, margin: '0 auto' }}>
 
       {/* Stats Grid - Apple Style */}
+      {/* Skeleton 표시: hasData가 false일 때만 (캐시가 없는 신규 사용자) */}
       <Row gutter={isMobile ? [8, 8] : [16, 16]} style={{ marginBottom: isMobile ? 16 : 24 }}>
         <Col xs={12} sm={12} md={6}>
           <StatCard
@@ -624,7 +548,7 @@ export default function Dashboard() {
             icon={<BarChartOutlined />}
             delay={0}
             isMobile={isMobile}
-            loading={initialLoading}
+            loading={!hasData}
           />
         </Col>
         <Col xs={12} sm={12} md={6}>
@@ -633,7 +557,7 @@ export default function Dashboard() {
             shortCount={tradeStats?.shortCount || 0}
             delay={0.1}
             isMobile={isMobile}
-            loading={initialLoading}
+            loading={!hasData}
           />
         </Col>
         <Col xs={12} sm={12} md={6}>
@@ -642,7 +566,7 @@ export default function Dashboard() {
             worstTrade={tradeStats?.worstTrade || 0}
             delay={0.2}
             isMobile={isMobile}
-            loading={initialLoading}
+            loading={!hasData}
           />
         </Col>
         <Col xs={12} sm={12} md={6}>
@@ -654,7 +578,7 @@ export default function Dashboard() {
             icon={<ThunderboltOutlined />}
             delay={0.3}
             isMobile={isMobile}
-            loading={initialLoading}
+            loading={!hasData}
           />
         </Col>
       </Row>
@@ -714,12 +638,12 @@ export default function Dashboard() {
           <ErrorBoundary>
             <PositionList
               currentPrices={currentPrices}
-              onPositionClosed={loadBotStatus}
+              onPositionClosed={revalidate}
             />
           </ErrorBoundary>
 
           {/* Recent Trades */}
-          <RecentTrades trades={recentTrades} loading={tradesLoading} />
+          <RecentTrades trades={recentTrades} loading={isRefreshing} />
         </Col>
 
         {/* Right Column */}

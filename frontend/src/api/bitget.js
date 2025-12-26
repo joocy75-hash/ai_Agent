@@ -186,6 +186,28 @@ export const bitgetAPI = {
       console.error('[BitgetAPI] setLeverage error:', error);
       throw error;
     }
+  },
+
+  /**
+   * 캔들 데이터 조회
+   * @param {string} symbol - 거래쌍 (예: BTCUSDT)
+   * @param {string} timeframe - 타임프레임 (1m, 5m, 15m, 1h, 4h, 1d)
+   * @param {number} limit - 캔들 개수 (기본: 100, 최대: 500)
+   */
+  async getCandles(symbol, timeframe = '15m', limit = 100) {
+    try {
+      const response = await apiClient.get(`/chart/candles/${symbol}`, {
+        params: {
+          timeframe,
+          limit,
+          include_current: true
+        }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('[BitgetAPI] getCandles error:', error);
+      throw error;
+    }
   }
 };
 

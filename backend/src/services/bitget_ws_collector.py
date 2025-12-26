@@ -28,10 +28,9 @@ class BitgetWebSocketCollector:
         """WebSocket 연결"""
         try:
             import ssl
-            # SSL 인증서 검증 비활성화 (개발 환경용)
+
+            # SSL 인증서 검증 활성화 (보안 강화)
             ssl_context = ssl.create_default_context()
-            ssl_context.check_hostname = False
-            ssl_context.verify_mode = ssl.CERT_NONE
 
             self.websocket = await websockets.connect(self.ws_url, ssl=ssl_context)
             logger.info(f"✅ Bitget WebSocket 연결 성공: {self.ws_url}")

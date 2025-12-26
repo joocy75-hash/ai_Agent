@@ -602,6 +602,82 @@ async def get_risk_metrics(
         }
 
 
+@router.get("/snapshot")
+async def get_dashboard_snapshot(
+    user_id: int = Depends(get_current_user_id),
+):
+    """
+    대시보드 스냅샷 가져오기 (캐시된 데이터)
+
+    Redis 캐시에서 사전 계산된 대시보드 스냅샷을 반환합니다.
+    실시간 계산 없이 빠른 응답 제공.
+
+    Returns:
+        - tradeStats: 거래 통계
+        - periodProfits: 기간별 수익
+        - botStatus: 봇 상태
+        - recentTrades: 최근 거래 목록
+        - updatedAt: 업데이트 시각
+        - isCached: 캐시 여부 (항상 true 또는 false if not found)
+    """
+    from ..utils.cache_manager import cache_manager
+
+    try:
+        structured_logger.info(
+            "dashboard_snapshot_requested",
+            "Dashboard snapshot requested",
+            user_id=user_id,
+        )
+
+        # Redis에서 캐시된 스냅샷 가져오기
+        cache_key = f"dashboard_snapshot:{user_id}"
+        cached_snapshot = await cache_manager.get(cache_key)
+
+        if cached_snapshot is not None:
+            logger.debug(f"Cache hit for dashboard_snapshot user {user_id}")
+            structured_logger.info(
+                "dashboard_snapshot_cache_hit",
+                "Dashboard snapshot cache hit",
+                user_id=user_id,
+            )
+            return cached_snapshot
+
+        # 캐시 미스 - 빈 응답 반환
+        logger.debug(f"Cache miss for dashboard_snapshot user {user_id}")
+        structured_logger.info(
+            "dashboard_snapshot_cache_miss",
+            "Dashboard snapshot cache miss",
+            user_id=user_id,
+        )
+
+        return {
+            "tradeStats": None,
+            "periodProfits": None,
+            "botStatus": None,
+            "recentTrades": [],
+            "updatedAt": None,
+            "isCached": False,
+        }
+
+    except Exception as e:
+        structured_logger.error(
+            "dashboard_snapshot_failed",
+            "Failed to get dashboard snapshot",
+            user_id=user_id,
+            error=str(e),
+        )
+        # 에러 시에도 빈 응답 반환
+        return {
+            "tradeStats": None,
+            "periodProfits": None,
+            "botStatus": None,
+            "recentTrades": [],
+            "updatedAt": None,
+            "isCached": False,
+            "error": str(e),
+        }
+
+
 @router.get("/performance")
 async def get_performance_metrics(
     period: str = Query(default="1m", description="기간: 1d, 1w, 1m, 3m, 1y, all"),

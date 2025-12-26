@@ -1,14 +1,28 @@
-from pydantic import BaseModel, EmailStr, field_validator, model_validator
+from pydantic import BaseModel, field_validator, model_validator
 from typing import Optional
+import re
 from ..utils.validators import validate_password_strength
 
 
 class RegisterRequest(BaseModel):
-    email: EmailStr
+    email: str  # username/ID (이메일 형식이 아닌 일반 ID도 허용)
     password: str
     password_confirm: str  # 비밀번호 확인
     name: str  # 이름 (필수)
     phone: str  # 전화번호 (필수)
+
+    @field_validator("email")
+    @classmethod
+    def validate_username(cls, v: str) -> str:
+        """사용자명 검증: 4-20자, 영문자/숫자/밑줄(_)/하이픈(-) 허용"""
+        v = v.strip()
+        if len(v) < 4:
+            raise ValueError("사용자명은 최소 4자 이상이어야 합니다")
+        if len(v) > 20:
+            raise ValueError("사용자명은 20자를 초과할 수 없습니다")
+        if not re.match(r"^[a-zA-Z0-9_-]+$", v):
+            raise ValueError("사용자명은 영문자, 숫자, 밑줄(_), 하이픈(-)만 사용할 수 있습니다")
+        return v
 
     @field_validator("password")
     @classmethod
@@ -52,9 +66,18 @@ class RegisterRequest(BaseModel):
 
 
 class LoginRequest(BaseModel):
-    email: EmailStr
+    email: str  # username/ID (이메일 형식이 아닌 일반 ID도 허용)
     password: str
     totp_code: Optional[str] = None  # 2FA 코드 (2FA 활성화된 경우 필수)
+
+    @field_validator("email")
+    @classmethod
+    def validate_username(cls, v: str) -> str:
+        """사용자명 검증: 빈 값 체크"""
+        v = v.strip()
+        if not v:
+            raise ValueError("사용자명을 입력해주세요")
+        return v
 
 
 class TokenResponse(BaseModel):

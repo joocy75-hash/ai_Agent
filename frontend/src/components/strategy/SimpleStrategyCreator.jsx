@@ -7,7 +7,9 @@ import {
     CheckCircleOutlined,
     LineChartOutlined,
     BarChartOutlined,
-    RiseOutlined
+    RiseOutlined,
+    RobotOutlined,
+    AimOutlined
 } from '@ant-design/icons';
 import { strategyAPI } from '../../api/strategy';
 
@@ -97,6 +99,60 @@ const REPRESENTATIVE_STRATEGIES = {
             leverage: 10,
             stop_loss_percent: 1.5,
             take_profit_percent: 4.0
+        }
+    },
+    autonomous_30pct: {
+        name: 'AI 자율 거래 (30% 마진)',
+        code: 'autonomous_30pct',
+        icon: <RobotOutlined />,
+        color: '#722ed1',
+        tag: 'AI 자율',
+        tagColor: 'purple',
+        description: 'AI 에이전트에게 완전한 자율권을 부여하는 실전 거래 전략입니다. 총 증거금의 30%를 최대 운용 자본으로 엄격히 제한하며, 진입/청산/포지션 크기를 AI가 자율적으로 결정합니다.',
+        features: [
+            '최대 마진: 30% 한도',
+            'AI 완전 자율 거래',
+            '동적 레버리지 조절',
+            '자동 보호 모드'
+        ],
+        params: {
+            symbol: 'BTCUSDT',
+            timeframe: '1h',
+            max_margin_percent: 30,
+            base_leverage: 10,
+            max_leverage: 20,
+            enable_ai: true,
+            position_size_percent: 30,
+            leverage: 10,
+            stop_loss_percent: 2.0,
+            take_profit_percent: 4.0
+        }
+    },
+    adaptive_market_regime_fighter: {
+        name: '적응형 시장체제 전투 전략',
+        code: 'adaptive_market_regime_fighter',
+        icon: <AimOutlined />,
+        color: '#13c2c2',
+        tag: '🎯 NEW AI',
+        tagColor: 'cyan',
+        description: '시장 체제(Bull/Bear/Sideways/High Volatility)를 자동 분류하고, 각 체제에 최적화된 서브 전략을 동적으로 적용합니다. Anti-Whipsaw 보호와 30% 마진 한도를 엄격히 준수합니다.',
+        features: [
+            '4가지 시장 체제 자동 분류',
+            '체제별 최적 서브 전략 적용',
+            'Anti-Whipsaw 보호 모드',
+            '30% 마진 한도 적용'
+        ],
+        params: {
+            symbol: 'BTCUSDT',
+            timeframe: '1h',
+            max_margin_percent: 30,
+            base_leverage: 10,
+            max_leverage: 15,
+            enable_ai: true,
+            position_size_percent: 30,
+            leverage: 10,
+            stop_loss_percent: 2.0,
+            take_profit_percent: 5.0
         }
     }
 };
@@ -197,7 +253,7 @@ export default function SimpleStrategyCreator({ onStrategyCreated }) {
                     <RocketOutlined /> 전략 선택
                 </Title>
                 <Text type="secondary" style={{ fontSize: 16 }}>
-                    검증된 3가지 대표 전략 중 하나를 선택하세요
+                    검증된 대표 전략 중 하나를 선택하세요
                 </Text>
             </div>
 
@@ -211,7 +267,7 @@ export default function SimpleStrategyCreator({ onStrategyCreated }) {
 
             <Row gutter={[16, 16]}>
                 {Object.entries(REPRESENTATIVE_STRATEGIES).map(([key, strategy]) => (
-                    <Col xs={24} md={8} key={key}>
+                    <Col xs={24} sm={12} lg={8} key={key}>
                         <Card
                             hoverable
                             onClick={() => !loading && handleSelectStrategy(key)}

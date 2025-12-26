@@ -35,25 +35,22 @@ async def lifespan(app):
     import asyncio
     import logging
     from ..database.models import Base
-    from ..services.bitget_ws_collector import bitget_ws_collector
     from ..services.chart_data_service import get_chart_service
 
     logger = logging.getLogger(__name__)
 
     # Startup
-    print("🚀 Starting application...")
     logger.info("🚀 Starting application...")
 
     # Create tables
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    print("✅ Database tables created")
     logger.info("✅ Database tables created")
 
     # Get market queue and bot manager from app state
     market_queue = app.state.market_queue
     bot_manager = app.state.bot_manager
-    print(f"📊 Market queue created: {market_queue}")
+    logger.info(f"📊 Market queue created: {market_queue}")
 
     # Start CCXT price collector for real-time market data (reliable alternative)
     from ..services.ccxt_price_collector import ccxt_price_collector
@@ -63,55 +60,52 @@ async def lifespan(app):
 
     # Start collector - it will feed both queues
     asyncio.create_task(ccxt_price_collector(market_queue, chart_queue))
-    print("✅ CCXT price collector started (production mode)")
     logger.info("✅ CCXT price collector started (production mode)")
 
     # Start chart data service with dedicated queue
     chart_service = await get_chart_service(chart_queue)
-    print(f"✅ Chart data service started: {chart_service}")
-    logger.info("✅ Chart data service started")
+    logger.info(f"✅ Chart data service started: {chart_service}")
 
     # Initialize cache manager (Redis with in-memory fallback)
     from ..utils.cache_manager import cache_manager
 
     await cache_manager.initialize()
-    print("✅ Cache manager initialized")
     logger.info("✅ Cache manager initialized")
 
     # Initialize AI Cost Optimization Service
     from ..services import initialize_ai_service
 
     await initialize_ai_service()
-    print("✅ AI Cost Optimization Service initialized")
     logger.info("✅ AI Cost Optimization Service initialized")
 
     # Bootstrap bot manager
     await bot_manager.bootstrap()
-    print("✅ Bot manager bootstrapped")
     logger.info("✅ Bot manager bootstrapped")
 
     # Start alert scheduler
     from ..services.alert_scheduler import alert_scheduler
 
     asyncio.create_task(alert_scheduler.start())
-    print("✅ Alert scheduler started")
     logger.info("✅ Alert scheduler started")
 
     # Start price alert service (for chart annotations)
     from ..services.price_alert_service import price_alert_service
 
     await price_alert_service.start()
-    print("✅ Price alert service started")
     logger.info("✅ Price alert service started")
 
     # Start Telegram bot handler (for responding to button clicks)
     from ..services.telegram.bot_handler import start_telegram_bot
 
     asyncio.create_task(start_telegram_bot())
-    print("✅ Telegram bot handler started")
     logger.info("✅ Telegram bot handler started")
 
-    print("🎉 Application startup complete!")
+    # Start snapshot worker for dashboard pre-caching (Phase 0 - Zero-Wait UX)
+    from ..services.snapshot_worker import start_snapshot_worker
+
+    asyncio.create_task(start_snapshot_worker())
+    logger.info("✅ Dashboard snapshot worker started")
+
     logger.info("🎉 Application startup complete!")
 
     try:
@@ -125,6 +119,12 @@ async def lifespan(app):
 
         await price_alert_service.stop()
         logger.info("✅ Price alert service stopped")
+
+        # Issue #2.2: Close all Bitget REST clients (aiohttp sessions)
+        from ..services.bitget_rest import close_all_rest_clients
+
+        await close_all_rest_clients()
+        logger.info("✅ Bitget REST clients closed")
 
         # Shutdown AI Cost Optimization Service
         from ..services import shutdown_ai_service

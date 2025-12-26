@@ -7,6 +7,7 @@ Market Regime Agent 사용 예제
 import asyncio
 import logging
 import sys
+import os
 from pathlib import Path
 
 # 프로젝트 루트를 Python 경로에 추가
@@ -25,6 +26,19 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+def get_api_credentials():
+    """환경 변수에서 API 인증 정보 가져오기"""
+    api_key = os.getenv("BITGET_API_KEY", "")
+    api_secret = os.getenv("BITGET_SECRET_KEY", "")
+    passphrase = os.getenv("BITGET_PASSPHRASE", "")
+
+    if not all([api_key, api_secret, passphrase]):
+        logger.warning("⚠️ Bitget API credentials not set in environment variables")
+        logger.warning("Please set: BITGET_API_KEY, BITGET_SECRET_KEY, BITGET_PASSPHRASE")
+
+    return api_key, api_secret, passphrase
+
+
 async def example_basic_usage():
     """
     기본 사용 예제 (Bitget API 연동)
@@ -33,8 +47,9 @@ async def example_basic_usage():
     print("Example 1: Basic Market Regime Analysis")
     print("="*60 + "\n")
 
-    # Bitget API 클라이언트 생성 (공개 데이터는 인증 불필요)
-    bitget_client = get_bitget_rest()
+    # Bitget API 클라이언트 생성
+    api_key, api_secret, passphrase = get_api_credentials()
+    bitget_client = get_bitget_rest(api_key, api_secret, passphrase)
 
     # Market Regime Agent 생성
     agent = MarketRegimeAgent(
@@ -102,7 +117,8 @@ async def example_with_cache():
     print("="*60 + "\n")
 
     # Bitget API 클라이언트
-    bitget_client = get_bitget_rest()
+    api_key, api_secret, passphrase = get_api_credentials()
+    bitget_client = get_bitget_rest(api_key, api_secret, passphrase)
 
     # Candle Cache 매니저 생성
     candle_cache = CandleCacheManager()
@@ -166,7 +182,8 @@ async def example_periodic_analysis():
     print("Example 3: Periodic Market Regime Analysis")
     print("="*60 + "\n")
 
-    bitget_client = get_bitget_rest()
+    api_key, api_secret, passphrase = get_api_credentials()
+    bitget_client = get_bitget_rest(api_key, api_secret, passphrase)
 
     agent = MarketRegimeAgent(
         agent_id="market_regime_3",
@@ -226,7 +243,8 @@ async def example_regime_types():
     print("Example 4: Detecting Different Market Regimes")
     print("="*60 + "\n")
 
-    bitget_client = get_bitget_rest()
+    api_key, api_secret, passphrase = get_api_credentials()
+    bitget_client = get_bitget_rest(api_key, api_secret, passphrase)
 
     # 여러 심볼과 타임프레임 조합
     configs = [

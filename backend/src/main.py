@@ -63,6 +63,7 @@ from .middleware.rate_limit_improved import EnhancedRateLimitMiddleware
 from .middleware.error_handler import register_exception_handlers
 from .middleware.request_context import RequestContextMiddleware
 from .middleware.admin_ip_whitelist import AdminIPWhitelistMiddleware
+from .middleware.security_headers import SecurityHeadersMiddleware
 from .config import RateLimitConfig
 
 
@@ -78,6 +79,12 @@ def create_app() -> FastAPI:
             logging.warning(
                 "⚠️ WARNING: JWT_SECRET is not set. Using insecure default for development only!"
             )
+    # 프로덕션에서 JWT_SECRET 길이 검증 (최소 32자)
+    elif not RateLimitConfig.IS_DEVELOPMENT and not settings.is_jwt_secret_secure():
+        raise RuntimeError(
+            f"❌ CRITICAL: JWT_SECRET is too short ({len(settings.jwt_secret)} chars). "
+            "Minimum 32 characters required for production security."
+        )
 
     market_queue: asyncio.Queue = asyncio.Queue()
     bot_manager = BotManager(market_queue, db.AsyncSessionLocal)
@@ -115,8 +122,9 @@ def create_app() -> FastAPI:
             "name": "MIT",
         },
         lifespan=lifespan,
-        docs_url="/docs",
-        redoc_url="/redoc",
+        # 프로덕션 환경에서 API 문서 비활성화 (보안)
+        docs_url=None if not RateLimitConfig.IS_DEVELOPMENT else "/docs",
+        redoc_url=None if not RateLimitConfig.IS_DEVELOPMENT else "/redoc",
         openapi_tags=[
             {"name": "health", "description": "시스템 상태 확인 및 헬스 체크"},
             {"name": "auth", "description": "인증 및 회원가입 (JWT 기반)"},
@@ -191,11 +199,12 @@ def create_app() -> FastAPI:
             f"🔒 CORS: Added {len(additional_origins)} origins from CORS_ORIGINS env"
         )
 
-    # 프로덕션에서 CORS_ORIGINS가 설정되지 않은 경우 경고
+    # 프로덕션에서 CORS_ORIGINS가 설정되지 않은 경우 에러 (보안 강화)
     if not RateLimitConfig.IS_DEVELOPMENT and not allowed_origins:
-        logging.warning(
-            "⚠️ CORS: No origins configured in production! "
-            "Set CORS_ORIGINS environment variable (comma-separated domains)"
+        raise RuntimeError(
+            "❌ CRITICAL: CORS_ORIGINS must be set in production! "
+            "Set CORS_ORIGINS environment variable (comma-separated domains). "
+            "Example: CORS_ORIGINS=https://example.com,https://admin.example.com"
         )
 
     app.add_middleware(
@@ -216,6 +225,9 @@ def create_app() -> FastAPI:
 
     # Rate Limiting Middleware 추가 (개선된 버전)
     app.add_middleware(EnhancedRateLimitMiddleware)
+
+    # 보안 헤더 미들웨어 추가 (OWASP 권장)
+    app.add_middleware(SecurityHeadersMiddleware)
 
     # 전역 에러 핸들러 등록
     register_exception_handlers(app)

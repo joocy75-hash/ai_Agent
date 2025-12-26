@@ -17,6 +17,8 @@ from typing import Any, Dict, List, Optional
 from ..base import BaseAgent, AgentTask
 from .models import SignalValidation, ValidationResult, ValidationRule
 from .rules import ValidationRules
+from src.ml.models import EnsemblePredictor
+from src.ml.features import FeaturePipeline
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +53,31 @@ class SignalValidatorAgent(BaseAgent):
         self.ai_service = ai_service  # IntegratedAIService
         self.enable_ai = config.get("enable_ai", True) if config else True  # AI 활성화
 
-        logger.info(f"SignalValidatorAgent initialized with AI={self.enable_ai}")
+        # ML 통합
+        self.ml_predictor = EnsemblePredictor()
+        self.feature_pipeline = FeaturePipeline()
+        self.enable_ml = config.get("enable_ml", True) if config else True
+
+        logger.info(f"SignalValidatorAgent initialized with AI={self.enable_ai}, ML={self.enable_ml}")
+
+    async def validate_signal(self, params: dict) -> SignalValidation:
+        """
+        Public method for signal validation (wraps _validate_signal)
+
+        Args:
+            params: Signal parameters dict containing:
+                - signal_id: str
+                - symbol: str
+                - action: str (buy/sell/close)
+                - confidence: float
+                - current_price: float
+                - market_regime: str (optional)
+                - volatility: float (optional)
+
+        Returns:
+            SignalValidation object with validation result
+        """
+        return await self._validate_signal(params)
 
     def _init_rules(self) -> List[ValidationRule]:
         """검증 규칙 초기화"""
@@ -220,8 +246,19 @@ class SignalValidatorAgent(BaseAgent):
         recent_trades = params.get("recent_trades_count", 0)
         current_drawdown = params.get("current_drawdown", 0.0)
 
-        # Redis에서 Market Regime 읽기
-        market_regime = await self._get_market_regime_from_redis(symbol)
+        # Market Regime: 파라미터로 전달받거나 Redis에서 읽기
+        # Issue Fix: ADX 0.00 문제 해결 - 파라미터로 전달된 market_regime 우선 사용
+        market_regime_param = params.get("market_regime")
+        if market_regime_param and isinstance(market_regime_param, dict):
+            # 파라미터로 전달된 market_regime 사용 (ETH 전략에서 직접 전달)
+            market_regime = market_regime_param
+            logger.debug(f"Using market_regime from params: {market_regime}")
+        else:
+            # 레거시: Redis에서 Market Regime 읽기
+            market_regime = await self._get_market_regime_from_redis(symbol)
+            # 문자열로 전달된 경우 변환
+            if market_regime_param and isinstance(market_regime_param, str):
+                market_regime["regime_type"] = market_regime_param
 
         # 검증 결과 저장
         passed_rules = []
@@ -295,12 +332,79 @@ class SignalValidatorAgent(BaseAgent):
         total_weight = sum(r.weight for r in self._validation_rules)
         confidence_score = sum(rule_scores) / total_weight if total_weight > 0 else 0.0
 
-        # 검증 결과 결정 (규칙 기반)
+        # ML 기반 검증 (선택적)
+        ml_confidence_adjustment = 0.0
+        ml_should_reject = False
+
+        if self.enable_ml and self.ml_predictor and params.get("candles"):
+            try:
+                candles = params.get("candles", [])
+
+                # 피처 추출
+                features_df = self.feature_pipeline.extract_features(
+                    candles_5m=candles,
+                    symbol=symbol
+                )
+
+                if not features_df.empty:
+                    # ML 예측
+                    ml_prediction = self.ml_predictor.predict(
+                        features=features_df,
+                        symbol=symbol,
+                        rule_based_signal=action
+                    )
+
+                    # 1. 방향 일치 체크
+                    ml_direction = ml_prediction.direction
+                    direction_agrees = ml_direction.agrees_with_rule
+
+                    if direction_agrees and ml_direction.confidence > 0.7:
+                        ml_confidence_adjustment += 0.1
+                        logger.info(f"🔬 ML confirms signal direction: {ml_direction.direction.value} (conf: {ml_direction.confidence:.2f}, boost: +0.1)")
+                    elif not direction_agrees and ml_direction.confidence > 0.7:
+                        ml_confidence_adjustment -= 0.15
+                        logger.warning(f"🔬 ML disagrees with signal direction: ML={ml_direction.direction.value}, Signal={action} (penalty: -0.15)")
+
+                    # 2. 타이밍 체크
+                    ml_timing = ml_prediction.timing
+                    if not ml_timing.is_good_entry and ml_timing.confidence > 0.6:
+                        ml_confidence_adjustment -= 0.2
+                        ml_should_reject = True
+                        failed_rules.append("ml_timing")
+                        warnings.append(f"ML timing check failed: {ml_timing.reason} (confidence: {ml_timing.confidence:.2f})")
+                        logger.warning(f"🔬 ML rejects entry timing: {ml_timing.reason}")
+                    elif ml_timing.is_good_entry and ml_timing.confidence > 0.6:
+                        ml_confidence_adjustment += 0.05
+                        logger.info(f"🔬 ML confirms good entry timing (boost: +0.05)")
+
+                    # 3. 종합 신뢰도 체크
+                    if ml_prediction.combined_confidence < 0.4:
+                        ml_confidence_adjustment -= 0.1
+                        warnings.append(f"ML combined confidence too low: {ml_prediction.combined_confidence:.2f}")
+                        logger.warning(f"🔬 Low ML combined confidence: {ml_prediction.combined_confidence:.2f}")
+
+                    logger.debug(
+                        f"🔬 ML Validation: Dir={ml_direction.direction.value}({ml_direction.confidence:.0%}), "
+                        f"Timing={ml_timing.is_good_entry}, Combined={ml_prediction.combined_confidence:.0%}, "
+                        f"Adjustment={ml_confidence_adjustment:+.2f}"
+                    )
+
+            except Exception as e:
+                logger.warning(f"ML validation failed: {e}")
+
+        # 검증 결과 결정 (규칙 기반 + ML 조정)
+        adjusted_confidence_score = max(0.0, min(1.0, confidence_score + ml_confidence_adjustment))
+
         validation_result = self._determine_result(
             passed_rules=passed_rules,
             failed_rules=failed_rules,
-            confidence_score=confidence_score
+            confidence_score=adjusted_confidence_score
         )
+
+        # ML이 강하게 거부하면 무조건 REJECTED
+        if ml_should_reject and self.enable_ml:
+            validation_result = ValidationResult.REJECTED
+            logger.warning("🔬 ML forces signal rejection due to poor timing")
 
         # AI 기반 검증 (선택적)
         ai_validation_result = validation_result
