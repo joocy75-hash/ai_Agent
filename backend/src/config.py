@@ -1,5 +1,6 @@
 import os
-from pydantic import BaseModel
+import warnings
+from pydantic import BaseModel, model_validator
 
 
 class RateLimitConfig:
@@ -130,6 +131,39 @@ class Settings(BaseModel):
 
     # Frontend URL (OAuth 후 리다이렉트)
     frontend_url: str = os.getenv("FRONTEND_URL", "http://localhost:5173")
+
+    @model_validator(mode="after")
+    def validate_jwt_secret(self) -> "Settings":
+        """JWT Secret 검증: 프로덕션에서는 필수, 개발 환경에서는 경고만"""
+        environment = os.getenv("ENVIRONMENT", "development")
+
+        if not self.jwt_secret:
+            if environment != "development":
+                raise ValueError(
+                    "JWT_SECRET is required in production environment. "
+                    "Please set the JWT_SECRET environment variable with a secure value (minimum 32 characters)."
+                )
+            else:
+                warnings.warn(
+                    "JWT_SECRET is not set. Using empty secret is insecure and only allowed in development.",
+                    UserWarning,
+                    stacklevel=2,
+                )
+        elif len(self.jwt_secret) < 32:
+            if environment != "development":
+                raise ValueError(
+                    f"JWT_SECRET is too short ({len(self.jwt_secret)} characters). "
+                    "Minimum 32 characters required for production security."
+                )
+            else:
+                warnings.warn(
+                    f"JWT_SECRET is too short ({len(self.jwt_secret)} characters). "
+                    "Minimum 32 characters recommended for security.",
+                    UserWarning,
+                    stacklevel=2,
+                )
+
+        return self
 
     def is_jwt_secret_secure(self) -> bool:
         """JWT Secret이 보안 요구사항을 충족하는지 확인 (최소 32자)"""

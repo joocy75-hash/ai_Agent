@@ -4,7 +4,7 @@ JWT 인증 유틸리티
 실사용자 20명 규모에 맞춘 JWT 기반 인증 시스템.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 from jose import JWTError, jwt
 from passlib.context import CryptContext
@@ -62,15 +62,15 @@ class JWTAuth:
         to_encode = data.copy()
 
         if expires_delta:
-            expire = datetime.utcnow() + expires_delta
+            expire = datetime.now(timezone.utc) + expires_delta
         else:
             # 설정값이 있으면 사용, 없으면 기본 1시간
             if settings.jwt_expires_seconds:
-                expire = datetime.utcnow() + timedelta(
+                expire = datetime.now(timezone.utc) + timedelta(
                     seconds=settings.jwt_expires_seconds
                 )
             else:
-                expire = datetime.utcnow() + timedelta(
+                expire = datetime.now(timezone.utc) + timedelta(
                     hours=JWTAuth.ACCESS_TOKEN_EXPIRES_HOURS
                 )
 
@@ -106,9 +106,9 @@ class JWTAuth:
         to_encode = data.copy()
 
         if expires_delta:
-            expire = datetime.utcnow() + expires_delta
+            expire = datetime.now(timezone.utc) + expires_delta
         else:
-            expire = datetime.utcnow() + timedelta(
+            expire = datetime.now(timezone.utc) + timedelta(
                 days=JWTAuth.REFRESH_TOKEN_EXPIRES_DAYS
             )
 
@@ -221,8 +221,8 @@ class JWTAuth:
 
         # Refresh Token 남은 유효기간 확인
         exp_timestamp = payload.get("exp", 0)
-        exp_datetime = datetime.fromtimestamp(exp_timestamp)
-        remaining = exp_datetime - datetime.utcnow()
+        exp_datetime = datetime.fromtimestamp(exp_timestamp, tz=timezone.utc)
+        remaining = exp_datetime - datetime.now(timezone.utc)
 
         # 남은 유효기간이 1일 미만이면 새 Refresh Token도 발급
         if remaining < timedelta(days=1):
