@@ -467,18 +467,18 @@ class DynamicRiskCalculator:
     손절/익절: ATR 기반 동적 계산
     """
 
-    # 레버리지 범위
-    MIN_LEVERAGE = 8
-    MAX_LEVERAGE = 15
+    # 레버리지 범위 (적극적 매매: 상향 조정)
+    MIN_LEVERAGE = 10
+    MAX_LEVERAGE = 20
 
-    # ATR 기반 SL/TP 배수
-    ATR_SL_MULTIPLIER_LOW_VOL = 1.5    # 저변동성
-    ATR_SL_MULTIPLIER_MID_VOL = 2.0    # 중변동성
-    ATR_SL_MULTIPLIER_HIGH_VOL = 2.5   # 고변동성
+    # ATR 기반 SL/TP 배수 (적극적 매매: 타이트한 손절, 넓은 익절)
+    ATR_SL_MULTIPLIER_LOW_VOL = 1.2    # 저변동성 (더 타이트)
+    ATR_SL_MULTIPLIER_MID_VOL = 1.5    # 중변동성
+    ATR_SL_MULTIPLIER_HIGH_VOL = 2.0   # 고변동성
 
-    ATR_TP_MULTIPLIER_LOW_VOL = 3.0    # 저변동성 (1:2 R:R)
-    ATR_TP_MULTIPLIER_MID_VOL = 4.0    # 중변동성 (1:2 R:R)
-    ATR_TP_MULTIPLIER_HIGH_VOL = 5.0   # 고변동성 (1:2 R:R)
+    ATR_TP_MULTIPLIER_LOW_VOL = 3.5    # 저변동성 (1:3 R:R)
+    ATR_TP_MULTIPLIER_MID_VOL = 4.5    # 중변동성 (1:3 R:R)
+    ATR_TP_MULTIPLIER_HIGH_VOL = 5.5   # 고변동성 (1:2.75 R:R)
 
     @classmethod
     def calculate_dynamic_params(
@@ -543,16 +543,16 @@ class DynamicRiskCalculator:
         stop_loss_percent = max(1.0, min(5.0, stop_loss_percent))
         take_profit_percent = max(2.0, min(10.0, take_profit_percent))
 
-        # === 3. 포지션 크기 계산 ===
+        # === 3. 포지션 크기 계산 (적극적 매매: 상향 조정) ===
         # 변동성이 높을수록 포지션 축소
         if volatility_percentile > 80:
-            position_size_percent = 30.0
+            position_size_percent = 50.0  # 30 → 50 (상향)
         elif volatility_percentile > 60:
-            position_size_percent = 50.0
+            position_size_percent = 70.0  # 50 → 70 (상향)
         elif volatility_percentile > 40:
-            position_size_percent = 70.0
+            position_size_percent = 85.0  # 70 → 85 (상향)
         else:
-            position_size_percent = 85.0
+            position_size_percent = 95.0  # 85 → 95 (상향)
 
         # 보호 모드에 따른 조정
         if protection_mode == ProtectionMode.CAUTIOUS:
@@ -596,7 +596,7 @@ class ETHAutonomous40PctStrategy:
     SYMBOL = "ETH/USDT"           # ETH 전용
     SYMBOL_BITGET = "ETHUSDT"     # Bitget 심볼
     TIMEFRAME = "1h"             # 기본 타임프레임
-    MIN_CONFIDENCE = 0.65        # 최소 신뢰도
+    MIN_CONFIDENCE = 0.55        # 최소 신뢰도 (적극적 매매: 낮춤)
 
     def __init__(self, config: Dict[str, Any] = None):
         """
@@ -1000,12 +1000,12 @@ class ETHAutonomous40PctStrategy:
         regime = market_analysis.regime_type
         phase = market_analysis.market_phase
 
-        # === 상승 추세 + 상승 신호 ===
+        # === 상승 추세 + 상승 신호 (적극적 매매: 신뢰도 상향) ===
         if regime == MarketRegimeType.TRENDING_UP:
             if self._is_bullish_continuation(latest, prev, df):
                 return AutonomousDecision(
                     decision=TradingDecision.ENTER_LONG,
-                    confidence=0.80,
+                    confidence=0.85,  # 0.80 → 0.85 (상향)
                     position_size_percent=risk_params.position_size_percent,
                     target_leverage=risk_params.leverage,
                     stop_loss_percent=risk_params.stop_loss_percent,
@@ -1015,13 +1015,13 @@ class ETHAutonomous40PctStrategy:
                     ai_enhanced=self.enable_ai
                 )
 
-        # === 하락 추세 + 숏 신호 ===
+        # === 하락 추세 + 숏 신호 (적극적 매매: 숏도 동등하게) ===
         elif regime == MarketRegimeType.TRENDING_DOWN:
             if self._is_bearish_continuation(latest, prev, df):
                 return AutonomousDecision(
                     decision=TradingDecision.ENTER_SHORT,
-                    confidence=0.75,
-                    position_size_percent=risk_params.position_size_percent * 0.8,  # 숏은 보수적
+                    confidence=0.80,  # 0.75 → 0.80 (상향)
+                    position_size_percent=risk_params.position_size_percent * 0.9,  # 0.8 → 0.9 (상향)
                     target_leverage=risk_params.leverage,
                     stop_loss_percent=risk_params.stop_loss_percent,
                     take_profit_percent=risk_params.take_profit_percent,
@@ -1030,18 +1030,18 @@ class ETHAutonomous40PctStrategy:
                     ai_enhanced=self.enable_ai
                 )
 
-        # === 횡보 + 지지/저항 반전 ===
+        # === 횡보 + 지지/저항 반전 (적극적 매매: 포지션 크기 상향) ===
         elif regime == MarketRegimeType.RANGING:
             # 디버그: 현재 지표 값 로깅
             logger.info(f"[RANGING Debug] RSI: {latest.get('rsi', 0):.1f} | BB%: {latest.get('bb_percent', 0):.2f} | VolRatio: {latest.get('volume_ratio', 0):.2f}")
             if self._is_support_bounce(latest, df):
                 return AutonomousDecision(
                     decision=TradingDecision.ENTER_LONG,
-                    confidence=0.70,
-                    position_size_percent=risk_params.position_size_percent * 0.6,
-                    target_leverage=min(risk_params.leverage, 10),
-                    stop_loss_percent=risk_params.stop_loss_percent * 0.8,
-                    take_profit_percent=risk_params.take_profit_percent * 0.7,
+                    confidence=0.75,  # 0.70 → 0.75 (상향)
+                    position_size_percent=risk_params.position_size_percent * 0.8,  # 0.6 → 0.8 (상향)
+                    target_leverage=min(risk_params.leverage, 15),  # 10 → 15 (상향)
+                    stop_loss_percent=risk_params.stop_loss_percent * 0.9,  # 0.8 → 0.9
+                    take_profit_percent=risk_params.take_profit_percent * 0.85,  # 0.7 → 0.85 (상향)
                     reasoning="🔄 Mean reversion: Bounce from support (BB lower + RSI oversold)",
                     market_analysis=market_analysis,
                     ai_enhanced=self.enable_ai
@@ -1049,60 +1049,60 @@ class ETHAutonomous40PctStrategy:
             elif self._is_resistance_rejection(latest, df):
                 return AutonomousDecision(
                     decision=TradingDecision.ENTER_SHORT,
-                    confidence=0.65,
-                    position_size_percent=risk_params.position_size_percent * 0.5,
-                    target_leverage=min(risk_params.leverage, 8),
-                    stop_loss_percent=risk_params.stop_loss_percent * 0.8,
-                    take_profit_percent=risk_params.take_profit_percent * 0.7,
+                    confidence=0.70,  # 0.65 → 0.70 (상향)
+                    position_size_percent=risk_params.position_size_percent * 0.7,  # 0.5 → 0.7 (상향)
+                    target_leverage=min(risk_params.leverage, 12),  # 8 → 12 (상향)
+                    stop_loss_percent=risk_params.stop_loss_percent * 0.9,
+                    take_profit_percent=risk_params.take_profit_percent * 0.85,
                     reasoning="🔄 Mean reversion: Rejection from resistance (BB upper + RSI overbought)",
                     market_analysis=market_analysis,
                     ai_enhanced=self.enable_ai
                 )
 
-        # === 고변동성 - 극단적 과매도에서만 진입 ===
+        # === 고변동성 - 극단적 과매도에서 진입 (적극적 매매: 상향) ===
         elif regime == MarketRegimeType.HIGH_VOLATILITY:
             if self._is_extreme_oversold(latest, df):
                 return AutonomousDecision(
                     decision=TradingDecision.ENTER_LONG,
-                    confidence=0.65,
-                    position_size_percent=risk_params.position_size_percent * 0.4,
-                    target_leverage=8,  # 최소 레버리지
-                    stop_loss_percent=risk_params.stop_loss_percent * 1.5,
+                    confidence=0.70,  # 0.65 → 0.70 (상향)
+                    position_size_percent=risk_params.position_size_percent * 0.6,  # 0.4 → 0.6 (상향)
+                    target_leverage=10,  # 8 → 10 (상향)
+                    stop_loss_percent=risk_params.stop_loss_percent * 1.3,  # 1.5 → 1.3 (타이트하게)
                     take_profit_percent=risk_params.take_profit_percent * 1.5,
                     reasoning="⚡ High volatility: Extreme oversold with volume spike",
                     market_analysis=market_analysis,
                     ai_enhanced=self.enable_ai,
-                    warnings=["High volatility - reduced position size"]
+                    warnings=["High volatility - moderate position size"]
                 )
 
-        # === 저거래량 - RANGING과 유사하게 지지/저항 반전 전략 ===
+        # === 저거래량 - RANGING과 유사하게 지지/저항 반전 전략 (적극적 매매: 상향) ===
         elif regime == MarketRegimeType.LOW_VOLUME:
-            # 저거래량 시장에서는 보수적으로 지지/저항 반전만 진입
+            # 저거래량 시장에서도 적극적으로 진입
             if self._is_support_bounce(latest, df):
                 return AutonomousDecision(
                     decision=TradingDecision.ENTER_LONG,
-                    confidence=0.65,
-                    position_size_percent=risk_params.position_size_percent * 0.5,  # 작은 포지션
-                    target_leverage=min(risk_params.leverage, 8),  # 낮은 레버리지
-                    stop_loss_percent=risk_params.stop_loss_percent * 0.8,
-                    take_profit_percent=risk_params.take_profit_percent * 0.6,  # 짧은 TP
-                    reasoning="🔇 Low volume: Conservative bounce from support (BB lower + RSI oversold)",
+                    confidence=0.70,  # 0.65 → 0.70 (상향)
+                    position_size_percent=risk_params.position_size_percent * 0.7,  # 0.5 → 0.7 (상향)
+                    target_leverage=min(risk_params.leverage, 12),  # 8 → 12 (상향)
+                    stop_loss_percent=risk_params.stop_loss_percent * 0.85,
+                    take_profit_percent=risk_params.take_profit_percent * 0.8,  # 0.6 → 0.8 (상향)
+                    reasoning="🔇 Low volume: Bounce from support (BB lower + RSI oversold)",
                     market_analysis=market_analysis,
                     ai_enhanced=self.enable_ai,
-                    warnings=["Low volume market - reduced position & leverage"]
+                    warnings=["Low volume market - moderate position"]
                 )
             elif self._is_resistance_rejection(latest, df):
                 return AutonomousDecision(
                     decision=TradingDecision.ENTER_SHORT,
-                    confidence=0.60,
-                    position_size_percent=risk_params.position_size_percent * 0.4,  # 더 작은 포지션
-                    target_leverage=min(risk_params.leverage, 6),  # 더 낮은 레버리지
-                    stop_loss_percent=risk_params.stop_loss_percent * 0.8,
-                    take_profit_percent=risk_params.take_profit_percent * 0.5,
-                    reasoning="🔇 Low volume: Conservative rejection from resistance",
+                    confidence=0.65,  # 0.60 → 0.65 (상향)
+                    position_size_percent=risk_params.position_size_percent * 0.6,  # 0.4 → 0.6 (상향)
+                    target_leverage=min(risk_params.leverage, 10),  # 6 → 10 (상향)
+                    stop_loss_percent=risk_params.stop_loss_percent * 0.85,
+                    take_profit_percent=risk_params.take_profit_percent * 0.7,  # 0.5 → 0.7 (상향)
+                    reasoning="🔇 Low volume: Rejection from resistance",
                     market_analysis=market_analysis,
                     ai_enhanced=self.enable_ai,
-                    warnings=["Low volume market - reduced position & leverage"]
+                    warnings=["Low volume market - moderate position"]
                 )
 
         # === 기본: HOLD ===
@@ -1427,69 +1427,85 @@ class ETHAutonomous40PctStrategy:
     # === 신호 감지 메서드 ===
 
     def _is_bullish_continuation(self, latest, prev, df) -> bool:
-        """상승 추세 지속 신호"""
-        conditions = {
+        """상승 추세 지속 신호 (적극적 매매: 조건 완화)"""
+        # 핵심 조건 (필수)
+        core_conditions = {
             "close > ema_21": latest["close"] > latest["ema_21"],
             "ema_21 > ema_55": latest["ema_21"] > latest["ema_55"],
-            "rsi > 50": latest["rsi"] > 50,
-            "rsi < 75": latest["rsi"] < 75,
-            "macd > signal": latest["macd"] > latest["macd_signal"],
-            "macd_hist increasing": latest["macd_hist"] > prev["macd_hist"],
-            "volume_ratio > 1.1": latest["volume_ratio"] > 1.1,
-            "adx > 20": latest["adx"] > 20,
+            "rsi > 45": latest["rsi"] > 45,  # 50 → 45 (완화)
+            "rsi < 80": latest["rsi"] < 80,  # 75 → 80 (완화)
         }
 
-        all_passed = all(conditions.values())
+        # 보조 조건 (6개 중 3개 이상 충족)
+        secondary_conditions = {
+            "macd > signal": latest["macd"] > latest["macd_signal"],
+            "macd_hist increasing": latest["macd_hist"] > prev["macd_hist"],
+            "macd_hist positive": latest["macd_hist"] > 0,
+            "volume_ratio > 0.9": latest["volume_ratio"] > 0.9,  # 1.1 → 0.9 (완화)
+            "adx > 18": latest["adx"] > 18,  # 20 → 18 (완화)
+            "stoch_rsi > 0.3": latest.get("stoch_rsi", 0.5) > 0.3,
+        }
 
-        # 디버그 로그: 어떤 조건이 실패했는지 표시 (INFO 레벨로 변경)
+        core_passed = all(core_conditions.values())
+        secondary_passed = sum(secondary_conditions.values()) >= 3  # 6개 중 3개 이상
+
+        all_passed = core_passed and secondary_passed
+
         if not all_passed:
-            failed = [k for k, v in conditions.items() if not v]
+            failed_core = [k for k, v in core_conditions.items() if not v]
+            secondary_count = sum(secondary_conditions.values())
             logger.info(
-                f"[Bullish Check] Failed: {failed} | "
+                f"[Bullish Check] Core failed: {failed_core}, Secondary: {secondary_count}/6 | "
                 f"RSI: {latest['rsi']:.1f}, MACD_hist: {latest['macd_hist']:.4f}, "
                 f"Vol_ratio: {latest['volume_ratio']:.2f}, ADX: {latest['adx']:.1f}"
             )
         else:
-            logger.info(f"✅ [Bullish Signal] All conditions passed! RSI: {latest['rsi']:.1f}, ADX: {latest['adx']:.1f}")
+            logger.info(f"✅ [Bullish Signal] Conditions passed! RSI: {latest['rsi']:.1f}, ADX: {latest['adx']:.1f}")
 
         return all_passed
 
     def _is_bearish_continuation(self, latest, prev, df) -> bool:
-        """하락 추세 지속 신호"""
-        return (
+        """하락 추세 지속 신호 (적극적 매매: 조건 완화)"""
+        # 핵심 조건 (필수)
+        core_ok = (
             latest["close"] < latest["ema_21"] and
             latest["ema_21"] < latest["ema_55"] and
-            latest["rsi"] < 50 and latest["rsi"] > 25 and
-            latest["macd"] < latest["macd_signal"] and
-            latest["macd_hist"] < prev["macd_hist"] and
-            latest["volume_ratio"] > 1.1 and
-            latest["adx"] > 20
+            latest["rsi"] < 55 and latest["rsi"] > 20  # 50→55, 25→20 (완화)
         )
 
+        # 보조 조건 (4개 중 2개 이상)
+        secondary_count = sum([
+            latest["macd"] < latest["macd_signal"],
+            latest["macd_hist"] < prev["macd_hist"],
+            latest["volume_ratio"] > 0.9,  # 1.1 → 0.9 (완화)
+            latest["adx"] > 18  # 20 → 18 (완화)
+        ])
+
+        return core_ok and secondary_count >= 2
+
     def _is_support_bounce(self, latest, df) -> bool:
-        """지지선 반등 신호 (완화된 조건)"""
+        """지지선 반등 신호 (적극적 매매: 더 완화된 조건)"""
         return (
-            latest["rsi"] < 40 and  # 35 -> 40 (완화)
-            latest["bb_percent"] < 0.20 and  # 0.15 -> 0.20 (완화)
-            latest["close"] > latest["low"] * 1.001  # 저점에서 반등 (완화)
-            # volume_ratio 조건 제거 - 저거래량 시장에서도 진입 가능
+            latest["rsi"] < 45 and  # 40 → 45 (더 완화)
+            latest["bb_percent"] < 0.30 and  # 0.20 → 0.30 (더 완화)
+            latest["close"] > latest["low"] * 1.0005  # 저점에서 반등 (더 완화)
         )
 
     def _is_resistance_rejection(self, latest, df) -> bool:
-        """저항선 거부 신호 (완화된 조건)"""
+        """저항선 거부 신호 (적극적 매매: 더 완화된 조건)"""
         return (
-            latest["rsi"] > 60 and  # 65 -> 60 (완화)
-            latest["bb_percent"] > 0.80 and  # 0.85 -> 0.80 (완화)
-            latest["close"] < latest["high"] * 0.999  # 고점에서 거부 (완화)
+            latest["rsi"] > 55 and  # 60 → 55 (더 완화)
+            latest["bb_percent"] > 0.70 and  # 0.80 → 0.70 (더 완화)
+            latest["close"] < latest["high"] * 0.9995  # 고점에서 거부 (더 완화)
         )
 
     def _is_extreme_oversold(self, latest, df) -> bool:
-        """극단적 과매도"""
+        """극단적 과매도 (적극적 매매: 조건 완화)"""
         return (
-            latest["rsi"] < 25 and
-            latest["stoch_rsi"] < 0.1 and
-            latest["bb_percent"] < 0.05 and
-            latest["volume_ratio"] > 2.0
+            latest["rsi"] < 30 and  # 25 → 30 (완화)
+            latest["stoch_rsi"] < 0.15 and  # 0.1 → 0.15 (완화)
+            latest["bb_percent"] < 0.10 and  # 0.05 → 0.10 (완화)
+            latest["volume_ratio"] > 1.5  # 2.0 → 1.5 (완화)
         )
 
     def _is_trend_reversal_bearish(self, latest, df) -> bool:
