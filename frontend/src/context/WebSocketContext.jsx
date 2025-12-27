@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { useAuth } from './AuthContext';
 
 const WebSocketContext = createContext();
@@ -349,7 +349,8 @@ export function WebSocketProvider({ children }) {
     };
   }, [user, token, isConnected, reconnect]);
 
-  const value = {
+  // Memoize context value to prevent unnecessary re-renders of consumers
+  const value = useMemo(() => ({
     isConnected,
     connectionState,
     lastMessage,
@@ -363,7 +364,20 @@ export function WebSocketProvider({ children }) {
     connect,
     disconnect,
     reconnect,
-  };
+  }), [
+    isConnected,
+    connectionState,
+    lastMessage,
+    retryCount,
+    nextRetryIn,
+    send,
+    subscribe,
+    addListener,
+    removeListener,
+    connect,
+    disconnect,
+    reconnect,
+  ]);
 
   return (
     <WebSocketContext.Provider value={value}>

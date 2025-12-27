@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext, useRef } from 'react';
 import { Badge, Dropdown, List, Button, Empty, Spin } from 'antd';
 import {
     BellOutlined,
@@ -12,11 +12,15 @@ import { useNavigate } from 'react-router-dom';
 import alertsAPI from '../api/alerts';
 import { WebSocketContext } from '../context/WebSocketContext';
 
+// 캐시 TTL: 10초 - 드롭다운 반복 열기 시 불필요한 API 호출 방지
+const NOTIFICATION_CACHE_TTL = 10000;
+
 export default function NotificationBell() {
     const [visible, setVisible] = useState(false);
     const [notifications, setNotifications] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [loading, setLoading] = useState(false);
+    const lastLoadTimeRef = useRef(null);
     const navigate = useNavigate();
     const { lastMessage } = useContext(WebSocketContext);
 
@@ -24,9 +28,14 @@ export default function NotificationBell() {
         loadNotifications();
     }, []);
 
-    // 드롭다운이 열릴 때마다 통계 새로고침
+    // 드롭다운이 열릴 때 캐시가 만료된 경우에만 새로고침
     useEffect(() => {
         if (visible) {
+            const now = Date.now();
+            // 캐시가 신선하면 API 호출 스킵
+            if (lastLoadTimeRef.current && (now - lastLoadTimeRef.current) < NOTIFICATION_CACHE_TTL) {
+                return;
+            }
             loadNotifications();
         }
     }, [visible]);
@@ -52,6 +61,7 @@ export default function NotificationBell() {
 
             setNotifications(alertsData.alerts || []);
             setUnreadCount(statsData.unresolved_count || 0);
+            lastLoadTimeRef.current = Date.now(); // 캐시 타임스탬프 업데이트
         } catch (error) {
             console.error('Failed to load notifications:', error);
         } finally {

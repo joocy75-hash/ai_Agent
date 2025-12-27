@@ -1,6 +1,5 @@
 import { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { Spin } from 'antd';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { WebSocketProvider } from './context/WebSocketContext';
@@ -10,44 +9,45 @@ import ConnectionStatus from './components/ConnectionStatus';
 import TradingNotification from './components/TradingNotification';
 import MainLayout from './components/layout/MainLayout';
 
-// Lazy load pages for better initial load performance
-const Login = lazy(() => import('./pages/Login'));
+// Core pages - loaded immediately for instant navigation (no lazy loading)
+import Login from './pages/Login';
+import Dashboard from './pages/Dashboard';
+import Trading from './pages/Trading';
+import BotManagement from './pages/BotManagement';
+import Strategy from './pages/Strategy';
+import TradingHistory from './pages/TradingHistory';
+
+// Secondary pages - lazy loaded (less frequently accessed)
 const OAuthCallback = lazy(() => import('./pages/OAuthCallback'));
-const Dashboard = lazy(() => import('./pages/Dashboard'));
-const Strategy = lazy(() => import('./pages/Strategy'));
-const Trading = lazy(() => import('./pages/Trading'));
-const TradingHistory = lazy(() => import('./pages/TradingHistory'));
 const Settings = lazy(() => import('./pages/Settings'));
 const Alerts = lazy(() => import('./pages/Alerts'));
 const Notifications = lazy(() => import('./pages/Notifications'));
 const BacktestingPage = lazy(() => import('./pages/BacktestingPage'));
-const BotManagement = lazy(() => import('./pages/BotManagement'));
 
-// Admin pages
+// Admin pages - lazy loaded
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
 const GridTemplateManager = lazy(() => import('./pages/admin/GridTemplateManager'));
 
-// Loading spinner component - Clean & Minimal
+// Minimal inline loader for lazy-loaded secondary pages only
+// Core pages don't show this - they render instantly
 const PageLoader = () => (
   <div
     style={{
       display: 'flex',
-      flexDirection: 'column',
       justifyContent: 'center',
       alignItems: 'center',
-      height: '100vh',
-      background: '#fafafa',
-      gap: '24px',
+      minHeight: '200px',
+      padding: '40px',
     }}
   >
     <div
       style={{
-        width: '48px',
-        height: '48px',
-        border: '3px solid #e8e8ed',
+        width: '32px',
+        height: '32px',
+        border: '2px solid #e8e8ed',
         borderTopColor: '#0071e3',
         borderRadius: '50%',
-        animation: 'spin 0.8s linear infinite',
+        animation: 'spin 0.6s linear infinite',
       }}
     />
     <style>
@@ -57,16 +57,6 @@ const PageLoader = () => (
         }
       `}
     </style>
-    <p
-      style={{
-        fontSize: '15px',
-        color: '#86868b',
-        fontWeight: 500,
-        margin: 0,
-      }}
-    >
-      로딩 중...
-    </p>
   </div>
 );
 

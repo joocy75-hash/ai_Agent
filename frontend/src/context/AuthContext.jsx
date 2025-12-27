@@ -1,4 +1,4 @@
-import { createContext, useState, useContext, useEffect, useCallback } from 'react';
+import { createContext, useState, useContext, useEffect, useCallback, useMemo } from 'react';
 import { authAPI } from '../api/auth';
 
 const AuthContext = createContext(null);
@@ -203,7 +203,8 @@ export const AuthProvider = ({ children }) => {
     setRefreshToken(null);
   };
 
-  const value = {
+  // Memoize context value to prevent unnecessary re-renders of consumers
+  const value = useMemo(() => ({
     user,
     token,
     refreshToken,
@@ -212,7 +213,7 @@ export const AuthProvider = ({ children }) => {
     loading,
     isAuthenticated: !!user,
     refreshAccessToken,
-  };
+  }), [user, token, refreshToken, login, logout, loading, refreshAccessToken]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

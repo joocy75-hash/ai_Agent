@@ -3,7 +3,7 @@
  * 전략 목록 상태를 전역으로 관리하여 전략관리 페이지와 트레이딩 페이지 간의 연동을 처리
  */
 
-import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { strategyAPI } from '../api/strategy';
 import apiClient from '../api/client';
 
@@ -18,16 +18,21 @@ export function StrategyProvider({ children }) {
     const [lastUpdated, setLastUpdated] = useState(null);
     const lastUpdatedRef = useRef(null);
 
+    // strategies 길이를 ref로 추적하여 순환 의존성 방지
+    const strategiesLengthRef = useRef(0);
+    strategiesLengthRef.current = strategies.length;
+
     /**
      * 전략 목록 로드 (백엔드에서 가져오기)
      * @param {boolean} force - true면 캐시 무시하고 강제 로드
+     * Note: 순환 의존성 방지를 위해 strategies를 의존성 배열에서 제거
      */
     const loadStrategies = useCallback(async (force = false) => {
-        // 캐시가 유효하면 API 호출 스킵
+        // 캐시가 유효하면 API 호출 스킵 (ref 사용으로 의존성 제거)
         const now = Date.now();
-        if (!force && strategies.length > 0 && lastUpdatedRef.current && (now - lastUpdatedRef.current < CACHE_TTL)) {
+        if (!force && strategiesLengthRef.current > 0 && lastUpdatedRef.current && (now - lastUpdatedRef.current < CACHE_TTL)) {
             console.log('[StrategyContext] Using cached strategies (TTL not expired)');
-            return strategies;
+            return; // void 반환 - 캐시된 상태 사용
         }
 
         setLoading(true);
@@ -37,7 +42,7 @@ export function StrategyProvider({ children }) {
                 console.log('[StrategyContext] No token, skipping strategy load');
                 setStrategies([]);
                 setLoading(false);
-                return [];
+                return;
             }
 
             const data = await strategyAPI.getAIStrategies();
@@ -48,16 +53,13 @@ export function StrategyProvider({ children }) {
             setLastUpdated(updateTime);
             lastUpdatedRef.current = updateTime;
             console.log(`[StrategyContext] Loaded ${allStrategies.length} strategies`);
-
-            return allStrategies;
         } catch (error) {
             console.error('[StrategyContext] Error loading strategies:', error);
             // 에러 시 기존 데이터 유지
-            return strategies;
         } finally {
             setLoading(false);
         }
-    }, [strategies]);
+    }, []); // 의존성 제거 - ref 사용으로 최신 값 참조
 
     /**
      * 활성화된 전략만 가져오기 (트레이딩 페이지용)
@@ -128,7 +130,8 @@ export function StrategyProvider({ children }) {
         }
     }, [loadStrategies]);
 
-    const value = {
+    // Memoize context value to prevent unnecessary re-renders of consumers
+    const value = useMemo(() => ({
         strategies,
         loading,
         lastUpdated,
@@ -137,7 +140,16 @@ export function StrategyProvider({ children }) {
         deleteStrategy,
         toggleStrategy,
         refreshStrategies,
-    };
+    }), [
+        strategies,
+        loading,
+        lastUpdated,
+        loadStrategies,
+        getActiveStrategies,
+        deleteStrategy,
+        toggleStrategy,
+        refreshStrategies,
+    ]);
 
     return (
         <StrategyContext.Provider value={value}>

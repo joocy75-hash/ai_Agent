@@ -24,7 +24,7 @@ const { Option } = Select;
 export default function Trading() {
     const { user } = useAuth();
     const { isConnected, subscribe } = useWebSocket();
-    const { strategies: allStrategies, loading: strategiesLoading, lastUpdated } = useStrategies();
+    const { strategies: allStrategies } = useStrategies();
 
     // 화면 크기 감지
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -72,6 +72,7 @@ export default function Trading() {
     }, []);
 
     // 전역 전략 상태가 변경되면 선택된 전략 유효성 검사
+    // Note: lastUpdated 제거 - strategies 배열 자체가 변경될 때만 실행되도록 최적화
     useEffect(() => {
         if (selectedStrategy && strategies.length > 0) {
             const strategyExists = strategies.some(s => s.id === parseInt(selectedStrategy));
@@ -80,8 +81,7 @@ export default function Trading() {
                 setSelectedStrategy('');
             }
         }
-        console.log(`[Trading] Strategy list updated: ${strategies.length} active strategies available`);
-    }, [lastUpdated, strategies, selectedStrategy]);
+    }, [strategies, selectedStrategy]);
 
     // WebSocket for price alerts
     useEffect(() => {

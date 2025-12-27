@@ -508,17 +508,22 @@ export default function Dashboard() {
     }
   };
 
-  // 가격만 초기 로드 및 주기적 갱신
+  // 가격 로드 - WebSocket 연결 상태에 따라 polling 여부 결정
+  // WebSocket이 연결되면 실시간 업데이트를 받으므로 polling 불필요
   useEffect(() => {
+    // 초기 로드는 항상 수행
     loadPrices();
 
-    const interval = setInterval(() => {
-      loadPrices();
-    }, 30000);
+    // WebSocket이 연결되어 있지 않을 때만 polling
+    if (!isConnected) {
+      const interval = setInterval(() => {
+        loadPrices();
+      }, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [isConnected]);
 
-    return () => clearInterval(interval);
-  }, []);
-
+  // WebSocket 실시간 가격 업데이트 구독
   useEffect(() => {
     if (!isConnected) return;
 
