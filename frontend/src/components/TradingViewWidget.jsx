@@ -1,5 +1,5 @@
 import { useEffect, useRef, memo, useState, useCallback } from 'react';
-import { Typography } from 'antd';
+import { Spin, Typography } from 'antd';
 import { DownOutlined, ReloadOutlined } from '@ant-design/icons';
 import { createChart } from 'lightweight-charts';
 import { bitgetAPI } from '../api/bitget';
