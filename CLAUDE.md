@@ -214,17 +214,36 @@ docker compose -f docker-compose.production.yml up -d
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### 현재 활성 전략
+### 현재 활성 전략 (2025-12-27 적극적 매매 모드로 변경)
 
 ```
 전략명: ETH AI Autonomous 40% Margin Strategy
 전략코드: eth_autonomous_40pct
 심볼: ETHUSDT
 최대 마진: 40% (하드코딩 - 절대 변경 금지)
-레버리지: 8-15x (변동성 기반 동적)
-손절: ATR × 1.5~2.5 (~1.5%)
-익절: ATR × 3.0~5.0 (~3%, 1:2 R:R)
+레버리지: 10-20x (변동성 기반 동적) ← 기존 8-15x에서 상향
+손절: ATR × 1.2~2.0 (~1.2%) ← 더 타이트하게 조정
+익절: ATR × 3.5~5.5 (~3.5%, 1:3 R:R) ← 더 넓게 조정
+최소 신뢰도: 55% ← 기존 65%에서 하향 (더 빈번한 진입)
 ```
+
+#### 적극적 매매 모드 변경 사항 (2025-12-27)
+
+| 항목 | 이전 | 변경 후 |
+|------|------|---------|
+| 레버리지 범위 | 8-15x | 10-20x |
+| 최소 신뢰도 | 65% | 55% |
+| 상승진입 RSI | > 50 | > 45 |
+| 지지반등 RSI | < 40 | < 45 |
+| 지지반등 BB% | < 0.20 | < 0.30 |
+| 저항거부 BB% | > 0.80 | < 0.70 |
+| 포지션 크기 (저변동성) | 85% | 95% |
+| 손절 ATR 배수 (저변동성) | 1.5 | 1.2 |
+| 익절 ATR 배수 (저변동성) | 3.0 | 3.5 |
+
+**진입 조건 완화:**
+- 상승 추세: 8개 조건 모두 충족 → 핵심 4개 + 보조 6개 중 3개 충족
+- 하락 추세: 8개 조건 모두 충족 → 핵심 3개 + 보조 4개 중 2개 충족
 
 ### AI Service 설정
 
@@ -495,8 +514,32 @@ ssh -i ~/.ssh/hetzner_deploy_key root@5.161.112.248 \
 ## Database Schema (핵심 테이블)
 
 ### strategies
+
 ```sql
 id, name, code, type, params, is_active, user_id, created_at
+```
+
+**현재 등록된 전략 (2025-12-27 복구됨):**
+
+| ID | 이름 | 코드 |
+|----|------|------|
+| 1 | ETH AI 자율 40% 마진 전략 | eth_ai_autonomous_40pct_strategy.EthAIAutonomous40PctStrategy |
+| 2 | AI 통합 스마트 전략 | ai_integrated_smart_strategy.AIIntegratedSmartStrategy |
+| 3 | RSI 전략 | rsi_strategy.RSIStrategy |
+| 4 | EMA 전략 | ema_strategy.EMAStrategy |
+| 5 | Conservative 전략 | proven_conservative_strategy.ProvenConservativeStrategy |
+
+**전략 복구 명령어** (DB가 비어있을 경우):
+
+```bash
+ssh -i ~/.ssh/hetzner_deploy_key root@5.161.112.248 "docker exec groupc-postgres psql -U trading_user -d trading_prod -c \"
+INSERT INTO strategies (user_id, name, description, code, params, is_active) VALUES
+(1, 'ETH AI 자율 40% 마진 전략', 'ETH 전용 AI 자율 거래 전략', 'eth_ai_autonomous_40pct_strategy.EthAIAutonomous40PctStrategy', '{\\\"max_margin_percent\\\": 40}', true),
+(1, 'AI 통합 스마트 전략', 'AI 기반 통합 분석 전략', 'ai_integrated_smart_strategy.AIIntegratedSmartStrategy', '{}', true),
+(1, 'RSI 전략', 'RSI 기반 기본 전략', 'rsi_strategy.RSIStrategy', '{}', true),
+(1, 'EMA 전략', 'EMA 크로스오버 전략', 'ema_strategy.EMAStrategy', '{}', true),
+(1, 'Conservative 전략', '보수적 안전 전략', 'proven_conservative_strategy.ProvenConservativeStrategy', '{}', true);
+\""
 ```
 
 ### trades
@@ -524,6 +567,8 @@ id, user_id, strategy_id, symbol, status, allocation_percent, bot_type
 
 | 날짜 | 내용 |
 |------|------|
+| 2025-12-27 | **적극적 매매 전략으로 변경** - 레버리지 10-20x, 진입조건 완화, 포지션 크기 상향 |
+| 2025-12-27 | **DB 전략 복구** - Production DB strategies 테이블에 5개 전략 재삽입 |
 | 2025-12-27 | **PostgreSQL 비밀번호 문제 해결** - 볼륨 재생성 및 문서화 |
 | 2025-12-27 | **Dockerfile 개선** - 마이그레이션 실패 시 컨테이너 종료 로직 추가 |
 | 2025-12-27 | **PostgreSQL init 스크립트 추가** - 자동 초기화 설정 |
