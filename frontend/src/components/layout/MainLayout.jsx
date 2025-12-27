@@ -3,7 +3,6 @@ import { Layout, Menu, Avatar, Dropdown, Space, Drawer, Button } from 'antd';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
     DashboardOutlined,
-    RocketOutlined,
     LineChartOutlined,
     SettingOutlined,
     LogoutOutlined,
@@ -11,7 +10,6 @@ import {
     UserOutlined,
     MenuFoldOutlined,
     MenuUnfoldOutlined,
-    ExperimentOutlined,
     FundOutlined,
     MenuOutlined,
     CloseOutlined,
@@ -65,19 +63,9 @@ export default function MainLayout({ children }) {
             label: '트레이딩',
         },
         {
-            key: '/strategy',
-            icon: <RocketOutlined />,
-            label: '전략 관리',
-        },
-        {
             key: '/bots',
             icon: <RobotOutlined />,
             label: '봇 관리',
-        },
-        {
-            key: '/backtesting',
-            icon: <ExperimentOutlined />,
-            label: '백테스팅',
         },
         {
             key: '/history',

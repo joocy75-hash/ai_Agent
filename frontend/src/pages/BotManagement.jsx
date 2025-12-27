@@ -37,6 +37,7 @@ import {
     FallOutlined,
     ThunderboltOutlined,
     LineChartOutlined,
+    RocketOutlined,
 } from '@ant-design/icons';
 
 import botInstancesAPI from '../api/botInstances';
@@ -57,6 +58,9 @@ import { GridBotTabs } from '../components/grid';  // 그리드 템플릿 컴포
 // AI 추세 봇 컴포넌트
 import { TrendBotTabs } from '../components/trend';  // AI 추세 템플릿 컴포넌트
 
+// 전략 선택 컴포넌트
+import SimpleStrategyCreator from '../components/strategy/SimpleStrategyCreator';
+
 const { Title, Text } = Typography;
 
 export default function BotManagement() {
@@ -67,7 +71,7 @@ export default function BotManagement() {
     const [runningCount, setRunningCount] = useState(0);
     const [loading, setLoading] = useState(false);
     const [actionLoading, setActionLoading] = useState(false);
-    const [activeTab, setActiveTab] = useState('ai_trend');  // 기본 탭: AI 추세
+    const [activeTab, setActiveTab] = useState('strategy');  // 기본 탭: 전략 선택
 
     // 전략 컨텍스트 - 템플릿 컴셉으로 사용 안함
     // const { getActiveStrategies } = useStrategies();
@@ -206,8 +210,17 @@ export default function BotManagement() {
         return value >= 0 ? `+$${formatted}` : `-$${formatted}`;
     };
 
-    // 탭 아이템 (전체 탭 삭제)
+    // 탭 아이템
     const tabItems = [
+        {
+            key: 'strategy',
+            label: (
+                <Space>
+                    <RocketOutlined style={{ color: '#722ed1' }} />
+                    전략 선택
+                </Space>
+            ),
+        },
         {
             key: 'ai_trend',
             label: (
@@ -544,8 +557,17 @@ export default function BotManagement() {
 
             {/* 봇 카드 그리드 */}
             <Spin spinning={loading}>
+                {/* 전략 선택 탭 */}
+                {activeTab === 'strategy' && (
+                    <SimpleStrategyCreator
+                        onStrategyCreated={() => {
+                            loadBots();
+                            loadSummary();
+                        }}
+                    />
+                )}
                 {/* AI 추세 탭: AI 추천 템플릿 */}
-                {activeTab === 'ai_trend' ? (
+                {activeTab === 'ai_trend' && (
                     <TrendBotTabs
                         availableBalance={availableAllocation}
                         onBotCreated={() => {
@@ -553,7 +575,9 @@ export default function BotManagement() {
                             loadSummary();
                         }}
                     />
-                ) : (
+                )}
+                {/* 그리드 탭 */}
+                {activeTab === 'grid' && (
                     <GridBotTabs
                         gridBots={bots.filter(b => b.bot_type === 'grid')}
                         onStartBot={handleStartBot}
