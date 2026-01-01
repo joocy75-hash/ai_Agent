@@ -169,6 +169,10 @@ def _create_strategy_instance_internal(
         normalized = (strategy_code or "eth_ai_fusion").strip()
         if not normalized:
             normalized = "eth_ai_fusion"
+
+        # Legacy aliases 및 다양한 형태의 전략 코드 처리
+        # DB에 저장된 코드 형태: "eth_ai_fusion_strategy.ETHAIFusionStrategy"
+        # 또는 짧은 형태: "eth_ai_fusion"
         legacy_aliases = {
             "proven_conservative",
             "proven_balanced",
@@ -179,15 +183,23 @@ def _create_strategy_instance_internal(
             "adaptive_market_regime_fighter",
             "eth_autonomous_40pct",
             "sol_volatility_regime_15m",
+            # 전체 경로 형태도 eth_ai_fusion으로 매핑
+            "eth_ai_fusion_strategy.ETHAIFusionStrategy",
+            "eth_ai_fusion_strategy",
+            "ETHAIFusionStrategy",
         }
         if normalized in legacy_aliases:
             normalized = "eth_ai_fusion"
 
         if normalized == "eth_ai_fusion":
             from ..strategies.eth_ai_fusion_strategy import ETHAIFusionStrategy
+            logger.info(f"✅ Loading ETHAIFusionStrategy for user {user_id}")
             return ETHAIFusionStrategy(params, user_id=user_id)
 
-        return None
+        # 알 수 없는 전략 코드 - 경고 후 기본 전략 로드
+        logger.warning(f"⚠️ Unknown strategy code '{strategy_code}', falling back to eth_ai_fusion")
+        from ..strategies.eth_ai_fusion_strategy import ETHAIFusionStrategy
+        return ETHAIFusionStrategy(params, user_id=user_id)
 
     except Exception as e:
         logger.error(f"Failed to load strategy: {e}", exc_info=True)
