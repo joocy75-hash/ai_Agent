@@ -76,7 +76,7 @@ jobs:
 
       - name: Frontend build check
         env:
-          VITE_API_URL: https://api.ai-deepsignal.com
+          VITE_API_URL: https://api.deepsignal.shop
         run: |
           cd frontend
           npm run build
@@ -308,10 +308,10 @@ jobs:
           # HTTPS endpoints
           echo ""
           echo "🔐 HTTPS Endpoints:"
-          HTTPS_API=$(curl -s -o /dev/null -w "%{http_code}" "https://api.ai-deepsignal.com/health" || echo "000")
+          HTTPS_API=$(curl -s -o /dev/null -w "%{http_code}" "https://api.deepsignal.shop/health" || echo "000")
           echo "  API (HTTPS): HTTP $HTTPS_API"
 
-          HTTPS_FE=$(curl -s -o /dev/null -w "%{http_code}" "https://ai-deepsignal.com" || echo "000")
+          HTTPS_FE=$(curl -s -o /dev/null -w "%{http_code}" "https://deepsignal.shop" || echo "000")
           echo "  Frontend (HTTPS): HTTP $HTTPS_FE"
 
       - name: Container status
@@ -340,9 +340,9 @@ jobs:
           echo "Server: ${{ secrets.HETZNER_SERVER_IP }}"
           echo ""
           echo "🌐 Public URLs:"
-          echo "  - Frontend: https://ai-deepsignal.com"
-          echo "  - API: https://api.ai-deepsignal.com"
-          echo "  - Admin: https://admin.ai-deepsignal.com"
+          echo "  - Frontend: https://deepsignal.shop"
+          echo "  - API: https://api.deepsignal.shop"
+          echo "  - Admin: https://admin.deepsignal.shop"
           echo ""
           echo "🔧 Internal URLs:"
           echo "  - API: http://${{ secrets.HETZNER_SERVER_IP }}:8000"

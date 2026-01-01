@@ -39,9 +39,9 @@ OS: Ubuntu 24.04 LTS
 
 | 서비스 | URL | 포트 |
 |-------|-----|------|
-| **Frontend** | http://5.161.112.248:3001 | 3001 |
-| **Admin** | http://5.161.112.248:4000 | 4000 |
-| **API** | http://5.161.112.248:8000 | 8000 |
+| **Frontend** | <https://deepsignal.shop> | 3001 |
+| **Admin** | <https://admin.deepsignal.shop> | 4000 |
+| **API** | <https://api.deepsignal.shop> | 8000 |
 
 > **Note**: 포트 3000은 Freqtrade UI가 사용 중이므로 Frontend는 3001 사용
 
@@ -242,6 +242,7 @@ docker compose -f docker-compose.production.yml up -d
 | 익절 ATR 배수 (저변동성) | 3.0 | 3.5 |
 
 **진입 조건 완화:**
+
 - 상승 추세: 8개 조건 모두 충족 → 핵심 4개 + 보조 6개 중 3개 충족
 - 하락 추세: 8개 조건 모두 충족 → 핵심 3개 + 보조 4개 중 2개 충족
 
@@ -346,6 +347,7 @@ docker compose build --no-cache frontend
 ```
 
 **수정 시 체크리스트:**
+
 - [ ] 두 루프 모두 동일하게 수정했는가? (instance loop + legacy loop)
 - [ ] `current_position` 동기화 로직 유지했는가?
 - [ ] AI 에이전트 초기화 순서 유지했는가?
@@ -357,6 +359,7 @@ docker compose build --no-cache frontend
 ```
 
 **수정 시 체크리스트:**
+
 - [ ] `generate_signal_with_strategy()` 인터페이스 유지했는가?
 - [ ] `current_position` 파라미터 전달했는가?
 
@@ -367,6 +370,7 @@ docker compose build --no-cache frontend
 ```
 
 **수정 시 체크리스트:**
+
 - [ ] 40% 마진 한도 유지했는가?
 - [ ] `_check_exit_conditions()` 로직 유지했는가?
 - [ ] 4개 AI 에이전트 초기화 유지했는가?
@@ -493,20 +497,24 @@ ssh -i ~/.ssh/hetzner_deploy_key root@5.161.112.248 \
 ## API 엔드포인트
 
 ### Auth
+
 - `POST /api/v1/auth/login` - 로그인
 - `POST /api/v1/auth/register` - 회원가입
 - `POST /api/v1/auth/refresh` - 토큰 갱신
 
 ### Bot
+
 - `GET /api/v1/bot/status` - 봇 상태
 - `POST /api/v1/bot/start` - 봇 시작
 - `POST /api/v1/bot/stop` - 봇 중지
 
 ### Strategy
+
 - `GET /api/v1/strategy/list` - 전략 목록
 - `GET /api/v1/ai/strategies/list` - AI 전략 목록
 
 ### Health
+
 - `GET /health` - 서버 헬스체크
 
 ---
@@ -543,11 +551,13 @@ INSERT INTO strategies (user_id, name, description, code, params, is_active) VAL
 ```
 
 ### trades
+
 ```sql
 id, user_id, symbol, side, entry_price, exit_price, size, pnl, status, created_at
 ```
 
 ### bot_instances
+
 ```sql
 id, user_id, strategy_id, symbol, status, allocation_percent, bot_type
 ```

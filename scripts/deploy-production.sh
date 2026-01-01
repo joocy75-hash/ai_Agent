@@ -22,8 +22,8 @@ SERVER_PASS='Vc8,xn7j_fjdnNGy'
 SERVER_PATH="/root/auto-dashboard"
 
 # Production URLs
-PRODUCTION_API_URL="https://api.ai-deepsignal.com"
-PRODUCTION_FRONTEND_URL="https://ai-deepsignal.com"
+PRODUCTION_API_URL="https://api.deepsignal.shop"
+PRODUCTION_FRONTEND_URL="https://deepsignal.shop"
 
 ssh_cmd() {
     sshpass -p "$SERVER_PASS" ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_IP} "$@"
@@ -104,9 +104,9 @@ EOF
     # 1.4 Check CORS_ORIGINS
     print_step "Checking CORS_ORIGINS..."
     local cors=$(ssh_cmd "grep '^CORS_ORIGINS=' ${SERVER_PATH}/.env 2>/dev/null | cut -d'=' -f2" || echo "")
-    if [[ ! "$cors" =~ "ai-deepsignal.com" ]]; then
-        print_warning "Updating CORS_ORIGINS to include ai-deepsignal.com"
-        local new_cors="https://ai-deepsignal.com,https://admin.ai-deepsignal.com,http://158.247.245.197:3000,http://158.247.245.197:4000"
+    if [[ ! "$cors" =~ "deepsignal.shop" ]]; then
+        print_warning "Updating CORS_ORIGINS to include deepsignal.shop"
+        local new_cors="https://deepsignal.shop,https://admin.deepsignal.shop,http://158.247.245.197:3000,http://158.247.245.197:4000"
         ssh_cmd "grep -q '^CORS_ORIGINS=' ${SERVER_PATH}/.env && sed -i 's|^CORS_ORIGINS=.*|CORS_ORIGINS=${new_cors}|' ${SERVER_PATH}/.env || echo 'CORS_ORIGINS=${new_cors}' >> ${SERVER_PATH}/.env"
     fi
     print_success "CORS_ORIGINS configured"
@@ -207,7 +207,7 @@ verify_deployment() {
     local in_container=$(ssh_cmd "docker exec trading-frontend grep -o 'api.ai-deepsignal' /usr/share/nginx/html/assets/index-*.js 2>/dev/null | head -1" || echo "")
 
     if [ -n "$in_container" ]; then
-        print_success "Frontend using: api.ai-deepsignal.com"
+        print_success "Frontend using: api.deepsignal.shop"
     else
         local has_localhost=$(ssh_cmd "docker exec trading-frontend grep -o 'localhost:8000' /usr/share/nginx/html/assets/index-*.js 2>/dev/null | head -1" || echo "")
         if [ -n "$has_localhost" ]; then

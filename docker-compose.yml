@@ -109,7 +109,7 @@ services:
       args:
         # 🔒 SECURITY: VITE_API_URL must be set in .env file
         # No default value to prevent accidental localhost builds in production
-        VITE_API_URL: ${VITE_API_URL:?VITE_API_URL must be set in .env file (e.g., https://api.ai-deepsignal.com)}
+        VITE_API_URL: ${VITE_API_URL:?VITE_API_URL must be set in .env file (e.g., https://api.deepsignal.shop)}
     container_name: trading-frontend
     ports:
       - "3000:3000"
@@ -133,7 +133,7 @@ services:
       args:
         # 🔒 SECURITY: VITE_API_URL must be set in .env file
         # No default value to prevent accidental localhost builds in production
-        VITE_API_URL: ${VITE_API_URL:?VITE_API_URL must be set in .env file (e.g., https://api.ai-deepsignal.com)}
+        VITE_API_URL: ${VITE_API_URL:?VITE_API_URL must be set in .env file (e.g., https://api.deepsignal.shop)}
     container_name: trading-admin-frontend
     ports:
       - "4000:4000"
