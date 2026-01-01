@@ -16,17 +16,16 @@ NC='\033[0m'
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
-SERVER_IP="158.247.245.197"
+SERVER_IP="5.161.112.248"
 SERVER_USER="root"
-SERVER_PASS='Vc8,xn7j_fjdnNGy'
-SERVER_PATH="/root/auto-dashboard"
+SERVER_PATH="/root/service_c/ai-trading-platform"
 
 # Production URLs
 PRODUCTION_API_URL="https://api.deepsignal.shop"
 PRODUCTION_FRONTEND_URL="https://deepsignal.shop"
 
 ssh_cmd() {
-    sshpass -p "$SERVER_PASS" ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_IP} "$@"
+    ssh -i ~/.ssh/hetzner_deploy_key -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_IP} "$@"
 }
 
 print_header() {
@@ -159,7 +158,7 @@ sync_files() {
         --exclude '.scannerwork' \
         --exclude 'bitget-futures-trading' \
         --exclude 'futures_trading_agent' \
-        -e "sshpass -p '$SERVER_PASS' ssh -o StrictHostKeyChecking=no" \
+        -e "ssh -i ~/.ssh/hetzner_deploy_key -o StrictHostKeyChecking=no" \
         ./ ${SERVER_USER}@${SERVER_IP}:${SERVER_PATH}/
 
     print_success "Files synced to server"

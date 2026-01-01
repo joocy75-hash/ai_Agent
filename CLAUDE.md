@@ -214,37 +214,23 @@ docker compose -f docker-compose.production.yml up -d
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### 현재 활성 전략 (2025-12-27 적극적 매매 모드로 변경)
+### 현재 활성 전략 (2026-01-01 ETH AI Fusion으로 교체)
 
-```
-전략명: ETH AI Autonomous 40% Margin Strategy
-전략코드: eth_autonomous_40pct
+전략명: ETH AI Fusion Strategy
+전략코드: eth_ai_fusion
 심볼: ETHUSDT
-최대 마진: 40% (하드코딩 - 절대 변경 금지)
-레버리지: 10-20x (변동성 기반 동적) ← 기존 8-15x에서 상향
-손절: ATR × 1.2~2.0 (~1.2%) ← 더 타이트하게 조정
-익절: ATR × 3.5~5.5 (~3.5%, 1:3 R:R) ← 더 넓게 조정
-최소 신뢰도: 55% ← 기존 65%에서 하향 (더 빈번한 진입)
-```
+타임프레임: 5m
+최대 마진: 40% (하드코딩)
+레버리지: 10-20x (변동성 기반 동적)
 
-#### 적극적 매매 모드 변경 사항 (2025-12-27)
+**전략 로직 요약:**
 
-| 항목 | 이전 | 변경 후 |
-|------|------|---------|
-| 레버리지 범위 | 8-15x | 10-20x |
-| 최소 신뢰도 | 65% | 55% |
-| 상승진입 RSI | > 50 | > 45 |
-| 지지반등 RSI | < 40 | < 45 |
-| 지지반등 BB% | < 0.20 | < 0.30 |
-| 저항거부 BB% | > 0.80 | < 0.70 |
-| 포지션 크기 (저변동성) | 85% | 95% |
-| 손절 ATR 배수 (저변동성) | 1.5 | 1.2 |
-| 익절 ATR 배수 (저변동성) | 3.0 | 3.5 |
-
-**진입 조건 완화:**
-
-- 상승 추세: 8개 조건 모두 충족 → 핵심 4개 + 보조 6개 중 3개 충족
-- 하락 추세: 8개 조건 모두 충족 → 핵심 3개 + 보조 4개 중 2개 충족
+- **진입 기준**: EMA(9/21) 방향, RSI(14), MACD 히스토그램, 거래량 비율 점수화. 점수 ≥ 4 및 방향 우세 시 진입
+- **ML 게이트**: FeaturePipeline + EnsemblePredictor 사용. `should_skip_entry` 또는 방향 불일치/타이밍 불량 시 진입 차단
+- **보수적 손절/익절**: ATR% 기반 SL/TP (SL: 0.6~1.6%, ML 신뢰도 높으면 최대 1.8%), TP: 1.2~4.5%
+- **트레일링**: 최대 수익이 TP 도달 시, `max(stop_loss, max_profit*0.5)` 기준으로 이익 보호 청산
+- **추매(수익 구간)**: 0.8% 단위 수익 구간 도달 시 최대 3회, 현재 포지션의 35% 규모로 추가 진입
+  - RSI 과열/과매도, EMA/MACD 반전, ML 방향 불일치 시 추매 차단
 
 ### AI Service 설정
 
@@ -329,10 +315,10 @@ docker compose build --no-cache frontend
 
 | Component | Location | Reason |
 |-----------|----------|--------|
-| `MarginCapEnforcer40Pct` | `eth_ai_autonomous_40pct_strategy.py` | 40% 마진 한도 |
-| `_check_exit_conditions()` | 동일 파일 | 익절/손절 로직 |
+| `ETHAIFusionStrategy` | `eth_ai_fusion_strategy.py` | 메인 트레이딩 로직 |
+| `_risk_targets()` | 동일 파일 | 익절/손절 로직 |
 | 포지션 동기화 | `bot_runner.py:627-670` | 봇 시작 시 동기화 |
-| AI Agent 초기화 | `strategy_loader.py` | 4개 에이전트 생성 |
+| AI Agent 초기화 | `strategy_loader.py` | 에이전트 생성 |
 
 ---
 
@@ -363,17 +349,17 @@ docker compose build --no-cache frontend
 - [ ] `generate_signal_with_strategy()` 인터페이스 유지했는가?
 - [ ] `current_position` 파라미터 전달했는가?
 
-### eth_ai_autonomous_40pct_strategy.py
+### eth_ai_fusion_strategy.py
 
 ```
-위치: backend/src/strategies/eth_ai_autonomous_40pct_strategy.py
+위치: backend/src/strategies/eth_ai_fusion_strategy.py
 ```
 
 **수정 시 체크리스트:**
 
 - [ ] 40% 마진 한도 유지했는가?
-- [ ] `_check_exit_conditions()` 로직 유지했는가?
-- [ ] 4개 AI 에이전트 초기화 유지했는가?
+- [ ] `_risk_targets()` 로직 유지했는가?
+- [ ] AI 에이전트 및 ML 연동 유지했는가?
 
 ---
 
@@ -531,22 +517,15 @@ id, name, code, type, params, is_active, user_id, created_at
 
 | ID | 이름 | 코드 |
 |----|------|------|
-| 1 | ETH AI 자율 40% 마진 전략 | eth_ai_autonomous_40pct_strategy.EthAIAutonomous40PctStrategy |
-| 2 | AI 통합 스마트 전략 | ai_integrated_smart_strategy.AIIntegratedSmartStrategy |
-| 3 | RSI 전략 | rsi_strategy.RSIStrategy |
-| 4 | EMA 전략 | ema_strategy.EMAStrategy |
-| 5 | Conservative 전략 | proven_conservative_strategy.ProvenConservativeStrategy |
+| 1 | ETH AI Fusion 전략 | eth_ai_fusion_strategy.ETHAIFusionStrategy |
 
 **전략 복구 명령어** (DB가 비어있을 경우):
 
 ```bash
 ssh -i ~/.ssh/hetzner_deploy_key root@5.161.112.248 "docker exec groupc-postgres psql -U trading_user -d trading_prod -c \"
+TRUNCATE strategies;
 INSERT INTO strategies (user_id, name, description, code, params, is_active) VALUES
-(1, 'ETH AI 자율 40% 마진 전략', 'ETH 전용 AI 자율 거래 전략', 'eth_ai_autonomous_40pct_strategy.EthAIAutonomous40PctStrategy', '{\\\"max_margin_percent\\\": 40}', true),
-(1, 'AI 통합 스마트 전략', 'AI 기반 통합 분석 전략', 'ai_integrated_smart_strategy.AIIntegratedSmartStrategy', '{}', true),
-(1, 'RSI 전략', 'RSI 기반 기본 전략', 'rsi_strategy.RSIStrategy', '{}', true),
-(1, 'EMA 전략', 'EMA 크로스오버 전략', 'ema_strategy.EMAStrategy', '{}', true),
-(1, 'Conservative 전략', '보수적 안전 전략', 'proven_conservative_strategy.ProvenConservativeStrategy', '{}', true);
+(1, 'ETH AI Fusion 전략', 'ETH AI/ML 융합 전략', 'eth_ai_fusion_strategy.ETHAIFusionStrategy', '{\\\"symbol\\\": \\\"ETH/USDT\\\", \\\"timeframe\\\": \\\"5m\\\"}', true);
 \""
 ```
 
@@ -577,6 +556,7 @@ id, user_id, strategy_id, symbol, status, allocation_percent, bot_type
 
 | 날짜 | 내용 |
 |------|------|
+| 2026-01-01 | **ETH AI Fusion 전략으로 전면 교체** - 기존 전략 제거 및 단일화 |
 | 2025-12-27 | **적극적 매매 전략으로 변경** - 레버리지 10-20x, 진입조건 완화, 포지션 크기 상향 |
 | 2025-12-27 | **DB 전략 복구** - Production DB strategies 테이블에 5개 전략 재삽입 |
 | 2025-12-27 | **PostgreSQL 비밀번호 문제 해결** - 볼륨 재생성 및 문서화 |
