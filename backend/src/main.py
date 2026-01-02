@@ -231,9 +231,12 @@ def create_app() -> FastAPI:
     app.add_middleware(SecurityHeadersMiddleware)
 
     # CSRF 보호 (쿠키 기반 인증용)
+    # NOTE: refresh 엔드포인트는 CSRF 검증에서 제외해야 함
+    # (access_token 만료 시 refresh_token만으로 갱신해야 하므로)
     csrf_exempt_paths = {
         "/api/v1/auth/login",
         "/api/v1/auth/register",
+        "/api/v1/auth/refresh",  # 토큰 갱신은 CSRF 제외 (refresh_token 자체가 인증)
         "/api/v1/auth/google/callback",
         "/api/v1/auth/kakao/callback",
     }
