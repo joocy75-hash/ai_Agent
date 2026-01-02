@@ -7,8 +7,10 @@ Rate Limit 헤더 추가 지원.
 import time
 import logging
 from collections import defaultdict
+from datetime import datetime
 from typing import Optional, Dict, Tuple
 from fastapi import Request, Response
+from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from ..config import RateLimitConfig
@@ -116,18 +118,20 @@ class EnhancedRateLimitMiddleware(BaseHTTPMiddleware):
         """Rate limit 체크 및 헤더 추가"""
         client_ip = request.client.host if request.client else "unknown"
 
+        # CORS 헤더를 위한 Origin 추출
+        origin = request.headers.get("origin", "")
+
         # 1. IP 기반 Rate Limiting (기본 보호)
         allowed, remaining, reset_time = await self._check_ip_rate_limit(
             client_ip, request.url.path
         )
 
         if not allowed:
-            raise RateLimitExceededError(
-                f"IP rate limit exceeded. Try again after {reset_time - int(time.time())} seconds",
-                details={
-                    "limit_type": "ip",
-                    "reset_at": reset_time
-                }
+            return self._create_rate_limit_response(
+                message=f"IP rate limit exceeded. Try again after {reset_time - int(time.time())} seconds",
+                reset_time=reset_time,
+                limit_type="ip",
+                origin=origin
             )
 
         # 2. 사용자별 Rate Limiting (JWT 기반)
@@ -139,12 +143,11 @@ class EnhancedRateLimitMiddleware(BaseHTTPMiddleware):
             )
 
             if not user_allowed:
-                raise RateLimitExceededError(
-                    f"User rate limit exceeded. Try again after {user_reset - int(time.time())} seconds",
-                    details={
-                        "limit_type": "user",
-                        "reset_at": user_reset
-                    }
+                return self._create_rate_limit_response(
+                    message=f"User rate limit exceeded. Try again after {user_reset - int(time.time())} seconds",
+                    reset_time=user_reset,
+                    limit_type="user",
+                    origin=origin
                 )
 
             # 사용자별 limit이 더 엄격하므로 사용
@@ -157,6 +160,56 @@ class EnhancedRateLimitMiddleware(BaseHTTPMiddleware):
         # 3. Rate Limit 헤더 추가
         response.headers["X-RateLimit-Remaining"] = str(remaining)
         response.headers["X-RateLimit-Reset"] = str(reset_time)
+
+        return response
+
+    def _create_rate_limit_response(
+        self,
+        message: str,
+        reset_time: int,
+        limit_type: str,
+        origin: str
+    ) -> JSONResponse:
+        """
+        Rate limit 초과 시 CORS 헤더가 포함된 429 응답 생성
+
+        미들웨어에서 예외를 raise하면 FastAPI exception handler에 도달하지 못하므로
+        직접 JSONResponse를 반환해야 합니다.
+        """
+        response = JSONResponse(
+            status_code=429,
+            content={
+                "success": False,
+                "error": {
+                    "code": "RATE_LIMIT_EXCEEDED",
+                    "message": message,
+                    "details": {
+                        "limit_type": limit_type,
+                        "reset_at": reset_time
+                    },
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "request_id": None
+                }
+            }
+        )
+
+        # CORS 헤더 추가 (브라우저에서 에러 응답을 읽을 수 있도록)
+        allowed_origins = [
+            "https://deepsignal.shop",
+            "https://admin.deepsignal.shop",
+            "http://localhost:5173",
+            "http://localhost:3000"
+        ]
+
+        if origin in allowed_origins:
+            response.headers["Access-Control-Allow-Origin"] = origin
+            response.headers["Access-Control-Allow-Credentials"] = "true"
+
+        response.headers["X-RateLimit-Remaining"] = "0"
+        response.headers["X-RateLimit-Reset"] = str(reset_time)
+        response.headers["Retry-After"] = str(reset_time - int(time.time()))
+
+        logger.warning(f"Rate limit exceeded for {limit_type}, reset at {reset_time}")
 
         return response
 
