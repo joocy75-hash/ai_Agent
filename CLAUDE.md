@@ -3,59 +3,253 @@
 > **IMPORTANT**: 이 문서는 AI가 코드 수정 및 배포 시 반드시 읽어야 하는 **유일한 필수 가이드**입니다.
 > 모든 핵심 정보가 이 문서에 통합되어 있습니다.
 
-**최종 업데이트**: 2025-12-27
+**최종 업데이트**: 2026-01-02
 
 ---
 
 ## 📋 목차
 
-1. [서버 및 인프라 정보](#서버-및-인프라-정보)
-2. [시스템 아키텍처](#시스템-아키텍처)
-3. [CI/CD 자동 배포](#cicd-자동-배포)
-4. [AI 에이전트 아키텍처](#ai-에이전트-아키텍처)
-5. [핵심 데이터 구조](#핵심-데이터-구조)
-6. [절대 하면 안 되는 것들](#-절대-하면-안-되는-것들)
-7. [파일별 수정 규칙](#파일별-수정-규칙)
-8. [문제 해결 가이드](#문제-해결-가이드)
-9. [API 엔드포인트](#api-엔드포인트)
+1. [📁 프로젝트 구조](#-프로젝트-구조) ⭐ NEW
+2. [서버 및 인프라 정보](#서버-및-인프라-정보)
+3. [시스템 아키텍처](#시스템-아키텍처)
+4. [CI/CD 자동 배포](#cicd-자동-배포)
+5. [🚀 상세 배포 가이드](#-상세-배포-가이드)
+6. [🤖 전략 생성 가이드](#-전략-생성-가이드)
+7. [AI 에이전트 아키텍처](#ai-에이전트-아키텍처)
+8. [핵심 데이터 구조](#핵심-데이터-구조)
+9. [절대 하면 안 되는 것들](#-절대-하면-안-되는-것들)
+10. [파일별 수정 규칙](#파일별-수정-규칙)
+11. [문제 해결 가이드](#문제-해결-가이드)
+12. [API 엔드포인트](#api-엔드포인트)
+
+---
+
+## 📁 프로젝트 구조
+
+```
+auto-dashboard/
+├── 📁 backend/                          # FastAPI 백엔드 서버
+│   ├── src/
+│   │   ├── api/                         # API 엔드포인트
+│   │   │   ├── auth.py                  # 인증 (로그인, 회원가입, JWT)
+│   │   │   ├── bot.py                   # ⭐ 봇 시작/중지 API
+│   │   │   ├── bot_instances.py         # 다중 봇 인스턴스 관리
+│   │   │   ├── strategy.py              # 전략 CRUD
+│   │   │   ├── account.py               # 계정 및 API 키 관리
+│   │   │   ├── order.py                 # 주문 및 거래 내역
+│   │   │   ├── backtest.py              # 백테스트 실행
+│   │   │   ├── health.py                # 헬스 체크
+│   │   │   ├── admin_*.py               # 관리자 전용 API
+│   │   │   └── ...
+│   │   │
+│   │   ├── services/                    # 비즈니스 로직 (핵심)
+│   │   │   ├── bot_runner.py            # ⭐⭐ 봇 메인 루프 (~2700줄)
+│   │   │   ├── strategy_loader.py       # ⭐ 전략 로더 (코드→클래스 매핑)
+│   │   │   ├── exchange_service.py      # 거래소 클라이언트 관리
+│   │   │   ├── trade_executor.py        # 주문 실행
+│   │   │   ├── backtest_engine.py       # 백테스트 엔진
+│   │   │   ├── exchanges/               # 거래소 연동
+│   │   │   │   ├── bitget.py            # Bitget REST API
+│   │   │   │   ├── bitget_ws.py         # Bitget WebSocket
+│   │   │   │   └── base.py              # 거래소 기본 클래스
+│   │   │   ├── telegram/                # 텔레그램 알림
+│   │   │   ├── ai_optimization/         # AI 서비스 최적화
+│   │   │   │   ├── integrated_ai_service.py  # 통합 AI 서비스
+│   │   │   │   ├── smart_sampling.py    # 스마트 샘플링
+│   │   │   │   └── cost_tracker.py      # AI 비용 추적
+│   │   │   └── ...
+│   │   │
+│   │   ├── strategies/                  # 트레이딩 전략 클래스
+│   │   │   ├── eth_ai_fusion_strategy.py  # ⭐ 메인 전략 (ETH AI Fusion)
+│   │   │   └── __init__.py
+│   │   │
+│   │   ├── agents/                      # AI 에이전트
+│   │   │   ├── market_regime/           # 시장 국면 분석 에이전트
+│   │   │   ├── signal_validator/        # 신호 검증 에이전트
+│   │   │   ├── risk_monitor/            # 리스크 모니터 에이전트
+│   │   │   ├── portfolio_optimizer/     # 포트폴리오 최적화 에이전트
+│   │   │   └── ml_predictor/            # ML 예측 에이전트
+│   │   │
+│   │   ├── ml/                          # 머신러닝 모듈
+│   │   │   ├── features/                # 피처 엔지니어링
+│   │   │   │   ├── feature_pipeline.py  # 피처 파이프라인
+│   │   │   │   ├── technical_features.py
+│   │   │   │   └── structure_features.py
+│   │   │   ├── models/                  # ML 모델
+│   │   │   │   └── ensemble_predictor.py  # 앙상블 예측기
+│   │   │   ├── training/                # 학습 스크립트
+│   │   │   └── validation/              # 검증 및 백테스트
+│   │   │
+│   │   ├── database/                    # 데이터베이스
+│   │   │   ├── models.py                # SQLAlchemy 모델 정의
+│   │   │   ├── db.py                    # DB 연결 관리
+│   │   │   └── session.py               # 세션 관리
+│   │   │
+│   │   ├── schemas/                     # Pydantic 스키마 (요청/응답 검증)
+│   │   │   ├── auth_schema.py
+│   │   │   ├── bot_schema.py
+│   │   │   └── ...
+│   │   │
+│   │   ├── middleware/                  # 미들웨어
+│   │   │   ├── csrf.py                  # CSRF 보호
+│   │   │   ├── rate_limit_improved.py   # Rate Limiting
+│   │   │   ├── security_headers.py      # 보안 헤더
+│   │   │   └── error_handler.py         # 전역 에러 핸들러
+│   │   │
+│   │   ├── utils/                       # 유틸리티
+│   │   │   ├── jwt_auth.py              # JWT 인증
+│   │   │   ├── auth_cookies.py          # 쿠키 기반 인증
+│   │   │   ├── crypto_secrets.py        # API 키 암호화
+│   │   │   └── log_broadcaster.py       # 로그 브로드캐스터
+│   │   │
+│   │   ├── workers/                     # 백그라운드 워커
+│   │   │   └── manager.py               # 봇 매니저 (bootstrap)
+│   │   │
+│   │   ├── config.py                    # 환경 설정
+│   │   └── main.py                      # FastAPI 앱 진입점
+│   │
+│   ├── alembic/                         # DB 마이그레이션
+│   │   ├── versions/                    # 마이그레이션 파일들
+│   │   └── env.py
+│   │
+│   ├── tests/                           # 테스트 코드
+│   │   ├── unit/                        # 단위 테스트
+│   │   ├── integration/                 # 통합 테스트
+│   │   └── ml/                          # ML 테스트
+│   │
+│   ├── scripts/                         # 유틸리티 스크립트
+│   │   ├── train_ml_models.py           # ML 모델 학습
+│   │   ├── register_ai_strategy.py      # 전략 등록
+│   │   └── emergency_stop_all.py        # 긴급 정지
+│   │
+│   ├── requirements.txt                 # Python 의존성
+│   ├── alembic.ini                      # Alembic 설정
+│   ├── Dockerfile                       # Docker 빌드
+│   └── README.md
+│
+├── 📁 frontend/                         # 사용자 대시보드 (React)
+│   ├── src/
+│   │   ├── api/                         # API 클라이언트
+│   │   │   ├── client.js                # Axios 인스턴스 (쿠키 인증)
+│   │   │   ├── auth.js                  # 인증 API
+│   │   │   ├── bot.js                   # 봇 API
+│   │   │   ├── strategy.js              # 전략 API
+│   │   │   └── ...
+│   │   │
+│   │   ├── pages/                       # 페이지 컴포넌트
+│   │   │   ├── Dashboard.jsx            # 메인 대시보드
+│   │   │   ├── Trading.jsx              # 트레이딩 페이지
+│   │   │   ├── Strategy.jsx             # 전략 관리
+│   │   │   ├── BotManagement.jsx        # 봇 관리
+│   │   │   ├── Settings.jsx             # 설정
+│   │   │   ├── Login.jsx                # 로그인
+│   │   │   └── admin/                   # 관리자 페이지
+│   │   │
+│   │   ├── components/                  # 재사용 컴포넌트
+│   │   │   ├── dashboard/               # 대시보드 위젯
+│   │   │   ├── bot/                     # 봇 관련 컴포넌트
+│   │   │   ├── strategy/                # 전략 관련 컴포넌트
+│   │   │   ├── grid/                    # 그리드 봇 컴포넌트
+│   │   │   └── ...
+│   │   │
+│   │   ├── context/                     # React Context
+│   │   │   ├── AuthContext.jsx          # 인증 상태
+│   │   │   ├── WebSocketContext.jsx     # WebSocket 연결
+│   │   │   └── ThemeContext.jsx         # 테마 설정
+│   │   │
+│   │   ├── hooks/                       # Custom Hooks
+│   │   ├── App.jsx                      # 메인 App
+│   │   └── main.jsx                     # 진입점
+│   │
+│   ├── vite.config.js                   # Vite 설정
+│   ├── tailwind.config.js               # Tailwind CSS 설정
+│   ├── package.json                     # NPM 의존성
+│   ├── Dockerfile                       # Docker 빌드
+│   └── .env                             # 환경 변수 (VITE_API_URL)
+│
+├── 📁 admin-frontend/                   # 관리자 페이지 (React)
+│   ├── src/
+│   │   ├── api/                         # 관리자 API 클라이언트
+│   │   ├── pages/                       # 관리자 페이지
+│   │   │   ├── AdminDashboard.jsx       # 관리자 대시보드
+│   │   │   └── Login.jsx                # 관리자 로그인
+│   │   └── components/
+│   ├── package.json
+│   └── Dockerfile
+│
+├── 📁 tools/                            # 개발 도구 및 에이전트
+│   ├── agents/                          # CI/CD 에이전트
+│   │   ├── dev_assistant.py             # 개발 어시스턴트
+│   │   ├── ci_agent.py                  # CI 에이전트
+│   │   └── ops_agent.py                 # 운영 에이전트
+│   └── ...
+│
+├── 📁 monitoring/                       # 모니터링 설정
+│   ├── prometheus.yml                   # Prometheus 설정
+│   └── grafana/                         # Grafana 대시보드
+│
+├── 📁 .github/                          # GitHub 설정
+│   └── workflows/
+│       └── deploy-production.yml        # ⭐ 자동 배포 워크플로우
+│
+├── 📁 .claude/                          # Claude 설정
+│   └── settings.local.json              # 로컬 설정
+│
+├── docker-compose.yml                   # 로컬 개발용
+├── docker-compose.production.yml        # ⭐ 프로덕션 배포용
+├── docker-compose.monitoring.yml        # 모니터링 스택
+├── CLAUDE.md                            # ⭐⭐ 이 문서 (필독)
+└── README.md
+```
+
+### 핵심 파일 요약
+
+| 파일 | 역할 | 중요도 |
+|------|------|--------|
+| `backend/src/services/bot_runner.py` | 봇 메인 루프, 시그널 처리, 주문 실행 | ⭐⭐⭐ |
+| `backend/src/services/strategy_loader.py` | 전략 코드 → 클래스 매핑 | ⭐⭐⭐ |
+| `backend/src/strategies/eth_ai_fusion_strategy.py` | 메인 트레이딩 전략 | ⭐⭐⭐ |
+| `backend/src/api/bot.py` | 봇 시작/중지 API | ⭐⭐ |
+| `backend/src/workers/manager.py` | 서버 시작 시 봇 복구 | ⭐⭐ |
+| `backend/src/database/models.py` | DB 모델 정의 | ⭐⭐ |
+| `docker-compose.production.yml` | 프로덕션 컨테이너 구성 | ⭐⭐ |
+| `.github/workflows/deploy-production.yml` | CI/CD 자동 배포 | ⭐⭐ |
 
 ---
 
 ## 서버 및 인프라 정보
 
-### Production Server (Hetzner)
+### Production Server (Seoul)
 
 ```
-서버 IP: 5.161.112.248
-서버명: deep-server
-위치: Ashburn, VA (USA)
-사양: CPX31 (4 vCPU / 8 GB RAM / 160 GB SSD)
+서버 IP: 141.164.55.245
+서버명: seoul-server
+위치: Seoul, Korea
+사양: 4 vCPU / 8 GB RAM (예상)
 OS: Ubuntu 24.04 LTS
 
-프로젝트 경로: /root/service_c/ai-trading-platform
+프로젝트 경로: /root/group_c
 ```
 
-### 접속 URL
+### 접속 URL (Nginx Proxy)
 
-| 서비스 | URL | 포트 |
-|-------|-----|------|
-| **Frontend** | <https://deepsignal.shop> | 3001 |
-| **Admin** | <https://admin.deepsignal.shop> | 4000 |
-| **API** | <https://api.deepsignal.shop> | 8000 |
+| 서비스 | URL | 내부 포트 | 외부 노출 포트 |
+|-------|-----|----------|---------------|
+| **Frontend** | <https://deepsignal.shop> | 3000 | 3201 |
+| **Admin** | <https://admin.deepsignal.shop> | 4000 | 3202 |
+| **API** | <https://api.deepsignal.shop> | 8000 | 3200 |
 
-> **Note**: 포트 3000은 Freqtrade UI가 사용 중이므로 Frontend는 3001 사용
+> **Note**: 모든 트래픽은 Global Proxy(80/443)를 통해 분산됩니다. 직접 접속 시 32xx 포트를 사용하세요.
 
 ### SSH 접속
 
 ```bash
-# SSH 키 기반 접속 (권장)
-ssh -i ~/.ssh/hetzner_deploy_key root@5.161.112.248
+# SSH 접속
+ssh root@141.164.55.245
 
-# 컨테이너 상태 확인
-ssh -i ~/.ssh/hetzner_deploy_key root@5.161.112.248 "docker ps --filter name=groupc-"
-
-# 백엔드 로그 확인
-ssh -i ~/.ssh/hetzner_deploy_key root@5.161.112.248 "docker logs groupc-backend --tail 100"
+# 통합 관리 스크립트 사용
+/root/deploy.sh status
+/root/deploy.sh group_c logs
 ```
 
 ### GitHub 저장소
@@ -68,24 +262,42 @@ Remote name: hetzner
 
 ---
 
-## 시스템 아키텍처
-
-### 서버 그룹 구조
+### 서버 그룹 구조 및 포트 가이드라인
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    Hetzner 서버 (8GB RAM)                    │
+│                    Seoul 서버 (8GB RAM)                      │
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
 │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────┐ │
 │  │   Group A       │  │   Group B       │  │  Group C    │ │
-│  │   Freqtrade     │  │   개인 자동화    │  │  AI 트레이딩 │ │
-│  │   (포트 3000)    │  │                 │  │  플랫폼     │ │
+│  │   Stock Trading │  │   개인 자동화    │  │  AI 트레이딩 │ │
+│  │   (3000-3099)   │  │   (3100-3199)   │  │  (3200-3299)│ │
 │  └─────────────────┘  └─────────────────┘  └─────────────┘ │
+│           │                   │                  │          │
+│           └───────────┬───────┴──────────────────┘          │
+│                       ▼                                     │
+│             ┌───────────────────┐                           │
+│             │   Global Proxy    │                           │
+│             │   (Nginx: 80/443) │                           │
+│             └───────────────────┘                           │
 │                                                             │
-│              각 그룹은 독립된 네트워크로 격리됨                │
+│  * 각 그룹은 독립된 네트워크와 docker-compose를 사용함           │
+│  * Nginx와 통신할 때만 proxy-net을 공유함                      │
 └─────────────────────────────────────────────────────────────┘
 ```
+
+### 포트 할당 규칙
+
+- **Global Proxy**: 80, 443
+- **Group A**: 3000 ~ 3099 (Stock Trading AI)
+- **Group B**: 3100 ~ 3199 (Automation)
+- **Group C**: 3200 ~ 3299 (AI Trading Platform)
+  - 3200: Backend API
+  - 3201: Frontend
+  - 3202: Admin Frontend
+  - 3203: PostgreSQL (내부 전용)
+  - 3204: Redis (내부 전용)
 
 ### Group C (AI Trading Platform) 컨테이너 구성
 
@@ -187,6 +399,608 @@ rsync -avz --exclude 'node_modules' --exclude '.git' \
 # 4. 서비스 재빌드 및 재시작
 docker compose -f docker-compose.production.yml build --no-cache
 docker compose -f docker-compose.production.yml up -d
+```
+
+---
+
+## 🚀 상세 배포 가이드
+
+> 이 섹션은 새로운 개발자가 처음부터 끝까지 배포할 수 있도록 상세하게 작성되었습니다.
+
+### 배포 전 체크리스트
+
+```
+□ 1. 로컬에서 코드가 정상 작동하는지 확인
+□ 2. Python 구문 오류 없는지 확인: python -m py_compile backend/src/main.py
+□ 3. Frontend 빌드 성공하는지 확인: cd frontend && npm run build
+□ 4. Git 커밋 메시지 작성
+□ 5. 민감한 정보(.env, API 키 등) 커밋에 포함되지 않았는지 확인
+```
+
+### Step 1: 로컬 개발 환경 설정
+
+#### Backend 설정
+
+```bash
+# 1. 프로젝트 클론 또는 이동
+cd /Users/mr.joo/Desktop/auto-dashboard/backend
+
+# 2. 가상환경 생성 및 활성화
+python3.11 -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+
+# 3. 의존성 설치
+pip install -r requirements.txt
+
+# 4. 환경 변수 설정
+export DATABASE_URL="sqlite+aiosqlite:///./trading.db"
+export JWT_SECRET="your-dev-secret-key"
+export ENCRYPTION_KEY="$(python3 -c 'from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())')"
+
+# 5. DB 마이그레이션
+alembic upgrade head
+
+# 6. 서버 실행
+python -m src.main
+# 또는
+uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+#### Frontend 설정
+
+```bash
+# 1. Frontend 디렉토리로 이동
+cd /Users/mr.joo/Desktop/auto-dashboard/frontend
+
+# 2. 의존성 설치
+npm install
+
+# 3. 환경 변수 설정 (.env 파일)
+echo "VITE_API_URL=http://localhost:8000" > .env
+
+# 4. 개발 서버 실행
+npm run dev
+```
+
+### Step 2: 코드 변경 및 테스트
+
+#### Python 구문 검사
+
+```bash
+# 전체 백엔드 구문 검사
+find backend/src -name "*.py" -exec python -m py_compile {} \;
+
+# 특정 파일 검사
+python -m py_compile backend/src/services/strategy_loader.py
+```
+
+#### 로컬 테스트
+
+```bash
+# Backend 테스트
+cd backend
+pytest tests/
+
+# Frontend 빌드 테스트
+cd frontend
+npm run build
+```
+
+### Step 3: Git 커밋 및 배포
+
+#### 자동 배포 (권장)
+
+```bash
+# 1. 변경 사항 스테이징
+git add .
+
+# 2. 커밋 (의미있는 메시지 작성)
+git commit -m "feat: 새 전략 추가 - MyNewStrategy"
+
+# 3. GitHub 푸시 → 자동 배포 시작!
+git push hetzner main
+
+# 4. 배포 상태 모니터링
+gh run list -R joocy75-hash/AI-Agent-DeepSignal --limit 3
+gh run watch <RUN_ID> -R joocy75-hash/AI-Agent-DeepSignal
+```
+
+#### 배포 진행 상황 확인
+
+```bash
+# GitHub Actions 로그 확인
+gh run view <RUN_ID> --log -R joocy75-hash/AI-Agent-DeepSignal
+
+# 또는 SSH로 서버 로그 직접 확인
+ssh -i ~/.ssh/hetzner_deploy_key root@5.161.112.248 "docker logs groupc-backend --tail 50"
+```
+
+### Step 4: 배포 검증
+
+```bash
+# 1. API 헬스 체크
+curl https://api.deepsignal.shop/health
+
+# 2. 로그인 테스트 (쿠키 기반 인증)
+curl -c cookies.txt -X POST "https://api.deepsignal.shop/api/v1/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@admin.com","password":"Admin123!"}'
+
+# 3. 인증이 필요한 API 테스트
+# 쿠키에서 CSRF 토큰 추출
+CSRF_TOKEN=$(grep csrf cookies.txt | awk '{print $7}')
+
+# 봇 상태 확인
+curl -b cookies.txt -X GET "https://api.deepsignal.shop/api/v1/bot/status" \
+  -H "X-CSRF-Token: $CSRF_TOKEN"
+
+# 전략 목록 확인
+curl -b cookies.txt -X GET "https://api.deepsignal.shop/api/v1/ai/strategies/list" \
+  -H "X-CSRF-Token: $CSRF_TOKEN"
+```
+
+### Step 5: 롤백 (문제 발생 시)
+
+```bash
+# 1. 이전 커밋으로 되돌리기
+git revert HEAD
+git push hetzner main
+
+# 또는 특정 커밋으로 복원
+git reset --hard <commit_hash>
+git push hetzner main --force  # 주의: force push
+
+# 2. 서버에서 직접 롤백 (긴급 시)
+ssh -i ~/.ssh/hetzner_deploy_key root@5.161.112.248 << 'EOF'
+cd /root/service_c/ai-trading-platform
+git log --oneline -5  # 최근 커밋 확인
+git checkout <이전_commit_hash>
+docker compose -f docker-compose.production.yml build --no-cache
+docker compose -f docker-compose.production.yml up -d
+EOF
+```
+
+### 배포 시 자주 발생하는 문제
+
+| 문제 | 원인 | 해결 방법 |
+|------|------|----------|
+| 배포 실패: Python syntax error | 코드 구문 오류 | `python -m py_compile <file>` 로 확인 |
+| 배포 실패: npm build error | Frontend 빌드 오류 | `npm run build` 로컬에서 확인 |
+| API 500 에러 | 런타임 오류 | `docker logs groupc-backend` 확인 |
+| DB 연결 실패 | PostgreSQL 비밀번호 불일치 | 문제 해결 가이드 참조 |
+| 전략 로드 실패 | strategy_loader.py 매핑 누락 | 아래 전략 생성 가이드 참조 |
+
+---
+
+## 🤖 전략 생성 가이드
+
+> 새로운 트레이딩 전략을 만들고 시스템에 등록하는 완전한 가이드입니다.
+
+### 전략 시스템 아키텍처 이해
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                           전략 시스템 흐름도                              │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  1. DB (strategies 테이블)                                               │
+│     └─ code: "my_new_strategy" 또는 "my_strategy.MyStrategy"            │
+│                    │                                                     │
+│                    ▼                                                     │
+│  2. strategy_loader.py                                                   │
+│     └─ load_strategy_class(strategy_code, params_json, user_id)         │
+│     └─ _create_strategy_instance_internal()에서 매핑                     │
+│                    │                                                     │
+│                    ▼                                                     │
+│  3. 전략 클래스 (backend/src/strategies/my_new_strategy.py)              │
+│     └─ generate_signal(current_price, candles, current_position)        │
+│                    │                                                     │
+│                    ▼                                                     │
+│  4. bot_runner.py                                                        │
+│     └─ 시그널에 따라 주문 실행                                            │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### Step 1: 전략 클래스 파일 생성
+
+**위치**: `backend/src/strategies/my_new_strategy.py`
+
+```python
+"""
+나의 새로운 전략
+
+전략 설명:
+- 진입 조건: ...
+- 청산 조건: ...
+- 리스크 관리: ...
+"""
+
+from __future__ import annotations
+from dataclasses import dataclass
+from typing import Any, Dict, Optional, Tuple
+
+
+@dataclass
+class IndicatorSnapshot:
+    """지표 스냅샷 - 필요한 지표들을 정의"""
+    close: float
+    ema_fast: float
+    ema_slow: float
+    rsi: float
+    # 필요한 지표 추가...
+
+
+class MyNewStrategy:
+    """
+    나의 새로운 전략 클래스
+
+    ⚠️ 필수 메서드:
+    - __init__(self, params, user_id)
+    - generate_signal(self, current_price, candles, current_position)
+
+    ⚠️ 필수 반환 구조:
+    {
+        "action": "buy" | "sell" | "hold" | "close",
+        "confidence": 0.0 ~ 1.0,
+        "reason": str,
+        "stop_loss": float | None,
+        "take_profit": float | None,
+        "size": float | None,
+        "strategy_type": str,
+    }
+    """
+
+    def __init__(self, params: Optional[Dict[str, Any]] = None, user_id: Optional[int] = None):
+        """
+        전략 초기화
+
+        Args:
+            params: 전략 파라미터 (DB의 params JSON에서 로드됨)
+            user_id: 사용자 ID (AI 에이전트 캐싱에 사용)
+        """
+        self.params = params or {}
+        self.user_id = user_id
+
+        # 파라미터에서 설정값 로드 (기본값 포함)
+        self.symbol = self.params.get("symbol", "ETH/USDT")
+        self.timeframe = self.params.get("timeframe", "5m")
+        self.leverage = int(self.params.get("leverage", 10))
+
+        # 지표 설정
+        self._ema_fast = int(self.params.get("ema_fast", 9))
+        self._ema_slow = int(self.params.get("ema_slow", 21))
+        self._rsi_length = int(self.params.get("rsi_length", 14))
+
+        # 리스크 관리 설정
+        self._stop_loss_percent = float(self.params.get("stop_loss_percent", 1.5))
+        self._take_profit_percent = float(self.params.get("take_profit_percent", 3.0))
+
+    def generate_signal(
+        self,
+        current_price: float,
+        candles: list,
+        current_position: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """
+        시그널 생성 - 봇 루프에서 주기적으로 호출됨
+
+        Args:
+            current_price: 현재 가격
+            candles: OHLCV 캔들 데이터 리스트
+                [{"open": float, "high": float, "low": float, "close": float, "volume": float}, ...]
+            current_position: 현재 포지션 정보 (없으면 None)
+                {
+                    "side": "long" | "short",
+                    "entry_price": float,
+                    "size": float,
+                    "pnl": float,
+                    "pnl_percent": float,
+                    "leverage": int,
+                }
+
+        Returns:
+            시그널 딕셔너리 (구조는 위 docstring 참조)
+        """
+        # 1. 캔들 데이터 검증
+        if not candles or len(candles) < 60:
+            return self._hold("insufficient_candles")
+
+        # 2. 지표 계산
+        snapshot = self._compute_indicators(candles)
+
+        # 3. 포지션이 있으면 관리, 없으면 진입 평가
+        if current_position and current_position.get("size", 0) > 0:
+            return self._manage_position(current_price, snapshot, current_position)
+
+        return self._evaluate_entry(snapshot)
+
+    def _evaluate_entry(self, snapshot: IndicatorSnapshot) -> Dict[str, Any]:
+        """진입 조건 평가"""
+        # 롱 진입 조건
+        if snapshot.ema_fast > snapshot.ema_slow and snapshot.rsi < 70:
+            return {
+                "action": "buy",
+                "confidence": 0.7,
+                "reason": "EMA 골든크로스 + RSI 과매수 아님",
+                "stop_loss": self._stop_loss_percent,
+                "take_profit": self._take_profit_percent,
+                "size": None,  # bot_runner가 계산
+                "strategy_type": "my_new_strategy",
+            }
+
+        # 숏 진입 조건
+        if snapshot.ema_fast < snapshot.ema_slow and snapshot.rsi > 30:
+            return {
+                "action": "sell",
+                "confidence": 0.7,
+                "reason": "EMA 데드크로스 + RSI 과매도 아님",
+                "stop_loss": self._stop_loss_percent,
+                "take_profit": self._take_profit_percent,
+                "size": None,
+                "strategy_type": "my_new_strategy",
+            }
+
+        return self._hold("no_entry_signal")
+
+    def _manage_position(
+        self,
+        current_price: float,
+        snapshot: IndicatorSnapshot,
+        current_position: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        """포지션 관리 (손절/익절/청산)"""
+        side = current_position.get("side", "long")
+        pnl_percent = current_position.get("pnl_percent", 0)
+
+        # 손절
+        if pnl_percent <= -self._stop_loss_percent:
+            return self._close("stop_loss_hit")
+
+        # 익절
+        if pnl_percent >= self._take_profit_percent:
+            return self._close("take_profit_hit")
+
+        # 추세 반전 시 청산
+        if side == "long" and snapshot.ema_fast < snapshot.ema_slow:
+            return self._close("trend_reversal")
+        if side == "short" and snapshot.ema_fast > snapshot.ema_slow:
+            return self._close("trend_reversal")
+
+        return self._hold("position_maintained")
+
+    def _compute_indicators(self, candles: list) -> IndicatorSnapshot:
+        """지표 계산"""
+        closes = [c.get("close", 0) for c in candles]
+
+        return IndicatorSnapshot(
+            close=closes[-1],
+            ema_fast=self._ema(closes, self._ema_fast),
+            ema_slow=self._ema(closes, self._ema_slow),
+            rsi=self._rsi(closes, self._rsi_length),
+        )
+
+    def _hold(self, reason: str) -> Dict[str, Any]:
+        """HOLD 시그널 반환"""
+        return {
+            "action": "hold",
+            "confidence": 0.0,
+            "reason": reason,
+            "stop_loss": None,
+            "take_profit": None,
+            "size": None,
+            "strategy_type": "my_new_strategy",
+        }
+
+    def _close(self, reason: str) -> Dict[str, Any]:
+        """CLOSE 시그널 반환"""
+        return {
+            "action": "close",
+            "confidence": 0.7,
+            "reason": reason,
+            "stop_loss": None,
+            "take_profit": None,
+            "size": None,
+            "strategy_type": "my_new_strategy",
+        }
+
+    # ============================================================
+    # 지표 계산 헬퍼 함수들
+    # ============================================================
+
+    def _ema(self, values: list, period: int) -> float:
+        """EMA 계산"""
+        if not values or len(values) < period:
+            return values[-1] if values else 0.0
+        k = 2 / (period + 1)
+        ema = values[0]
+        for price in values[1:]:
+            ema = price * k + ema * (1 - k)
+        return ema
+
+    def _rsi(self, closes: list, period: int) -> float:
+        """RSI 계산"""
+        if len(closes) <= period:
+            return 50.0
+        gains = 0.0
+        losses = 0.0
+        for i in range(-period, 0):
+            change = closes[i] - closes[i - 1]
+            if change >= 0:
+                gains += change
+            else:
+                losses += abs(change)
+        if losses == 0:
+            return 100.0
+        rs = gains / losses
+        return 100 - (100 / (1 + rs))
+
+
+# 팩토리 함수 (선택사항이지만 권장)
+def create_my_new_strategy(
+    params: Optional[Dict[str, Any]] = None,
+    user_id: Optional[int] = None,
+) -> MyNewStrategy:
+    """전략 인스턴스 생성 팩토리"""
+    return MyNewStrategy(params=params, user_id=user_id)
+```
+
+### Step 2: strategy_loader.py에 매핑 추가
+
+**위치**: `backend/src/services/strategy_loader.py`
+
+`_create_strategy_instance_internal()` 함수에 새 전략 매핑을 추가합니다:
+
+```python
+def _create_strategy_instance_internal(
+    strategy_code: str,
+    params: dict,
+    user_id: Optional[int] = None,
+):
+    # ... 기존 코드 ...
+
+    try:
+        normalized = (strategy_code or "eth_ai_fusion").strip()
+        if not normalized:
+            normalized = "eth_ai_fusion"
+
+        # Legacy aliases 및 다양한 형태의 전략 코드 처리
+        legacy_aliases = {
+            "proven_conservative",
+            "proven_balanced",
+            # ... 기존 aliases ...
+
+            # ⭐ 새 전략 aliases 추가
+            "my_new_strategy",
+            "my_new_strategy.MyNewStrategy",
+            "MyNewStrategy",
+        }
+
+        # eth_ai_fusion으로 매핑되는 aliases
+        if normalized in legacy_aliases and normalized not in ["my_new_strategy", "my_new_strategy.MyNewStrategy", "MyNewStrategy"]:
+            normalized = "eth_ai_fusion"
+
+        # ⭐ 새 전략 로드 블록 추가
+        if normalized in ["my_new_strategy", "my_new_strategy.MyNewStrategy", "MyNewStrategy"]:
+            from ..strategies.my_new_strategy import MyNewStrategy
+            logger.info(f"✅ Loading MyNewStrategy for user {user_id}")
+            return MyNewStrategy(params, user_id=user_id)
+
+        if normalized == "eth_ai_fusion":
+            from ..strategies.eth_ai_fusion_strategy import ETHAIFusionStrategy
+            logger.info(f"✅ Loading ETHAIFusionStrategy for user {user_id}")
+            return ETHAIFusionStrategy(params, user_id=user_id)
+
+        # ... 기존 코드 ...
+```
+
+### Step 3: 데이터베이스에 전략 등록
+
+```bash
+# SSH로 서버 접속
+ssh -i ~/.ssh/hetzner_deploy_key root@5.161.112.248
+
+# PostgreSQL에 전략 INSERT
+docker exec groupc-postgres psql -U trading_user -d trading_prod -c "
+INSERT INTO strategies (user_id, name, description, code, params, is_active) VALUES
+(1, '나의 새 전략', 'EMA 크로스오버 기반 전략', 'my_new_strategy', '{\"symbol\": \"ETH/USDT\", \"timeframe\": \"5m\", \"ema_fast\": 9, \"ema_slow\": 21}', true);
+"
+
+# 등록 확인
+docker exec groupc-postgres psql -U trading_user -d trading_prod -c "SELECT id, name, code, is_active FROM strategies;"
+```
+
+### Step 4: 배포 및 테스트
+
+```bash
+# 1. 로컬에서 구문 검사
+python -m py_compile backend/src/strategies/my_new_strategy.py
+python -m py_compile backend/src/services/strategy_loader.py
+
+# 2. Git 커밋 및 배포
+git add backend/src/strategies/my_new_strategy.py backend/src/services/strategy_loader.py
+git commit -m "feat: 새 전략 추가 - MyNewStrategy"
+git push hetzner main
+
+# 3. 배포 완료 후 테스트
+# 로그인 및 쿠키 저장
+curl -c cookies.txt -X POST "https://api.deepsignal.shop/api/v1/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@admin.com","password":"Admin123!"}'
+
+# CSRF 토큰 추출
+CSRF_TOKEN=$(grep csrf cookies.txt | awk '{print $7}')
+
+# 전략 목록에서 새 전략 확인
+curl -b cookies.txt -X GET "https://api.deepsignal.shop/api/v1/ai/strategies/list" \
+  -H "X-CSRF-Token: $CSRF_TOKEN" | jq .
+
+# 봇 시작 테스트 (새 전략 ID로)
+curl -b cookies.txt -X POST "https://api.deepsignal.shop/api/v1/bot/start" \
+  -H "Content-Type: application/json" \
+  -H "X-CSRF-Token: $CSRF_TOKEN" \
+  -d '{"strategy_id": <새_전략_ID>}'
+```
+
+### 전략 개발 체크리스트
+
+```
+□ 1. 전략 클래스 파일 생성 (backend/src/strategies/)
+□ 2. generate_signal() 메서드 구현 (필수 반환 구조 준수)
+□ 3. strategy_loader.py에 매핑 추가
+□ 4. 로컬 구문 검사 통과
+□ 5. Git 커밋 및 배포
+□ 6. DB에 전략 등록
+□ 7. 봇 시작 테스트
+□ 8. 로그에서 전략 로드 확인: "✅ Loading MyNewStrategy"
+```
+
+### 전략 코드 매핑 규칙
+
+| DB의 code 값 | strategy_loader.py 매핑 | 실제 클래스 |
+|--------------|------------------------|------------|
+| `eth_ai_fusion` | `if normalized == "eth_ai_fusion":` | ETHAIFusionStrategy |
+| `eth_ai_fusion_strategy.ETHAIFusionStrategy` | legacy_aliases에서 변환 | ETHAIFusionStrategy |
+| `my_new_strategy` | `if normalized in ["my_new_strategy", ...]:` | MyNewStrategy |
+
+### ML/AI 기능 추가 (고급)
+
+ETH AI Fusion 전략처럼 ML 기능을 추가하려면:
+
+```python
+# 전략 파일 상단에 ML 모듈 import
+try:
+    from src.ml.features import FeaturePipeline
+    from src.ml.models import EnsemblePredictor
+    ML_AVAILABLE = True
+except Exception:
+    FeaturePipeline = None
+    EnsemblePredictor = None
+    ML_AVAILABLE = False
+
+
+class MyMLStrategy:
+    def __init__(self, params, user_id=None):
+        # ... 기존 초기화 ...
+
+        # ML 초기화
+        self.enable_ml = self.params.get("enable_ml", True) and ML_AVAILABLE
+        self._feature_pipeline = FeaturePipeline() if self.enable_ml and FeaturePipeline else None
+        self._ml_predictor = EnsemblePredictor() if self.enable_ml and EnsemblePredictor else None
+
+    def _get_ml_prediction(self, candles, snapshot):
+        """ML 예측 수행"""
+        if not self._ml_predictor or not self._feature_pipeline:
+            return None
+
+        symbol = self.symbol.replace("/", "").replace(":USDT", "")
+        features = self._feature_pipeline.extract_features(candles, symbol=symbol)
+
+        if features.empty:
+            return None
+
+        rule_signal = "long" if snapshot.ema_fast > snapshot.ema_slow else "short"
+        return self._ml_predictor.predict(features, symbol=symbol, rule_based_signal=rule_signal)
 ```
 
 ---
@@ -556,6 +1370,10 @@ id, user_id, strategy_id, symbol, status, allocation_percent, bot_type
 
 | 날짜 | 내용 |
 |------|------|
+| 2026-01-02 | **프로젝트 구조 섹션 추가** - 전체 디렉토리 구조 및 핵심 파일 설명 |
+| 2026-01-02 | **상세 배포 가이드 및 전략 생성 가이드 추가** - 새 개발자를 위한 완전한 가이드 |
+| 2026-01-02 | **전략 코드 매핑 문제 해결** - strategy_loader.py에서 다양한 형태의 코드 인식 |
+| 2026-01-02 | **tradesource enum 수정** - bot_instance 값 추가 |
 | 2026-01-01 | **ETH AI Fusion 전략으로 전면 교체** - 기존 전략 제거 및 단일화 |
 | 2025-12-27 | **적극적 매매 전략으로 변경** - 레버리지 10-20x, 진입조건 완화, 포지션 크기 상향 |
 | 2025-12-27 | **DB 전략 복구** - Production DB strategies 테이블에 5개 전략 재삽입 |

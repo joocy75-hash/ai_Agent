@@ -1,17 +1,6 @@
 # ============================================================
 # AI Trading Platform - Group C Production Configuration
-# Server: 5.161.112.248 (Hetzner - deep-server)
-# Path: ~/service_c/ai-trading-platform
 # ============================================================
-# Resource Allocation (Total: ~4GB of 8GB available):
-# - Backend: 2GB (AI agents, FastAPI)
-# - PostgreSQL: 1GB
-# - Frontend: 256MB
-# - Admin: 256MB
-# - Redis: 256MB
-# ============================================================
-
-# Version is obsolete in modern Docker Compose
 
 services:
   # PostgreSQL Database
@@ -21,11 +10,10 @@ services:
     environment:
       POSTGRES_DB: trading_prod
       POSTGRES_USER: trading_user
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - groupc_postgres_data:/var/lib/postgresql/data
-      # Init script - 새 볼륨 생성 시에만 실행됨
       - ./backend/scripts/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh:ro
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U trading_user -d trading_prod" ]
@@ -40,14 +28,12 @@ services:
         limits:
           memory: 1G
           cpus: '1.0'
-        reservations:
-          memory: 512M
 
   # Redis Cache
   redis:
     image: redis:7-alpine
     container_name: groupc-redis
-    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD required} --maxmemory 200mb --maxmemory-policy allkeys-lru
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD} --maxmemory 200mb --maxmemory-policy allkeys-lru
     volumes:
       - groupc_redis_data:/data
     healthcheck:
@@ -63,8 +49,6 @@ services:
         limits:
           memory: 256M
           cpus: '0.5'
-        reservations:
-          memory: 128M
 
   # Backend (FastAPI + AI Agents)
   backend:
@@ -73,40 +57,27 @@ services:
       dockerfile: Dockerfile
     container_name: groupc-backend
     environment:
-      # Database
       DATABASE_URL: postgresql+asyncpg://trading_user:${POSTGRES_PASSWORD}@postgres:5432/trading_prod
-
-      # Security
-      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?ENCRYPTION_KEY required}
-      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET required}
-
-      # App Settings
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      JWT_SECRET: ${JWT_SECRET}
       DEBUG: "False"
       ENVIRONMENT: production
       CORS_ORIGINS: ${CORS_ORIGINS:-https://deepsignal.shop,https://admin.deepsignal.shop}
-
-      # Redis
       REDIS_URL: redis://default:${REDIS_PASSWORD}@redis:6379
       REDIS_HOST: redis
       REDIS_PORT: "6379"
       REDIS_DB: "0"
       REDIS_PASSWORD: ${REDIS_PASSWORD}
-
-      # AI Service
       AI_PROVIDER: ${AI_PROVIDER:-gemini}
-      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
-      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
-
-      # Logging
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
-
-      # Telegram (optional)
-      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
-      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID}
     volumes:
       - ./backend/logs:/app/logs
     ports:
-      - "8000:8000"
+      - "3200:8000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -117,29 +88,26 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 60s
     restart: always
     networks:
       - group_c_network
+      - proxy-net
     deploy:
       resources:
         limits:
           memory: 2G
           cpus: '2.0'
-        reservations:
-          memory: 1G
 
   # Frontend (User Dashboard)
-  # Note: Port 3000 is used by Freqtrade UI, using 3001 instead
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: ${VITE_API_URL:?VITE_API_URL required}
+        VITE_API_URL: ${VITE_API_URL}
     container_name: groupc-frontend
     ports:
-      - "3001:3000"
+      - "3201:3000"
     depends_on:
       backend:
         condition: service_healthy
@@ -148,17 +116,15 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 20s
     restart: always
     networks:
       - group_c_network
+      - proxy-net
     deploy:
       resources:
         limits:
           memory: 256M
           cpus: '0.5'
-        reservations:
-          memory: 128M
 
   # Admin Frontend
   admin-frontend:
@@ -166,10 +132,10 @@ services:
       context: ./admin-frontend
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: ${VITE_API_URL:?VITE_API_URL required}
+        VITE_API_URL: ${VITE_API_URL}
     container_name: groupc-admin
     ports:
-      - "4000:4000"
+      - "3202:4000"
     depends_on:
       backend:
         condition: service_healthy
@@ -178,17 +144,15 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 20s
     restart: always
     networks:
       - group_c_network
+      - proxy-net
     deploy:
       resources:
         limits:
           memory: 256M
           cpus: '0.5'
-        reservations:
-          memory: 128M
 
 volumes:
   groupc_postgres_data:
@@ -198,5 +162,6 @@ volumes:
 
 networks:
   group_c_network:
+    driver: bridge
+  proxy-net:
     external: true
-    name: group_c_network

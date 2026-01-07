@@ -84,4 +84,6 @@ next-env.d.ts
 # ==================== 임시/분석 파일 ====================
 code_summary.json
 test_results.json
-raw_report.md
+# ==================== SSH Keys ====================
+id_rsa_new
+id_rsa_new.pub

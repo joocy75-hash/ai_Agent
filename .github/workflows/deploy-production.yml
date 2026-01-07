@@ -27,7 +27,7 @@ on:
         type: boolean
 
 env:
-  DEPLOY_PATH: /root/service_c/ai-trading-platform
+  DEPLOY_PATH: /root/group_c
   DOCKER_BUILDKIT: 1
   COMPOSE_DOCKER_CLI_BUILD: 1
 
@@ -144,7 +144,7 @@ jobs:
         run: |
           ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no root@${{ secrets.HETZNER_SERVER_IP }} << 'ENDSSH'
           set -e
-          cd /root/service_c/ai-trading-platform
+          cd /root/group_c
 
           echo "============================================"
           echo "🚀 Starting optimized deployment..."
@@ -211,11 +211,11 @@ jobs:
             sleep $RETRY_INTERVAL
 
             # Check backend health
-            if curl -sf http://localhost:8000/health > /dev/null 2>&1; then
+            if curl -sf http://localhost:3200/health > /dev/null 2>&1; then
               echo "✅ Backend is healthy!"
 
               # Check frontend
-              if curl -sf http://localhost:3001 > /dev/null 2>&1; then
+              if curl -sf http://localhost:3201 > /dev/null 2>&1; then
                 echo "✅ Frontend is accessible!"
                 echo ""
                 echo "============================================"
@@ -255,7 +255,7 @@ jobs:
         run: |
           echo "::error::Deployment failed. Check the logs above for details."
           echo "To manually rollback, SSH to server and run:"
-          echo "  cd /root/service_c/ai-trading-platform"
+          echo "  cd /root/group_c"
           echo "  docker tag groupc-backend:rollback groupc-backend:latest"
           echo "  docker tag groupc-frontend:rollback groupc-frontend:latest"
           echo "  docker compose -f docker-compose.production.yml up -d"
@@ -282,7 +282,7 @@ jobs:
           echo "============================================"
 
           # API Health
-          API_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" "http://${{ secrets.HETZNER_SERVER_IP }}:8000/health" || echo "000")
+          API_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" "http://${{ secrets.HETZNER_SERVER_IP }}:3200/health" || echo "000")
           if [ "$API_RESPONSE" = "200" ]; then
             echo "✅ API: Healthy (HTTP $API_RESPONSE)"
           else
@@ -290,7 +290,7 @@ jobs:
           fi
 
           # Frontend
-          FE_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" "http://${{ secrets.HETZNER_SERVER_IP }}:3001" || echo "000")
+          FE_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" "http://${{ secrets.HETZNER_SERVER_IP }}:3201" || echo "000")
           if [ "$FE_RESPONSE" = "200" ]; then
             echo "✅ Frontend: Accessible (HTTP $FE_RESPONSE)"
           else
@@ -298,7 +298,7 @@ jobs:
           fi
 
           # Admin
-          ADMIN_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" "http://${{ secrets.HETZNER_SERVER_IP }}:4000" || echo "000")
+          ADMIN_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" "http://${{ secrets.HETZNER_SERVER_IP }}:3202" || echo "000")
           if [ "$ADMIN_RESPONSE" = "200" ]; then
             echo "✅ Admin: Accessible (HTTP $ADMIN_RESPONSE)"
           else
@@ -345,7 +345,7 @@ jobs:
           echo "  - Admin: https://admin.deepsignal.shop"
           echo ""
           echo "🔧 Internal URLs:"
-          echo "  - API: http://${{ secrets.HETZNER_SERVER_IP }}:8000"
-          echo "  - Frontend: http://${{ secrets.HETZNER_SERVER_IP }}:3001"
-          echo "  - Admin: http://${{ secrets.HETZNER_SERVER_IP }}:4000"
+          echo "  - API: http://${{ secrets.HETZNER_SERVER_IP }}:3200"
+          echo "  - Frontend: http://${{ secrets.HETZNER_SERVER_IP }}:3201"
+          echo "  - Admin: http://${{ secrets.HETZNER_SERVER_IP }}:3202"
           echo "============================================"
