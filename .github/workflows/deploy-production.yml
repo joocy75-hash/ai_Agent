@@ -1,6 +1,5 @@
-# ============================================================
 # AI Trading Platform - Optimized Production Deployment
-# Server: Hetzner deep-server (5.161.112.248)
+# Server: Seoul Server (141.164.55.245)
 # Optimizations:
 #   - Docker BuildKit caching (5분 → ~1분)
 #   - Parallel frontend builds

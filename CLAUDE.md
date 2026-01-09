@@ -370,7 +370,7 @@ gh run watch <RUN_ID> -R joocy75-hash/AI-Agent-DeepSignal
 
 | Secret | 설명 |
 |--------|------|
-| `HETZNER_SERVER_IP` | 서버 IP (5.161.112.248) |
+| `HETZNER_SERVER_IP` | 서버 IP (141.164.55.245) |
 | `HETZNER_SSH_PRIVATE_KEY` | SSH 배포 키 |
 | `POSTGRES_PASSWORD` | DB 비밀번호 |
 | `REDIS_PASSWORD` | Redis 비밀번호 |
@@ -386,7 +386,7 @@ gh run watch <RUN_ID> -R joocy75-hash/AI-Agent-DeepSignal
 
 ```bash
 # 1. SSH 접속
-ssh -i ~/.ssh/hetzner_deploy_key root@5.161.112.248
+ssh -i ~/.ssh/hetzner_deploy_key root@141.164.55.245
 
 # 2. 프로젝트 디렉토리로 이동
 cd /root/service_c/ai-trading-platform
@@ -394,7 +394,7 @@ cd /root/service_c/ai-trading-platform
 # 3. 코드 동기화 (로컬에서)
 rsync -avz --exclude 'node_modules' --exclude '.git' \
   -e "ssh -i ~/.ssh/hetzner_deploy_key" \
-  ./ root@5.161.112.248:/root/service_c/ai-trading-platform/
+  ./ root@141.164.55.245:/root/service_c/ai-trading-platform/
 
 # 4. 서비스 재빌드 및 재시작
 docker compose -f docker-compose.production.yml build --no-cache
@@ -512,7 +512,7 @@ gh run watch <RUN_ID> -R joocy75-hash/AI-Agent-DeepSignal
 gh run view <RUN_ID> --log -R joocy75-hash/AI-Agent-DeepSignal
 
 # 또는 SSH로 서버 로그 직접 확인
-ssh -i ~/.ssh/hetzner_deploy_key root@5.161.112.248 "docker logs groupc-backend --tail 50"
+ssh -i ~/.ssh/hetzner_deploy_key root@141.164.55.245 "docker logs groupc-backend --tail 50"
 ```
 
 ### Step 4: 배포 검증
@@ -551,7 +551,7 @@ git reset --hard <commit_hash>
 git push hetzner main --force  # 주의: force push
 
 # 2. 서버에서 직접 롤백 (긴급 시)
-ssh -i ~/.ssh/hetzner_deploy_key root@5.161.112.248 << 'EOF'
+ssh -i ~/.ssh/hetzner_deploy_key root@141.164.55.245 << 'EOF'
 cd /root/service_c/ai-trading-platform
 git log --oneline -5  # 최근 커밋 확인
 git checkout <이전_commit_hash>

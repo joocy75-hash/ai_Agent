@@ -14,10 +14,10 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 
-from backend.src.ml.features.technical_features import TechnicalFeatures
-from backend.src.ml.features.structure_features import StructureFeatures
-from backend.src.ml.features.mtf_features import MTFFeatures
-from backend.src.ml.features.feature_pipeline import FeaturePipeline
+from src.ml.features.technical_features import TechnicalFeatures
+from src.ml.features.structure_features import StructureFeatures
+from src.ml.features.mtf_features import MTFFeatures
+from src.ml.features.feature_pipeline import FeaturePipeline
 
 
 # Fixtures

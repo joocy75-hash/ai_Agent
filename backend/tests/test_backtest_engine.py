@@ -17,8 +17,7 @@ import csv
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from src.services.backtest_engine import BacktestEngine
-from src.services.strategies.simple_open_close import SimpleOpenCloseStrategy
-from src.services.strategies.rsi_strategy import RsiStrategy
+from src.services.strategies.eth_ai_fusion import EthAIFusionBacktestStrategy
 
 
 def create_temp_csv(data):
@@ -31,8 +30,8 @@ def create_temp_csv(data):
     return temp_file.name
 
 
-def test_simple_strategy_basic():
-    """Test basic backtest with SimpleOpenClose strategy."""
+def test_eth_ai_fusion_strategy_basic():
+    """Test basic backtest with EthAIFusionBacktestStrategy."""
     print("\n=== Test 1: Simple Strategy Basic ===")
 
     # Create test data
@@ -47,7 +46,7 @@ def test_simple_strategy_basic():
     csv_path = create_temp_csv(test_data)
 
     try:
-        strategy = SimpleOpenCloseStrategy()
+        strategy = EthAIFusionBacktestStrategy()
         engine = BacktestEngine(strategy=strategy)
 
         result = engine.run({
@@ -75,8 +74,8 @@ def test_simple_strategy_basic():
         os.unlink(csv_path)
 
 
-def test_rsi_strategy():
-    """Test RSI strategy with sufficient data."""
+def test_eth_ai_fusion_strategy_extended():
+    """Test EthAIFusionBacktestStrategy with extended data."""
     print("\n=== Test 2: RSI Strategy ===")
 
     # Create test data with trend (20 candles for RSI warmup)
@@ -101,7 +100,7 @@ def test_rsi_strategy():
     csv_path = create_temp_csv(test_data)
 
     try:
-        strategy = RsiStrategy(length=14, overbought=70, oversold=30)
+        strategy = EthAIFusionBacktestStrategy()
         engine = BacktestEngine(strategy=strategy)
 
         result = engine.run({
@@ -131,7 +130,7 @@ def test_error_handling_missing_csv():
     """Test error handling for missing CSV file."""
     print("\n=== Test 3: Error Handling - Missing CSV ===")
 
-    strategy = SimpleOpenCloseStrategy()
+    strategy = EthAIFusionBacktestStrategy()
     engine = BacktestEngine(strategy=strategy)
 
     try:
@@ -155,7 +154,7 @@ def test_empty_csv():
     csv_path = create_temp_csv(test_data)
 
     try:
-        strategy = SimpleOpenCloseStrategy()
+        strategy = EthAIFusionBacktestStrategy()
         engine = BacktestEngine(strategy=strategy)
 
         result = engine.run({
@@ -194,7 +193,7 @@ def test_metrics_calculation():
     csv_path = create_temp_csv(test_data)
 
     try:
-        strategy = SimpleOpenCloseStrategy()
+        strategy = EthAIFusionBacktestStrategy()
         engine = BacktestEngine(strategy=strategy)
 
         result = engine.run({
