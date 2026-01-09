@@ -1,13 +1,20 @@
-# AI Trading Platform - Optimized Production Deployment
+# ============================================================
+# AI Trading Platform - Group C ONLY Deployment
 # Server: Seoul Server (141.164.55.245)
+#
+# ISOLATION GUARANTEE:
+#   - Only affects Group C containers (groupc-*)
+#   - Does NOT touch other groups (group_a, group_b, group_e, proxy)
+#   - Uses project-specific docker compose commands
+#
 # Optimizations:
-#   - Docker BuildKit caching (5분 → ~1분)
+#   - Docker BuildKit caching
 #   - Parallel frontend builds
 #   - Rollback mechanism on failure
 #   - Smart health check with retries
 # ============================================================
 
-name: Deploy to Production
+name: Deploy Group C to Production
 
 on:
   push:
@@ -189,15 +196,14 @@ jobs:
 
           echo "✅ All images built successfully"
 
-          # Graceful shutdown
+          # Graceful restart (without down - preserves other services)
           echo ""
-          echo "⏹️  Stopping existing containers gracefully..."
-          docker compose -f docker-compose.production.yml down --timeout 30 || true
+          echo "▶️  Restarting Group C services only..."
+          echo "   (This does NOT affect other groups: group_a, group_b, group_e, proxy)"
 
-          # Start services
-          echo ""
-          echo "▶️  Starting services..."
-          docker compose -f docker-compose.production.yml up -d
+          # Use 'up -d' which only recreates changed containers
+          # This is safer than 'down' as it preserves data and doesn't affect other projects
+          docker compose -f docker-compose.production.yml up -d --force-recreate --remove-orphans
 
           # Health check with retries
           echo ""
