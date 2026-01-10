@@ -3,11 +3,11 @@
  *
  * Bitget 스타일 다크 테마 봇 선택 페이지
  */
-import React, { useEffect, useState } from 'react';
-import { message, Spin, Empty } from 'antd';
-import { RobotOutlined } from '@ant-design/icons';
+import { useEffect, useState } from 'react';
+import { message, Spin, Empty, Alert } from 'antd';
+import { RobotOutlined, SettingOutlined } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import { useBotMarketplace } from '../../hooks/useBotMarketplace';
-import BotCard from './BotCard';
 import BotCardList from './BotCardList';
 import BotFilters from './BotFilters';
 import ActiveBotsBanner from './ActiveBotsBanner';
@@ -15,6 +15,7 @@ import BotDetailModal from './BotDetailModal';
 import './styles/BotMarketplace.css';
 
 const BotMarketplace = () => {
+    const navigate = useNavigate();
     const {
         templates,
         summary,
@@ -34,13 +35,29 @@ const BotMarketplace = () => {
         closeDetailModal,
     } = useBotMarketplace();
 
+    // API 키 미설정 상태
+    const [apiKeyMissing, setApiKeyMissing] = useState(false);
+
     // 초기 데이터 로드
     useEffect(() => {
         const fetchData = async () => {
+            // 템플릿은 필수, summary는 선택 (API 키 없어도 템플릿은 볼 수 있음)
             try {
-                await Promise.all([loadTemplates(), loadSummary()]);
+                await loadTemplates();
             } catch (err) {
-                message.error('데이터를 불러오는데 실패했습니다.');
+                message.error('템플릿을 불러오는데 실패했습니다.');
+            }
+
+            // Summary 로드 시도 (실패해도 페이지는 정상 표시)
+            try {
+                await loadSummary();
+                setApiKeyMissing(false);
+            } catch (err) {
+                // API 키 미설정 시 400 에러
+                if (err.response?.status === 400) {
+                    setApiKeyMissing(true);
+                    console.log('[BotMarketplace] API key not configured - summary skipped');
+                }
             }
         };
         fetchData();
@@ -89,8 +106,27 @@ const BotMarketplace = () => {
                 </div>
             </div>
 
+            {/* API 키 미설정 안내 */}
+            {apiKeyMissing && (
+                <Alert
+                    message="거래소 API 키가 설정되지 않았습니다"
+                    description={
+                        <span>
+                            봇을 시작하려면 먼저{' '}
+                            <a onClick={() => navigate('/settings')} style={{ color: '#5856d6', cursor: 'pointer' }}>
+                                설정 페이지 <SettingOutlined />
+                            </a>
+                            에서 API 키를 등록해주세요.
+                        </span>
+                    }
+                    type="warning"
+                    showIcon
+                    style={{ marginBottom: 16, background: '#2a2a2a', border: '1px solid #ff9500' }}
+                />
+            )}
+
             {/* 활성 봇 배너 */}
-            {summary && (
+            {summary && !apiKeyMissing && (
                 <ActiveBotsBanner
                     activeBotCount={summary.active_bot_count || 0}
                     totalPnl={summary.total_pnl || 0}
