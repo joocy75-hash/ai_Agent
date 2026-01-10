@@ -16,7 +16,9 @@ WORKDIR /app
 COPY requirements.txt .
 
 # Install Python dependencies
+# PyTorch CPU 버전을 먼저 설치 (CUDA 의존성 없이 ~200MB vs GPU 버전 ~4GB)
 RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu && \
     pip install --no-cache-dir -r requirements.txt
 
 # ========================================
