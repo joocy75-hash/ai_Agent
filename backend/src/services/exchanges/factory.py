@@ -7,6 +7,10 @@
 from typing import Dict, Optional, Type
 from .base import BaseExchange
 from .bitget import BitgetExchange
+from .binance import BinanceExchange
+from .okx import OKXExchange
+from .bybit import BybitExchange
+from .gateio import GateioExchange
 import logging
 
 logger = logging.getLogger(__name__)
@@ -18,9 +22,14 @@ class ExchangeFactory:
     # 지원 거래소 등록
     _exchanges: Dict[str, Type[BaseExchange]] = {
         'bitget': BitgetExchange,
-        # 'binance': BinanceExchange,  # 추후 추가
-        # 'okx': OKXExchange,  # 추후 추가
+        'binance': BinanceExchange,
+        'okx': OKXExchange,
+        'bybit': BybitExchange,
+        'gateio': GateioExchange,
     }
+
+    # Passphrase가 필요한 거래소
+    PASSPHRASE_REQUIRED = ['bitget', 'okx']
 
     @classmethod
     def create(
@@ -56,7 +65,7 @@ class ExchangeFactory:
         exchange_class = cls._exchanges[exchange_name]
 
         # Passphrase 필요 여부 확인
-        if exchange_name in ['bitget', 'okx']:
+        if exchange_name in cls.PASSPHRASE_REQUIRED:
             if not passphrase:
                 raise ValueError(f"{exchange_name} requires passphrase")
             return exchange_class(api_key, secret_key, passphrase)

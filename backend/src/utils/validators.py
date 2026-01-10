@@ -59,16 +59,26 @@ def sanitize_html(text: str) -> str:
     # bleach를 사용하여 모든 HTML 태그 제거
     cleaned = bleach.clean(text, tags=[], strip=True)
 
-    # 추가 XSS 패턴 제거
+    # 추가 XSS 패턴 제거 (ReDoS 안전한 패턴 사용)
     xss_patterns = [
         r"javascript:",
-        r"on\w+\s*=",  # onclick, onload 등
         r"<script",
         r"</script>",
     ]
 
     for pattern in xss_patterns:
         cleaned = re.sub(pattern, "", cleaned, flags=re.IGNORECASE)
+
+    # 이벤트 핸들러 제거 (ReDoS 방지를 위해 고정 패턴 사용)
+    event_handlers = [
+        "onclick", "ondblclick", "onmousedown", "onmouseup", "onmouseover",
+        "onmousemove", "onmouseout", "onkeydown", "onkeypress", "onkeyup",
+        "onload", "onunload", "onerror", "onsubmit", "onreset", "onfocus",
+        "onblur", "onchange", "onselect", "onabort"
+    ]
+    for handler in event_handlers:
+        # 대소문자 무시하고 handler= 패턴 제거
+        cleaned = re.sub(rf"{handler}\s*=", "", cleaned, flags=re.IGNORECASE)
 
     return cleaned
 

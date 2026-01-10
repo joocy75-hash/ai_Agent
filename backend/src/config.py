@@ -55,7 +55,19 @@ class ExchangeConfig:
     DEFAULT_EXCHANGE = "bitget"
 
     # 지원하는 거래소 목록
-    SUPPORTED_EXCHANGES = ["bitget", "binance", "okx"]
+    SUPPORTED_EXCHANGES = ["bitget", "binance", "okx", "bybit", "gateio"]
+
+    # Passphrase가 필요한 거래소
+    PASSPHRASE_REQUIRED = ["bitget", "okx"]
+
+    # 거래소별 심볼 형식
+    SYMBOL_FORMATS = {
+        "bitget": "ETHUSDT",        # ETHUSDT
+        "binance": "ETH/USDT",      # ETH/USDT
+        "okx": "ETH/USDT:USDT",     # ETH/USDT:USDT
+        "bybit": "ETHUSDT",         # ETHUSDT
+        "gateio": "ETH/USDT:USDT",  # ETH/USDT:USDT
+    }
 
 
 class BacktestConfig:

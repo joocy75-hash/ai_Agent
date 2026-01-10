@@ -41,7 +41,7 @@ from ..services.trade_executor import (
     ensure_client,
     place_market_order,
 )
-from ..services.exchanges import exchange_manager
+from ..services.exchanges import exchange_manager, ExchangeFactory
 from ..services.bitget_rest import get_bitget_rest, OrderSide
 from ..services.allocation_manager import allocation_manager  # 다중 봇 시스템 (NEW)
 from ..services.bot_isolation_manager import bot_isolation_manager  # 다중 봇 시스템 (NEW)
@@ -1241,8 +1241,21 @@ class BotRunner:
             raise ValueError(f"Strategy {strategy_id} not found")
         return strategy
 
-    async def _init_bitget_client(self, session: AsyncSession, user_id: int):
-        """Bitget API 클라이언트 초기화"""
+    async def _init_exchange_client(self, session: AsyncSession, user_id: int):
+        """
+        범용 거래소 클라이언트 초기화
+
+        Returns:
+            tuple: (exchange_client, exchange_name)
+        """
+        # 1. User 정보 조회 (exchange 필드)
+        user_result = await session.execute(
+            select(User).where(User.id == user_id)
+        )
+        user = user_result.scalars().first()
+        exchange_name = user.exchange if user and user.exchange else "bitget"
+
+        # 2. API 키 조회
         result = await session.execute(
             select(ApiKey).where(ApiKey.user_id == user_id)
         )
@@ -1253,16 +1266,37 @@ class BotRunner:
 
         api_key = decrypt_secret(api_key_obj.encrypted_api_key)
         api_secret = decrypt_secret(api_key_obj.encrypted_secret_key)
-        passphrase = (
-            decrypt_secret(api_key_obj.encrypted_passphrase)
-            if api_key_obj.encrypted_passphrase
-            else ""
-        )
 
-        if not all([api_key, api_secret, passphrase]):
+        # 3. Passphrase 처리 (Bitget, OKX만 필요)
+        passphrase = None
+        if exchange_name in ExchangeFactory.PASSPHRASE_REQUIRED:
+            passphrase = (
+                decrypt_secret(api_key_obj.encrypted_passphrase)
+                if api_key_obj.encrypted_passphrase
+                else ""
+            )
+            if not passphrase:
+                raise InvalidApiKeyError(f"{exchange_name} requires passphrase")
+
+        # 4. 기본 검증
+        if not all([api_key, api_secret]):
             raise InvalidApiKeyError("Invalid or incomplete API credentials")
 
-        return get_bitget_rest(api_key, api_secret, passphrase)
+        # 5. ExchangeFactory로 클라이언트 생성
+        client = ExchangeFactory.create(
+            exchange_name=exchange_name,
+            api_key=api_key,
+            secret_key=api_secret,
+            passphrase=passphrase
+        )
+
+        logger.info(f"Initialized {exchange_name} client for user {user_id}")
+        return client, exchange_name
+
+    async def _init_bitget_client(self, session: AsyncSession, user_id: int):
+        """Bitget API 클라이언트 초기화 (하위 호환성 유지)"""
+        client, _ = await self._init_exchange_client(session, user_id)
+        return client
 
     async def _update_bot_instance_error(
         self,

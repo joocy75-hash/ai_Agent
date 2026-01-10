@@ -157,22 +157,35 @@ async def save_keys(
         structured_logger.info(
             "api_keys_save_requested",
             "API keys save requested",
-            user_id=user_id
+            user_id=user_id,
+            exchange=payload.exchange
         )
+
+        # Passphrase 검증 (Bitget, OKX는 필수)
+        if payload.exchange in ApiKeyPayload.PASSPHRASE_REQUIRED:
+            if not payload.passphrase:
+                raise ValueError(f"{payload.exchange.upper()} requires a passphrase")
 
         # API 키 암호화
         encrypted_api = encrypt_secret(payload.api_key)
         encrypted_secret = encrypt_secret(payload.secret_key)
         encrypted_passphrase = encrypt_secret(payload.passphrase or "")
 
-        logger.debug(f"[save_keys] API keys encrypted successfully")
+        logger.debug(f"[save_keys] API keys encrypted successfully for {payload.exchange}")
+
+        # User.exchange 필드 업데이트
+        user_result = await session.execute(select(User).where(User.id == user_id))
+        user = user_result.scalars().first()
+        if user:
+            user.exchange = payload.exchange
+            logger.info(f"[save_keys] Updated user exchange to {payload.exchange}")
 
         # DB 저장 또는 업데이트
         result = await session.execute(select(ApiKey).where(ApiKey.user_id == user_id))
         key = result.scalars().first()
 
         if not key:
-            logger.info(f"[save_keys] Creating new API key for user {user_id}")
+            logger.info(f"[save_keys] Creating new API key for user {user_id} ({payload.exchange})")
             key = ApiKey(
                 user_id=user_id,
                 encrypted_api_key=encrypted_api,
@@ -181,7 +194,7 @@ async def save_keys(
             )
             session.add(key)
         else:
-            logger.info(f"[save_keys] Updating existing API key for user {user_id}")
+            logger.info(f"[save_keys] Updating existing API key for user {user_id} ({payload.exchange})")
             key.encrypted_api_key = encrypted_api
             key.encrypted_secret_key = encrypted_secret
             key.encrypted_passphrase = encrypted_passphrase

@@ -124,15 +124,39 @@ class UserRateLimitMiddleware(BaseHTTPMiddleware):
         return response
 
     def _get_user_id(self, request: Request) -> str | None:
-        """JWT에서 user_id 추출"""
-        # Authorization 헤더에서 추출
-        auth_header = request.headers.get("authorization")
-        if not auth_header:
-            return None
+        """JWT에서 user_id 추출
 
-        # 간단한 구현 - 실제로는 JWT 디코딩 필요
-        # TODO: JWT 토큰 파싱 구현
-        return request.client.host  # 임시로 IP 사용
+        Returns:
+            user_id 문자열 또는 None (인증 안 된 경우 IP 주소 반환)
+        """
+        # 1. RequestContext에서 캐시된 user_id 확인
+        if hasattr(request.state, "user_id") and request.state.user_id:
+            return str(request.state.user_id)
+
+        # 2. Authorization 헤더 또는 쿠키에서 토큰 추출
+        token = None
+        auth_header = request.headers.get("authorization")
+        if auth_header and auth_header.startswith("Bearer "):
+            token = auth_header[7:]
+        else:
+            token = request.cookies.get("access_token")
+
+        if not token:
+            # 인증 안 된 요청은 IP 기반으로 제한
+            return f"ip:{request.client.host}" if request.client else None
+
+        # 3. JWT 디코딩하여 user_id 추출
+        try:
+            from ..utils.jwt_auth import JWTAuth
+            payload = JWTAuth.verify_token(token)
+            user_id = payload.get("user_id") if payload else None
+            if user_id:
+                return str(user_id)
+        except Exception:
+            # JWT 검증 실패 시 IP 기반으로 처리
+            pass
+
+        return f"ip:{request.client.host}" if request.client else None
 
     def _check_rate_limit(
         self,

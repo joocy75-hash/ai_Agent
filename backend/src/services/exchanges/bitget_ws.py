@@ -20,14 +20,23 @@ logger = logging.getLogger(__name__)
 class BitgetWebSocket:
     """Bitget WebSocket 클라이언트"""
 
-    def __init__(self, api_key: str, secret_key: str, passphrase: str):
+    def __init__(
+        self,
+        api_key: str = None,
+        secret_key: str = None,
+        passphrase: str = None
+    ):
         """
         WebSocket 클라이언트 초기화
 
         Args:
-            api_key: API 키
-            secret_key: Secret 키
-            passphrase: API Passphrase
+            api_key: API 키 (Private 스트림용, 선택)
+            secret_key: Secret 키 (Private 스트림용, 선택)
+            passphrase: API Passphrase (Private 스트림용, 선택)
+
+        Note:
+            Public 스트림(Ticker, Candle 등)은 API 키 없이 사용 가능
+            Private 스트림(주문, 포지션)은 API 키 필수
         """
         self.api_key = api_key
         self.secret_key = secret_key
@@ -52,7 +61,11 @@ class BitgetWebSocket:
         return base64.b64encode(mac.digest()).decode('utf-8')
 
     async def _authenticate(self):
-        """WebSocket 인증"""
+        """WebSocket 인증 (Private 스트림용)"""
+        if not self.api_key or not self.secret_key or not self.passphrase:
+            logger.warning("API credentials not provided, skipping authentication")
+            return False
+
         timestamp = str(int(time.time()))
         sign = self._generate_signature(timestamp, 'GET', '/user/verify')
 
@@ -68,6 +81,7 @@ class BitgetWebSocket:
 
         await self.ws.send(json.dumps(auth_message))
         logger.info("Bitget WebSocket authentication sent")
+        return True
 
     async def _ping_loop(self):
         """주기적 Ping 전송 (연결 유지)"""
@@ -264,24 +278,31 @@ class BitgetWebSocket:
             logger.info("Bitget WebSocket closed")
 
 
-# 전역 WebSocket 인스턴스 생성 함수
-async def bitget_ws_collector(market_queue: asyncio.Queue):
+# 전역 WebSocket 데이터 수집기 함수
+async def bitget_ws_collector(
+    market_queue: asyncio.Queue,
+    symbols: list = None,
+    api_key: str = None,
+    secret_key: str = None,
+    passphrase: str = None
+):
     """
     Bitget WebSocket 데이터 수집기
 
+    Public 스트림(Ticker, Candle)은 API 키 없이 사용 가능.
+    Private 스트림(주문, 포지션)은 API 키 필요.
+
     Args:
         market_queue: 시장 데이터를 전달할 큐
+        symbols: 구독할 심볼 리스트 (기본: ["BTCUSDT_UMCBL", "ETHUSDT_UMCBL"])
+        api_key: API 키 (Private 스트림용, 선택)
+        secret_key: Secret 키 (Private 스트림용, 선택)
+        passphrase: Passphrase (Private 스트림용, 선택)
     """
-    # TODO: API 키는 설정에서 가져오기
-    # 현재는 환경변수나 설정 파일에서 로드해야 함
-    api_key = ""  # 실제 사용시 설정 필요
-    secret_key = ""
-    passphrase = ""
+    if symbols is None:
+        symbols = ["BTCUSDT_UMCBL", "ETHUSDT_UMCBL"]
 
-    if not api_key:
-        logger.warning("Bitget API keys not configured, WebSocket collector disabled")
-        return
-
+    # API 키가 없어도 Public 스트림 사용 가능
     ws_client = BitgetWebSocket(api_key, secret_key, passphrase)
 
     async def ticker_callback(data):
@@ -302,11 +323,36 @@ async def bitget_ws_collector(market_queue: asyncio.Queue):
                 }
             })
 
-    try:
-        await ws_client.connect()
+    async def candle_callback(data):
+        """Candle 데이터 처리"""
+        for candle in data:
+            await market_queue.put({
+                'type': 'candle',
+                'exchange': 'bitget',
+                'symbol': candle.get('instId'),
+                'data': {
+                    'timestamp': int(candle[0]) if isinstance(candle, list) else 0,
+                    'open': float(candle[1]) if isinstance(candle, list) else 0,
+                    'high': float(candle[2]) if isinstance(candle, list) else 0,
+                    'low': float(candle[3]) if isinstance(candle, list) else 0,
+                    'close': float(candle[4]) if isinstance(candle, list) else 0,
+                    'volume': float(candle[5]) if isinstance(candle, list) else 0
+                }
+            })
 
-        # BTC/USDT Ticker 구독
-        await ws_client.subscribe_ticker("BTCUSDT_UMCBL", ticker_callback)
+    try:
+        connected = await ws_client.connect()
+        if not connected:
+            logger.error("Failed to connect to Bitget WebSocket")
+            return
+
+        # 각 심볼에 대해 Ticker와 1분봉 구독
+        for symbol in symbols:
+            await ws_client.subscribe_ticker(symbol, ticker_callback)
+            await ws_client.subscribe_candle(symbol, "1m", candle_callback)
+            await asyncio.sleep(0.1)  # Rate limit 방지
+
+        logger.info(f"Bitget WebSocket collector started for symbols: {symbols}")
 
         # 메시지 수신 시작
         await ws_client.listen()

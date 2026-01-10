@@ -1,22 +1,26 @@
 from pydantic import BaseModel, field_validator, Field
-from typing import Optional
+from typing import ClassVar, Optional, Set
 from ..utils.validators import validate_api_key_format, validate_string_length, ValidationRules
 
 
 class ApiKeyPayload(BaseModel):
-    exchange: str = "lbank"
+    exchange: str = "bitget"
     api_key: str
     secret_key: str
     passphrase: Optional[str] = None
+
+    # 지원하는 거래소 목록 (ClassVar로 선언하여 Pydantic 필드로 인식되지 않게 함)
+    SUPPORTED_EXCHANGES: ClassVar[Set[str]] = {'bitget', 'binance', 'okx', 'bybit', 'gateio'}
+    # Passphrase가 필요한 거래소
+    PASSPHRASE_REQUIRED: ClassVar[Set[str]] = {'bitget', 'okx'}
 
     @field_validator('exchange')
     @classmethod
     def validate_exchange(cls, v: str) -> str:
         """거래소 이름 검증"""
-        allowed_exchanges = {'lbank', 'bitget', 'binance'}
         v = v.lower().strip()
-        if v not in allowed_exchanges:
-            raise ValueError(f"Exchange must be one of: {', '.join(allowed_exchanges)}")
+        if v not in cls.SUPPORTED_EXCHANGES:
+            raise ValueError(f"Exchange must be one of: {', '.join(sorted(cls.SUPPORTED_EXCHANGES))}")
         return v
 
     @field_validator('api_key', 'secret_key')
