@@ -1,0 +1,305 @@
+/**
+ * BotDetailModal - 봇 상세 모달 스타일
+ * Bitget 스타일 다크 테마
+ */
+
+/* 다크 테마 변수 */
+:root {
+    --modal-bg: #1a1a1a;
+    --modal-border: #2a2a2a;
+    --input-bg: #252525;
+    --text-primary: #ffffff;
+    --text-secondary: #a0a0a0;
+    --accent-green: #00d26a;
+    --accent-red: #ff4757;
+    --accent-blue: #1890ff;
+    --accent-gold: #ffd700;
+}
+
+/* 모달 래퍼 */
+.bot-detail-modal .ant-modal-content {
+    background: var(--modal-bg);
+    border: 1px solid var(--modal-border);
+    border-radius: 16px;
+    padding: 0;
+}
+
+.bot-detail-modal .ant-modal-body {
+    padding: 24px;
+}
+
+.bot-detail-modal .ant-modal-close {
+    color: var(--text-secondary);
+}
+
+.bot-detail-modal .ant-modal-close:hover {
+    color: var(--text-primary);
+}
+
+/* 헤더 */
+.bot-detail-modal .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.bot-detail-modal .header-left {
+    flex: 1;
+}
+
+.bot-detail-modal .symbol-title {
+    color: var(--text-primary);
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0 0 12px 0;
+}
+
+.bot-detail-modal .header-tags {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* 태그 스타일 */
+.bot-detail-modal .direction-tag {
+    border: none;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 4px;
+}
+
+.bot-detail-modal .direction-tag.long {
+    background: rgba(0, 210, 106, 0.15);
+    color: var(--accent-green);
+}
+
+.bot-detail-modal .direction-tag.short {
+    background: rgba(255, 71, 87, 0.15);
+    color: var(--accent-red);
+}
+
+.bot-detail-modal .direction-tag.both {
+    background: rgba(24, 144, 255, 0.15);
+    color: var(--accent-blue);
+}
+
+.bot-detail-modal .leverage-tag {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+    border: none;
+    font-weight: 600;
+}
+
+.bot-detail-modal .hot-tag {
+    background: linear-gradient(135deg, #ff6b6b, #ffd93d);
+    color: #fff;
+    border: none;
+    font-weight: 600;
+}
+
+/* 구분선 */
+.bot-detail-modal .modal-divider {
+    border-color: var(--modal-border);
+    margin: 20px 0;
+}
+
+/* 통계 그리드 */
+.bot-detail-modal .stats-grid {
+    margin-bottom: 20px;
+}
+
+.bot-detail-modal .ant-statistic-title {
+    color: var(--text-secondary);
+    font-size: 12px;
+    margin-bottom: 8px;
+}
+
+.bot-detail-modal .ant-statistic-content {
+    color: var(--text-primary);
+}
+
+/* 전략 설명 */
+.bot-detail-modal .strategy-description {
+    background: var(--input-bg);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 20px;
+}
+
+.bot-detail-modal .strategy-description h4 {
+    color: var(--text-primary);
+    font-size: 14px;
+    margin: 0 0 8px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.bot-detail-modal .strategy-description p {
+    color: var(--text-secondary);
+    font-size: 13px;
+    margin: 0;
+    line-height: 1.6;
+}
+
+/* 파라미터 섹션 */
+.bot-detail-modal .parameters-section {
+    margin-bottom: 20px;
+}
+
+.bot-detail-modal .parameters-section h4 {
+    color: var(--text-primary);
+    font-size: 14px;
+    margin: 0 0 12px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.bot-detail-modal .param-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.bot-detail-modal .param-item {
+    background: var(--input-bg);
+    border-radius: 8px;
+    padding: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.bot-detail-modal .param-label {
+    color: var(--text-secondary);
+    font-size: 12px;
+}
+
+.bot-detail-modal .param-value {
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.bot-detail-modal .param-value.profit {
+    color: var(--accent-green);
+}
+
+.bot-detail-modal .param-value.loss {
+    color: var(--accent-red);
+}
+
+/* 금액 섹션 */
+.bot-detail-modal .amount-section {
+    margin-bottom: 24px;
+}
+
+.bot-detail-modal .amount-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.bot-detail-modal .amount-header h4 {
+    color: var(--text-primary);
+    font-size: 14px;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.bot-detail-modal .available-balance {
+    color: var(--text-secondary);
+    font-size: 13px;
+}
+
+.bot-detail-modal .available-balance strong {
+    color: var(--accent-green);
+}
+
+/* 금액 입력 */
+.bot-detail-modal .amount-input {
+    width: 100%;
+    margin-bottom: 12px;
+}
+
+.bot-detail-modal .amount-input .ant-input-number {
+    background: var(--input-bg);
+    border: 1px solid var(--modal-border);
+    color: var(--text-primary);
+}
+
+.bot-detail-modal .amount-input .ant-input-number:hover,
+.bot-detail-modal .amount-input .ant-input-number:focus {
+    border-color: var(--accent-blue);
+}
+
+.bot-detail-modal .amount-input .ant-input-number-group-addon {
+    background: var(--modal-border);
+    color: var(--text-secondary);
+    border: 1px solid var(--modal-border);
+}
+
+/* 퍼센트 버튼 */
+.bot-detail-modal .percent-buttons {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.bot-detail-modal .percent-buttons .ant-btn {
+    background: var(--input-bg);
+    border: 1px solid var(--modal-border);
+    color: var(--text-secondary);
+    flex: 1;
+}
+
+.bot-detail-modal .percent-buttons .ant-btn:hover {
+    background: var(--modal-border);
+    color: var(--text-primary);
+    border-color: var(--accent-blue);
+}
+
+/* 잔고 알림 */
+.bot-detail-modal .balance-alert {
+    margin-top: 12px;
+}
+
+/* 시작 버튼 */
+.bot-detail-modal .start-button {
+    height: 48px;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: 8px;
+    background: linear-gradient(135deg, var(--accent-green), #00b359);
+    border: none;
+}
+
+.bot-detail-modal .start-button:hover:not(:disabled) {
+    background: linear-gradient(135deg, #00e676, var(--accent-green));
+}
+
+.bot-detail-modal .start-button:disabled {
+    background: var(--modal-border);
+    color: var(--text-muted);
+}
+
+/* 반응형 */
+@media (max-width: 576px) {
+    .bot-detail-modal .ant-modal {
+        max-width: calc(100vw - 32px);
+        margin: 16px;
+    }
+
+    .bot-detail-modal .param-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .bot-detail-modal .stats-grid .ant-col {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+}

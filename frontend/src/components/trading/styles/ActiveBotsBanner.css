@@ -1,0 +1,110 @@
+/**
+ * ActiveBotsBanner - 실행 중인 봇 상단 배너 스타일
+ */
+
+.active-bots-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #1a1a1a;
+    border-radius: 12px;
+    padding: 12px 20px;
+    margin-bottom: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.banner-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.banner-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    border-radius: 10px;
+    color: #fff;
+    font-size: 18px;
+}
+
+.banner-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.bot-count {
+    color: #e0e0e0;
+    font-size: 14px;
+}
+
+.bot-count strong {
+    color: #fff;
+    font-weight: 600;
+}
+
+.divider {
+    color: rgba(255, 255, 255, 0.2);
+}
+
+.pnl-label {
+    color: #9e9e9e;
+    font-size: 13px;
+}
+
+.pnl-value {
+    font-weight: 600;
+    font-size: 14px;
+    font-family: 'SF Mono', 'Consolas', monospace;
+}
+
+.pnl-percent {
+    font-size: 13px;
+    font-family: 'SF Mono', 'Consolas', monospace;
+}
+
+.view-all-button {
+    color: #8b5cf6 !important;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 4px 8px;
+    height: auto;
+    transition: all 0.2s ease;
+}
+
+.view-all-button:hover {
+    color: #a78bfa !important;
+    background: rgba(139, 92, 246, 0.1) !important;
+}
+
+.view-all-button .anticon {
+    font-size: 10px;
+    margin-left: 4px;
+}
+
+/* 반응형 */
+@media (max-width: 576px) {
+    .active-bots-banner {
+        flex-direction: column;
+        gap: 12px;
+        padding: 16px;
+    }
+
+    .banner-content {
+        width: 100%;
+    }
+
+    .banner-info {
+        flex: 1;
+    }
+
+    .view-all-button {
+        width: 100%;
+        justify-content: center;
+    }
+}

@@ -1,0 +1,111 @@
+/**
+ * BotMarketplace - 봇 마켓플레이스 스타일
+ * Bitget 스타일 다크 테마
+ */
+
+/* 다크 테마 변수 */
+:root {
+    --marketplace-bg: #0d0d0d;
+    --card-bg: #1a1a1a;
+    --card-border: #2a2a2a;
+    --text-primary: #ffffff;
+    --text-secondary: #a0a0a0;
+    --text-muted: #666666;
+    --accent-green: #00d26a;
+    --accent-red: #ff4757;
+    --accent-blue: #1890ff;
+    --accent-gold: #ffd700;
+}
+
+.bot-marketplace {
+    min-height: 100vh;
+    background: var(--marketplace-bg);
+    padding: 24px;
+}
+
+/* 헤더 */
+.marketplace-header {
+    margin-bottom: 24px;
+    padding: 20px 0;
+    border-bottom: 1px solid var(--card-border);
+}
+
+.header-content {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.page-title {
+    color: var(--text-primary);
+    font-size: 28px;
+    font-weight: 700;
+    margin: 0 0 8px 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.page-title .anticon {
+    color: var(--accent-blue);
+}
+
+.page-subtitle {
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin: 0;
+}
+
+/* 로딩 상태 */
+.loading-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 300px;
+    color: var(--text-secondary);
+}
+
+.loading-container .ant-spin-text {
+    color: var(--text-secondary);
+}
+
+/* 빈 상태 */
+.empty-state {
+    padding: 60px 20px;
+}
+
+.empty-state .ant-empty-description {
+    color: var(--text-secondary);
+}
+
+/* 에러 상태 */
+.bot-marketplace.error-state {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 400px;
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+    .bot-marketplace {
+        padding: 16px;
+    }
+
+    .page-title {
+        font-size: 22px;
+    }
+
+    .page-subtitle {
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 480px) {
+    .bot-marketplace {
+        padding: 12px;
+    }
+
+    .page-title {
+        font-size: 20px;
+    }
+}
