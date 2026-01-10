@@ -64,9 +64,10 @@ services:
       ENVIRONMENT: production
       CORS_ORIGINS: ${CORS_ORIGINS:-https://deepsignal.shop,https://admin.deepsignal.shop}
       # Cookie settings for cross-subdomain authentication
-      COOKIE_DOMAIN: ${COOKIE_DOMAIN:-.deepsignal.shop}
-      COOKIE_SAMESITE: ${COOKIE_SAMESITE:-none}
-      COOKIE_SECURE: ${COOKIE_SECURE:-true}
+      # CRITICAL: These must be set for CSRF tokens to work across subdomains
+      COOKIE_DOMAIN: ".deepsignal.shop"
+      COOKIE_SAMESITE: "none"
+      COOKIE_SECURE: "true"
       REDIS_URL: redis://default:${REDIS_PASSWORD}@redis:6379
       REDIS_HOST: redis
       REDIS_PORT: "6379"
