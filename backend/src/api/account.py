@@ -257,12 +257,18 @@ async def get_my_keys(
     if not key:
         raise HTTPException(status_code=404, detail="API key not found")
 
+    # 사용자의 거래소 정보 조회
+    user_result = await session.execute(select(User).where(User.id == user_id))
+    user = user_result.scalars().first()
+    exchange = user.exchange if user else "bitget"
+
     # 보안 로그 (CRITICAL: 보안 감사를 위한 로깅)
     structured_logger.warning(
         "api_keys_revealed",
         "API keys revealed - security audit event",
         user_id=user_id,
-        endpoint="/account/my_keys"
+        endpoint="/account/my_keys",
+        exchange=exchange
     )
 
     return {
@@ -271,6 +277,7 @@ async def get_my_keys(
         "passphrase": decrypt_secret(key.encrypted_passphrase)
         if key.encrypted_passphrase
         else "",
+        "exchange": exchange,
         "warning": "이 정보는 안전한 곳에 저장하세요. API 키 조회는 시간당 3회로 제한됩니다.",
     }
 

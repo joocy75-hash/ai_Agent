@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { accountAPI } from '../api/account';
 import { authAPI } from '../api/auth';
-import { bitgetAPI } from '../api/bitget';
 import apiClient from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -22,8 +20,16 @@ import {
 } from '@ant-design/icons';
 import TwoFactorSettings from '../components/settings/TwoFactorSettings';
 
+// 지원 거래소 목록 (1계정 = 1거래소 정책)
+const SUPPORTED_EXCHANGES = [
+  { value: 'bitget', label: 'Bitget', passphraseRequired: true, logo: '🟢' },
+  { value: 'binance', label: 'Binance', passphraseRequired: false, logo: '🟡' },
+  { value: 'okx', label: 'OKX', passphraseRequired: true, logo: '⚫' },
+  { value: 'bybit', label: 'Bybit', passphraseRequired: false, logo: '🟠' },
+  { value: 'gateio', label: 'Gate.io', passphraseRequired: false, logo: '🔵' },
+];
+
 export default function Settings() {
-  const navigate = useNavigate();
   const { user } = useAuth();
 
   // 화면 크기 감지
@@ -36,6 +42,7 @@ export default function Settings() {
   }, []);
 
   // API Keys State
+  const [selectedExchange, setSelectedExchange] = useState('bitget'); // 선택된 거래소
   const [apiKey, setApiKey] = useState('');
   const [secretKey, setSecretKey] = useState('');
   const [passphrase, setPassphrase] = useState('');
@@ -43,7 +50,7 @@ export default function Settings() {
   const [keysLoading, setKeysLoading] = useState(false);
   const [testingConnection, setTestingConnection] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState(null);
-  const [savedKeyInfo, setSavedKeyInfo] = useState(null); // 저장된 API 키 정보
+  const [savedKeyInfo, setSavedKeyInfo] = useState(null); // 저장된 API 키 정보 (거래소 포함)
 
   // Password State
   const [currentPassword, setCurrentPassword] = useState('');
@@ -238,12 +245,25 @@ export default function Settings() {
         // API 키 정보 마스킹 처리
         const maskedApiKey = data.api_key.substring(0, 8) + '...' + data.api_key.substring(data.api_key.length - 4);
         const maskedSecretKey = data.secret_key.substring(0, 4) + '...' + data.secret_key.substring(data.secret_key.length - 4);
+
+        // 거래소 정보 추출 및 라벨 찾기
+        const exchangeValue = data.exchange || 'bitget';
+        const exchangeInfo = SUPPORTED_EXCHANGES.find(ex => ex.value === exchangeValue);
+        const exchangeLabel = exchangeInfo ? exchangeInfo.label : exchangeValue.toUpperCase();
+        const exchangeLogo = exchangeInfo ? exchangeInfo.logo : '🔗';
+
         setSavedKeyInfo({
           apiKey: maskedApiKey,
           secretKey: maskedSecretKey,
           hasPassphrase: !!data.passphrase,
+          exchange: exchangeValue,
+          exchangeLabel: exchangeLabel,
+          exchangeLogo: exchangeLogo,
         });
-        setConnectionStatus({ type: 'info', message: 'API 키가 등록되어 있습니다.' });
+
+        // 저장된 거래소로 선택 상태 업데이트
+        setSelectedExchange(exchangeValue);
+        setConnectionStatus({ type: 'info', message: `${exchangeLabel} API 키가 등록되어 있습니다.` });
       }
     } catch (err) {
       // No keys saved yet
@@ -260,17 +280,25 @@ export default function Settings() {
       return;
     }
 
+    // Passphrase 필수 거래소 검증
+    const exchangeInfo = SUPPORTED_EXCHANGES.find(ex => ex.value === selectedExchange);
+    if (exchangeInfo?.passphraseRequired && !passphrase) {
+      setError(`${exchangeInfo.label} 거래소는 Passphrase가 필수입니다.`);
+      return;
+    }
+
     setKeysLoading(true);
     setError('');
     setSuccess('');
 
     try {
-      console.log('[Settings] Saving API keys...');
-      const result = await accountAPI.saveApiKeys(apiKey, secretKey, passphrase);
+      const exchangeLabel = exchangeInfo?.label || selectedExchange.toUpperCase();
+      console.log(`[Settings] Saving API keys for ${exchangeLabel}...`);
+      const result = await accountAPI.saveApiKeys(apiKey, secretKey, passphrase, selectedExchange);
       console.log('[Settings] API keys saved successfully:', result);
 
-      setSuccess('✅ API 키가 성공적으로 저장되었습니다!');
-      setConnectionStatus({ type: 'success', message: 'API 키가 저장되었습니다.' });
+      setSuccess(`✅ ${exchangeLabel} API 키가 성공적으로 저장되었습니다!`);
+      setConnectionStatus({ type: 'success', message: `${exchangeLabel} API 키가 저장되었습니다.` });
 
       // 저장 후 키 정보 업데이트
       await checkSavedKeys();
@@ -295,18 +323,20 @@ export default function Settings() {
     setSuccess('');
 
     try {
-      // Bitget 계정 정보 조회로 연결 테스트
-      const accountInfo = await bitgetAPI.getAccount();
+      // 범용 잔고 조회 API로 연결 테스트 (모든 거래소 지원)
+      const balanceData = await accountAPI.getBalance();
+      const exchangeName = balanceData.exchange || 'Unknown';
+      const exchangeInfo = SUPPORTED_EXCHANGES.find(ex => ex.value === exchangeName);
+      const exchangeLabel = exchangeInfo?.label || exchangeName.toUpperCase();
 
-      if (accountInfo && accountInfo.available !== undefined) {
-        setConnectionStatus({
-          type: 'success',
-          message: `연결 성공! 잔고: ${parseFloat(accountInfo.available || 0).toFixed(2)} USDT`
-        });
-        setSuccess('✅ API 연결 테스트 성공!');
-      } else {
-        throw new Error('계정 정보를 가져올 수 없습니다.');
-      }
+      // 선물 잔고 추출
+      const futuresTotal = parseFloat(balanceData.futures?.total || 0);
+
+      setConnectionStatus({
+        type: 'success',
+        message: `${exchangeLabel} 연결 성공! 잔고: ${futuresTotal.toFixed(2)} USDT`
+      });
+      setSuccess(`✅ ${exchangeLabel} API 연결 테스트 성공!`);
     } catch (err) {
       console.error('[Settings] Connection test failed:', err);
 
@@ -591,7 +621,7 @@ export default function Settings() {
                 거래소 API 키 설정
               </h2>
               <p style={{ color: '#86868b', margin: 0, fontSize: '0.9rem' }}>
-                Bitget 거래소 API 키를 등록하여 자동매매를 시작하세요
+                거래소를 선택하고 API 키를 등록하여 자동매매를 시작하세요 (1계정 = 1거래소)
               </p>
             </div>
             {connectionStatus && (
@@ -626,7 +656,9 @@ export default function Settings() {
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: '0.75rem' }}>
                 <CheckCircleOutlined style={{ color: '#52c41a' }} />
-                <span style={{ fontWeight: '600', color: '#1d1d1f' }}>현재 등록된 API 키</span>
+                <span style={{ fontWeight: '600', color: '#1d1d1f' }}>
+                  현재 등록된 API 키 - {savedKeyInfo.exchangeLogo} {savedKeyInfo.exchangeLabel}
+                </span>
               </div>
               <div style={{
                 fontFamily: 'SF Mono, Monaco, monospace',
@@ -635,6 +667,10 @@ export default function Settings() {
                 display: 'grid',
                 gap: '0.5rem'
               }}>
+                <div>
+                  <span style={{ color: '#86868b', minWidth: '80px', display: 'inline-block' }}>거래소:</span>
+                  <span style={{ fontWeight: '600', color: '#1890ff' }}>{savedKeyInfo.exchangeLogo} {savedKeyInfo.exchangeLabel}</span>
+                </div>
                 <div>
                   <span style={{ color: '#86868b', minWidth: '80px', display: 'inline-block' }}>API Key:</span>
                   <span style={{ fontWeight: '500' }}>{savedKeyInfo.apiKey}</span>
@@ -652,6 +688,50 @@ export default function Settings() {
           )}
 
           <form onSubmit={handleSaveKeys}>
+            {/* 거래소 선택 드롭다운 */}
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{
+                display: 'block',
+                marginBottom: '0.5rem',
+                fontWeight: '500',
+                fontSize: '0.9rem',
+                color: '#1d1d1f'
+              }}>
+                거래소 선택 <span style={{ color: '#ff4d4f' }}>*</span>
+              </label>
+              <select
+                value={selectedExchange}
+                onChange={(e) => setSelectedExchange(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '0.875rem',
+                  border: '1px solid #d2d2d7',
+                  borderRadius: '8px',
+                  fontSize: '0.95rem',
+                  backgroundColor: '#ffffff',
+                  cursor: 'pointer',
+                  outline: 'none',
+                  appearance: 'none',
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
+                  backgroundRepeat: 'no-repeat',
+                  backgroundPosition: 'right 12px center',
+                }}
+              >
+                {SUPPORTED_EXCHANGES.map(exchange => (
+                  <option key={exchange.value} value={exchange.value}>
+                    {exchange.logo} {exchange.label} {exchange.passphraseRequired ? '(Passphrase 필수)' : ''}
+                  </option>
+                ))}
+              </select>
+              <div style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: '#86868b' }}>
+                {savedKeyInfo && savedKeyInfo.exchange !== selectedExchange && (
+                  <span style={{ color: '#faad14' }}>
+                    ⚠️ 거래소 변경 시 기존 API 키가 새 거래소 키로 덮어씌워집니다.
+                  </span>
+                )}
+              </div>
+            </div>
+
             <div style={{ marginBottom: '1.5rem' }}>
               <label style={{
                 display: 'block',
@@ -724,13 +804,19 @@ export default function Settings() {
                 fontSize: '0.9rem',
                 color: '#1d1d1f'
               }}>
-                Passphrase (선택사항)
+                Passphrase {SUPPORTED_EXCHANGES.find(ex => ex.value === selectedExchange)?.passphraseRequired
+                  ? <span style={{ color: '#ff4d4f' }}>* (필수)</span>
+                  : <span style={{ color: '#86868b' }}>(선택사항)</span>
+                }
               </label>
               <input
                 type={showKeys ? 'text' : 'password'}
                 value={passphrase}
                 onChange={(e) => setPassphrase(e.target.value)}
-                placeholder="Passphrase (필요한 경우)"
+                placeholder={SUPPORTED_EXCHANGES.find(ex => ex.value === selectedExchange)?.passphraseRequired
+                  ? "Passphrase를 입력하세요 (필수)"
+                  : "Passphrase (선택사항)"
+                }
                 autoComplete="off"
                 style={{
                   width: '100%',
@@ -1540,7 +1626,17 @@ export default function Settings() {
                   Q. 여러 거래소를 지원하나요?
                 </h4>
                 <p style={{ color: '#666', margin: 0 }}>
-                  현재는 Bitget만 지원합니다. 향후 더 많은 거래소를 추가할 예정입니다.
+                  네, 현재 <strong>5개 거래소</strong>를 지원합니다: Bitget, Binance, OKX, Bybit, Gate.io.
+                  단, 1계정당 1개 거래소만 연결 가능하며, 거래소 변경 시 기존 키가 덮어씌워집니다.
+                </p>
+              </div>
+              <div>
+                <h4 style={{ fontSize: '1rem', fontWeight: 'bold', marginBottom: '0.5rem', color: '#333' }}>
+                  Q. Passphrase가 무엇인가요?
+                </h4>
+                <p style={{ color: '#666', margin: 0 }}>
+                  Bitget과 OKX는 API 키 생성 시 Passphrase를 설정해야 합니다.
+                  Binance, Bybit, Gate.io는 Passphrase가 필요 없습니다.
                 </p>
               </div>
             </div>

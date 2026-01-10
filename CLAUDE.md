@@ -2,7 +2,7 @@
 
 > **IMPORTANT**: 이 문서는 AI가 코드 수정 및 배포 시 반드시 읽어야 하는 **유일한 필수 가이드**입니다.
 
-**최종 업데이트**: 2026-01-10
+**최종 업데이트**: 2026-01-11
 
 ---
 
@@ -15,7 +15,8 @@
 5. [데이터 구조](#데이터-구조)
 6. [금지 사항](#금지-사항)
 7. [문제 해결](#문제-해결)
-8. [진행 중 프로젝트](#진행-중-프로젝트) 🚀 NEW
+8. [🔥 주요 배포 문제 및 해결법](#-주요-배포-문제-및-해결법-2026-01-11) ⭐ NEW
+9. [진행 중 프로젝트](#진행-중-프로젝트)
 
 ---
 
@@ -475,6 +476,265 @@ curl -b cookies.txt -X GET "https://api.deepsignal.shop/api/v1/bot/status" \
 
 ---
 
+## 🔥 주요 배포 문제 및 해결법 (2026-01-11)
+
+> **⚠️ CRITICAL**: 이 섹션은 반복되는 배포 문제를 방지하기 위한 필수 가이드입니다.
+
+### 1. Frontend 변경사항이 반영되지 않는 문제
+
+**증상**:
+- 코드 수정 후 `git push` 완료
+- GitHub Actions 배포 성공
+- 브라우저 캐시 삭제, 시크릿 모드로도 변경사항 미반영
+
+**원인**:
+1. **Docker 빌드 캐시**: Vite 빌드가 캐시되어 이전 번들 사용
+2. **GitHub Actions rsync 동기화 실패**: 파일이 서버에 제대로 전송되지 않음
+
+**해결법**:
+```bash
+# 1. 서버에서 직접 캐시 없이 빌드 (필수!)
+ssh root@141.164.55.245 "cd /root/group_c && \
+  docker compose -f docker-compose.production.yml build --no-cache frontend && \
+  docker compose -f docker-compose.production.yml up -d frontend --force-recreate"
+
+# 2. 빌드 검증 - 새 번들 해시 확인
+curl -s https://deepsignal.shop/ | grep -o 'index-[^"]*\.js'
+# 결과 예: index-ByPJuAUQ.js (해시가 변경되어야 함)
+
+# 3. CSS/JS 내용 검증
+ssh root@141.164.55.245 "docker exec groupc-frontend \
+  cat /usr/share/nginx/html/assets/index-*.css | grep 'trading-page'"
+```
+
+**예방책**:
+```bash
+# ❌ 절대 금지 - 캐시된 빌드 사용
+docker compose build frontend
+
+# ✅ 항상 사용 - 캐시 없는 빌드
+docker compose build --no-cache frontend
+```
+
+---
+
+### 2. .env 파일 삭제/손상 문제
+
+**증상**:
+- `rsync --delete` 실행 후 컨테이너 시작 실패
+- Redis: `dependency failed to start: container groupc-redis is unhealthy`
+- Backend: `ENCRYPTION_KEY environment variable is required`
+
+**원인**:
+수동 rsync에서 `--delete` 옵션이 서버의 `.env` 파일을 삭제함
+
+**⚠️ 위험한 명령어**:
+```bash
+# ❌ 절대 금지 - .env 파일 삭제됨
+rsync -avz --delete /local/path/ root@server:/remote/path/
+
+# ✅ 안전한 rsync - .env 제외
+rsync -avz --exclude='.env' --exclude='*.log' /local/path/ root@server:/remote/path/
+```
+
+**복구 방법**:
+```bash
+# 1. .env 파일 복구 (필수 환경변수)
+ssh root@141.164.55.245 "cat > /root/group_c/.env << 'EOF'
+POSTGRES_PASSWORD=TradingPostgres2024!
+REDIS_PASSWORD=TradingRedis2024!
+JWT_SECRET=TradingJWTSecret2024!SuperSecretKey123456
+ENCRYPTION_KEY=<유효한_Fernet_키>
+VITE_API_URL=https://api.deepsignal.shop
+CORS_ORIGINS=https://deepsignal.shop,https://admin.deepsignal.shop
+AI_PROVIDER=gemini
+GEMINI_API_KEY=<실제_키>
+DEEPSEEK_API_KEY=<실제_키>
+TELEGRAM_BOT_TOKEN=
+TELEGRAM_CHAT_ID=
+ENVIRONMENT=production
+LOG_LEVEL=INFO
+EOF"
+
+# 2. 컨테이너 재시작
+ssh root@141.164.55.245 "cd /root/group_c && \
+  docker compose -f docker-compose.production.yml up -d --force-recreate"
+```
+
+---
+
+### 3. ENCRYPTION_KEY 형식 오류
+
+**증상**:
+```
+src.utils.crypto_secrets.CryptoError: ENCRYPTION_KEY must be a valid URL-safe base64 32-byte key.
+```
+
+**원인**:
+`ENCRYPTION_KEY`가 유효한 Fernet 키 형식이 아님
+
+**요구사항**:
+- URL-safe Base64 인코딩
+- 정확히 32바이트 키
+- 예: `AkAsKsbo6oHBvuvjpLbnD4UI12ZnaYaGlt3fsfP6wvc=`
+
+**새 키 생성**:
+```bash
+# Python으로 유효한 Fernet 키 생성
+python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+# 출력 예: AkAsKsbo6oHBvuvjpLbnD4UI12ZnaYaGlt3fsfP6wvc=
+```
+
+**⚠️ 주의사항**:
+- 키 변경 시 기존 암호화된 데이터(거래소 API 키 등) **복호화 불가**
+- 사용자는 거래소 API 키를 **재등록**해야 함
+- 가능하면 기존 키 백업 후 사용
+
+---
+
+### 4. Redis 볼륨 손상
+
+**증상**:
+```
+*** FATAL CONFIG FILE ERROR (Redis 7.4.7) ***
+Reading the configuration file, at line 3
+>>> 'requirepass "--maxmemory" "200mb"'
+wrong number of arguments
+```
+
+**원인**:
+Redis 볼륨에 잘못된 설정 파일이 저장됨
+
+**해결법**:
+```bash
+# Redis 볼륨 삭제 후 재생성
+ssh root@141.164.55.245 "cd /root/group_c && \
+  docker compose -f docker-compose.production.yml stop redis && \
+  docker rm groupc-redis && \
+  docker volume rm groupc_redis_data 2>/dev/null; \
+  docker compose -f docker-compose.production.yml up -d redis"
+
+# 상태 확인 (healthy 될 때까지 대기)
+ssh root@141.164.55.245 "docker ps --filter name=groupc-redis"
+```
+
+---
+
+### 5. CSRF 토큰 오류 (Cross-Subdomain)
+
+**증상**:
+```
+403 Forbidden: CSRF token missing or invalid
+```
+
+**원인**:
+- `api.deepsignal.shop`에서 설정한 쿠키를 `deepsignal.shop`에서 접근 불가
+- Cookie Domain 설정 누락
+
+**해결법** (`docker-compose.production.yml`):
+```yaml
+backend:
+  environment:
+    # ⚠️ CRITICAL: Cross-subdomain 인증에 필수
+    COOKIE_DOMAIN: ".deepsignal.shop"   # 점(.)으로 시작해야 서브도메인 공유
+    COOKIE_SAMESITE: "none"              # Cross-origin 요청 허용
+    COOKIE_SECURE: "true"                # HTTPS 필수
+```
+
+**검증**:
+```bash
+# 로그인 후 쿠키 확인
+curl -c cookies.txt -X POST "https://api.deepsignal.shop/api/v1/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@test.com","password":"password"}'
+
+# csrf_token 쿠키에 Domain=.deepsignal.shop 확인
+cat cookies.txt | grep csrf
+```
+
+---
+
+### 6. GitHub Actions rsync 동기화 실패
+
+**증상**:
+- GitHub Actions 로그: "success"
+- 서버 파일: 변경되지 않음
+
+**원인**:
+- SSH 키 권한 문제
+- rsync 경로 불일치
+- 네트워크 일시적 오류
+
+**디버깅**:
+```bash
+# 1. 서버 파일 타임스탬프 확인
+ssh root@141.164.55.245 "ls -la /root/group_c/frontend/src/components/layout/MainLayout.jsx"
+
+# 2. 로컬 파일과 비교
+ssh root@141.164.55.245 "md5sum /root/group_c/frontend/src/components/layout/MainLayout.jsx"
+md5 frontend/src/components/layout/MainLayout.jsx
+
+# 3. 수동 동기화 (긴급 시)
+rsync -avz --exclude='.env' --exclude='node_modules' --exclude='__pycache__' \
+  /Users/mr.joo/Desktop/auto-dashboard/ root@141.164.55.245:/root/group_c/
+```
+
+**예방책**:
+- 배포 후 항상 서버 파일 검증
+- `git push` 후 서버에서 `git pull` 확인
+
+---
+
+### 7. 컨테이너 전체 복구 절차
+
+모든 컨테이너가 비정상일 때 전체 복구:
+
+```bash
+# 1. 모든 컨테이너 중지
+ssh root@141.164.55.245 "cd /root/group_c && \
+  docker compose -f docker-compose.production.yml down"
+
+# 2. .env 파일 확인/복구
+ssh root@141.164.55.245 "cat /root/group_c/.env"
+
+# 3. 볼륨 상태 확인 (필요시 Redis만 삭제)
+ssh root@141.164.55.245 "docker volume ls | grep groupc"
+
+# 4. 이미지 재빌드 (캐시 없이)
+ssh root@141.164.55.245 "cd /root/group_c && \
+  docker compose -f docker-compose.production.yml build --no-cache"
+
+# 5. 컨테이너 시작
+ssh root@141.164.55.245 "cd /root/group_c && \
+  docker compose -f docker-compose.production.yml up -d"
+
+# 6. 상태 확인
+ssh root@141.164.55.245 "docker ps --filter name=groupc- --format 'table {{.Names}}\t{{.Status}}'"
+
+# 7. 서비스 검증
+curl https://api.deepsignal.shop/health
+curl -s https://deepsignal.shop/ | head -5
+```
+
+---
+
+### 빠른 참조 - 배포 체크리스트
+
+```
+□ 코드 수정 완료
+□ 로컬 빌드 테스트 (npm run build)
+□ git push hetzner main
+□ GitHub Actions 완료 확인
+□ 서버 파일 동기화 확인 (md5sum 비교)
+□ --no-cache로 Docker 빌드
+□ 컨테이너 재시작 (--force-recreate)
+□ 새 번들 해시 확인 (index-*.js)
+□ 브라우저 강력 새로고침 (Ctrl+Shift+R)
+□ 기능 테스트
+```
+
+---
+
 ## API 엔드포인트
 
 **Auth**: `/api/v1/auth/login`, `/api/v1/auth/register`, `/api/v1/auth/refresh`
@@ -557,6 +817,7 @@ Phase 5: 테스트/배포      → AI-4
 
 | 날짜 | 내용 |
 |------|------|
+| 2026-01-11 | **배포 문제 해결 가이드 추가** - Frontend 캐시, .env 복구, CSRF 설정, Redis 볼륨 등 7가지 주요 문제 문서화 |
 | 2026-01-10 | **멀티봇 시스템 v2.0** - 40% 한도 제거, 최대 봇 5개, TrendBotTemplate 활용 |
 | 2026-01-10 | **멀티봇 시스템** - 구현 계획서 및 스킬 파일 작성 |
 | 2026-01-10 | **다중 거래소 지원** - Binance, OKX, Bybit, Gate.io 추가 (REST+WS) |

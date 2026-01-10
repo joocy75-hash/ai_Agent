@@ -1,65 +1,103 @@
 /**
- * BotCard - Bitget 스타일 봇 템플릿 카드
+ * BotCard - 프리미엄 봇 템플릿 카드
  *
- * 다크 테마 + 미니 차트 + Use 버튼
+ * 미니멀 & 고급스러운 디자인
  * 멀티봇 시스템에서 사용자가 봇 템플릿을 선택할 때 표시되는 카드
  */
-import React, { useMemo } from 'react';
-import { Button, Tag, Tooltip } from 'antd';
+import { useMemo } from 'react';
+import { Button, Tooltip } from 'antd';
 import {
-    UserOutlined,
     ThunderboltOutlined,
-    ArrowUpOutlined,
-    ArrowDownOutlined,
-    ClockCircleOutlined,
-    DollarOutlined
+    RiseOutlined,
+    FallOutlined,
+    SwapOutlined,
 } from '@ant-design/icons';
 import './styles/BotCard.css';
 
-// 코인 로고 URL 생성 (CoinCap API 사용)
+// 코인 로고 URL 매핑 (안정적인 CDN 사용)
+const COIN_LOGOS = {
+    btc: 'https://cryptologos.cc/logos/bitcoin-btc-logo.svg',
+    eth: 'https://cryptologos.cc/logos/ethereum-eth-logo.svg',
+    sol: 'https://cryptologos.cc/logos/solana-sol-logo.svg',
+    bnb: 'https://cryptologos.cc/logos/bnb-bnb-logo.svg',
+    xrp: 'https://cryptologos.cc/logos/xrp-xrp-logo.svg',
+    doge: 'https://cryptologos.cc/logos/dogecoin-doge-logo.svg',
+    ada: 'https://cryptologos.cc/logos/cardano-ada-logo.svg',
+    avax: 'https://cryptologos.cc/logos/avalanche-avax-logo.svg',
+    dot: 'https://cryptologos.cc/logos/polkadot-new-dot-logo.svg',
+    link: 'https://cryptologos.cc/logos/chainlink-link-logo.svg',
+    matic: 'https://cryptologos.cc/logos/polygon-matic-logo.svg',
+    uni: 'https://cryptologos.cc/logos/uniswap-uni-logo.svg',
+    atom: 'https://cryptologos.cc/logos/cosmos-atom-logo.svg',
+    ltc: 'https://cryptologos.cc/logos/litecoin-ltc-logo.svg',
+    etc: 'https://cryptologos.cc/logos/ethereum-classic-etc-logo.svg',
+    fil: 'https://cryptologos.cc/logos/filecoin-fil-logo.svg',
+    apt: 'https://cryptologos.cc/logos/aptos-apt-logo.svg',
+    arb: 'https://cryptologos.cc/logos/arbitrum-arb-logo.svg',
+    op: 'https://cryptologos.cc/logos/optimism-ethereum-op-logo.svg',
+    near: 'https://cryptologos.cc/logos/near-protocol-near-logo.svg',
+};
+
+// 코인별 그라데이션 색상 (프리미엄 느낌)
+const COIN_COLORS = {
+    btc: { primary: '#F7931A', secondary: '#FFB84D' },
+    eth: { primary: '#627EEA', secondary: '#8FA8FF' },
+    sol: { primary: '#9945FF', secondary: '#14F195' },
+    bnb: { primary: '#F3BA2F', secondary: '#FFD966' },
+    xrp: { primary: '#23292F', secondary: '#5A6A7E' },
+    doge: { primary: '#C2A633', secondary: '#E8D174' },
+    ada: { primary: '#0033AD', secondary: '#2B5CFF' },
+    avax: { primary: '#E84142', secondary: '#FF6B6B' },
+    dot: { primary: '#E6007A', secondary: '#FF4DA6' },
+    link: { primary: '#2A5ADA', secondary: '#5B8AFF' },
+    matic: { primary: '#8247E5', secondary: '#A77DFF' },
+    uni: { primary: '#FF007A', secondary: '#FF4DA6' },
+    default: { primary: '#6366f1', secondary: '#818cf8' },
+};
+
+// 코인 로고 URL 생성
 const getCoinLogoUrl = (symbol) => {
-    // BTCUSDT -> btc, ETHUSDT -> eth
     const coin = symbol
         .replace('USDT', '')
         .replace('BUSD', '')
         .replace('USDC', '')
         .toLowerCase();
-    return `https://assets.coincap.io/assets/icons/${coin}@2x.png`;
+    return COIN_LOGOS[coin] || `https://assets.coincap.io/assets/icons/${coin}@2x.png`;
 };
 
-// 심볼 포맷팅 (BTCUSDT -> BTC/USDT)
-const formatSymbol = (symbol) => {
-    if (symbol.endsWith('USDT')) {
-        return symbol.replace('USDT', '/USDT');
-    }
-    if (symbol.endsWith('BUSD')) {
-        return symbol.replace('BUSD', '/BUSD');
-    }
-    if (symbol.endsWith('USDC')) {
-        return symbol.replace('USDC', '/USDC');
-    }
-    return symbol;
+// 코인 색상 가져오기
+const getCoinColors = (symbol) => {
+    const coin = symbol
+        .replace('USDT', '')
+        .replace('BUSD', '')
+        .replace('USDC', '')
+        .toLowerCase();
+    return COIN_COLORS[coin] || COIN_COLORS.default;
 };
 
-// 미니 라인 차트 SVG 생성
-const MiniChart = ({ isPositive }) => {
-    // 랜덤한 차트 데이터 생성 (상승/하락 트렌드)
+// 코인 이름만 추출 (BTC, ETH 등)
+const getCoinName = (symbol) => {
+    return symbol
+        .replace('USDT', '')
+        .replace('BUSD', '')
+        .replace('USDC', '');
+};
+
+// 미니 스파크라인 차트 (더 심플한 버전)
+const SparklineChart = ({ isPositive, color }) => {
     const points = useMemo(() => {
         const data = [];
         let value = 50;
-        const trend = isPositive ? 0.8 : -0.8;
+        const trend = isPositive ? 0.6 : -0.6;
 
-        for (let i = 0; i < 20; i++) {
-            // 트렌드 + 약간의 랜덤 변동
-            value += trend + (Math.random() - 0.5) * 3;
-            // 범위 제한 (10-90)
-            value = Math.max(10, Math.min(90, value));
+        for (let i = 0; i < 12; i++) {
+            value += trend + (Math.random() - 0.5) * 4;
+            value = Math.max(20, Math.min(80, value));
             data.push(value);
         }
         return data;
     }, [isPositive]);
 
-    // SVG path 생성
     const pathData = points
         .map((val, idx) => {
             const x = (idx / (points.length - 1)) * 100;
@@ -68,45 +106,23 @@ const MiniChart = ({ isPositive }) => {
         })
         .join(' ');
 
-    const strokeColor = isPositive ? '#00d26a' : '#ff4757';
-
     return (
-        <svg
-            className="mini-chart"
-            viewBox="0 0 100 100"
-            preserveAspectRatio="none"
-        >
-            {/* 그라데이션 정의 */}
+        <svg className="sparkline" viewBox="0 0 100 100" preserveAspectRatio="none">
             <defs>
-                <linearGradient
-                    id={`gradient-${isPositive ? 'positive' : 'negative'}`}
-                    x1="0%" y1="0%" x2="0%" y2="100%"
-                >
-                    <stop
-                        offset="0%"
-                        stopColor={strokeColor}
-                        stopOpacity="0.3"
-                    />
-                    <stop
-                        offset="100%"
-                        stopColor={strokeColor}
-                        stopOpacity="0"
-                    />
+                <linearGradient id={`spark-grad-${isPositive}`} x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stopColor={color} stopOpacity="0.2" />
+                    <stop offset="100%" stopColor={color} stopOpacity="0" />
                 </linearGradient>
             </defs>
-
-            {/* 영역 채우기 */}
             <path
                 d={`${pathData} L 100 100 L 0 100 Z`}
-                fill={`url(#gradient-${isPositive ? 'positive' : 'negative'})`}
+                fill={`url(#spark-grad-${isPositive})`}
             />
-
-            {/* 라인 */}
             <path
                 d={pathData}
                 fill="none"
-                stroke={strokeColor}
-                strokeWidth="2"
+                stroke={color}
+                strokeWidth="2.5"
                 strokeLinecap="round"
                 strokeLinejoin="round"
             />
@@ -114,19 +130,27 @@ const MiniChart = ({ isPositive }) => {
     );
 };
 
-// 전략 타입 라벨 변환
+// 방향 아이콘 컴포넌트
+const DirectionIcon = ({ direction }) => {
+    if (direction === 'both') {
+        return <SwapOutlined />;
+    }
+    return direction === 'long' ? <RiseOutlined /> : <FallOutlined />;
+};
+
+// 전략 타입 라벨
 const getStrategyLabel = (type) => {
     const labels = {
-        'ema_crossover': 'EMA 교차',
-        'rsi_divergence': 'RSI 반전',
-        'macd_trend': 'MACD 추세',
-        'bollinger_bands': '볼린저밴드',
-        'ai_fusion': 'AI 퓨전',
-        'momentum': '모멘텀',
-        'scalping': '스캘핑',
-        'grid': '그리드',
+        'ema_crossover': 'EMA',
+        'rsi_divergence': 'RSI',
+        'macd_trend': 'MACD',
+        'bollinger_bands': 'BB',
+        'ai_fusion': 'AI Fusion',
+        'momentum': 'Momentum',
+        'scalping': 'Scalp',
+        'grid': 'Grid',
     };
-    return labels[type] || type || 'AI 전략';
+    return labels[type] || type || 'AI';
 };
 
 const BotCard = ({
@@ -135,7 +159,6 @@ const BotCard = ({
     loading = false,
 }) => {
     const {
-        id,
         symbol,
         direction,
         leverage,
@@ -146,9 +169,9 @@ const BotCard = ({
         strategy_type,
     } = template;
 
-    // 방향 판별
-    const isLong = direction === 'long';
-    const isBoth = direction === 'both';
+    // 코인 정보
+    const coinName = getCoinName(symbol);
+    const coinColors = getCoinColors(symbol);
 
     // ROI 값 처리
     const roiValue = backtest_roi_30d || 0;
@@ -162,109 +185,109 @@ const BotCard = ({
     };
 
     return (
-        <div className={`bot-card ${is_featured ? 'featured' : ''}`}>
-            {/* HOT 배지 (추천 템플릿) */}
+        <div className={`bot-card-premium ${is_featured ? 'featured' : ''}`}>
+            {/* 배경 그라데이션 효과 */}
+            <div
+                className="card-glow"
+                style={{
+                    background: `radial-gradient(ellipse at top left, ${coinColors.primary}15 0%, transparent 50%)`
+                }}
+            />
+
+            {/* HOT 배지 */}
             {is_featured && (
-                <div className="hot-badge">
-                    <ThunderboltOutlined /> HOT
+                <div className="featured-badge">
+                    <ThunderboltOutlined />
                 </div>
             )}
 
-            {/* 상단: 코인 정보 + 태그 */}
-            <div className="bot-card-header">
-                <div className="coin-info">
-                    <img
-                        src={getCoinLogoUrl(symbol)}
-                        alt={symbol}
-                        className="coin-logo"
-                        onError={(e) => {
-                            e.target.style.display = 'none';
+            {/* 메인 콘텐츠 */}
+            <div className="card-content">
+                {/* 상단: 코인 로고 + 심볼 */}
+                <div className="card-header">
+                    <div className="coin-wrapper">
+                        <div
+                            className="coin-logo-container"
+                            style={{
+                                background: `linear-gradient(135deg, ${coinColors.primary}20, ${coinColors.secondary}10)`
+                            }}
+                        >
+                            <img
+                                src={getCoinLogoUrl(symbol)}
+                                alt={coinName}
+                                className="coin-logo"
+                                onError={(e) => {
+                                    e.target.src = `https://ui-avatars.com/api/?name=${coinName}&background=${coinColors.primary.slice(1)}&color=fff&size=64`;
+                                }}
+                            />
+                        </div>
+                        <div className="coin-details">
+                            <span className="coin-name">{coinName}</span>
+                            <span className="coin-pair">/ USDT</span>
+                        </div>
+                    </div>
+
+                    {/* 태그들 */}
+                    <div className="card-badges">
+                        <span className={`direction-badge ${direction}`}>
+                            <DirectionIcon direction={direction} />
+                            {direction === 'both' ? 'Both' : direction === 'long' ? 'Long' : 'Short'}
+                        </span>
+                        <span className="leverage-badge">{leverage}×</span>
+                    </div>
+                </div>
+
+                {/* 중앙: ROI 표시 */}
+                <div className="card-body">
+                    <div className="roi-display">
+                        <div className="roi-header">
+                            <span className="roi-label">30일 예상 수익률</span>
+                            <Tooltip title={getStrategyLabel(strategy_type)}>
+                                <span className="strategy-chip">
+                                    <ThunderboltOutlined /> {getStrategyLabel(strategy_type)}
+                                </span>
+                            </Tooltip>
+                        </div>
+                        <div className={`roi-value ${isPositiveRoi ? 'positive' : 'negative'}`}>
+                            {isPositiveRoi ? '+' : ''}{roiValue.toFixed(1)}%
+                        </div>
+                    </div>
+
+                    {/* 스파크라인 차트 */}
+                    <div className="sparkline-container">
+                        <SparklineChart
+                            isPositive={isPositiveRoi}
+                            color={isPositiveRoi ? '#10b981' : '#ef4444'}
+                        />
+                    </div>
+                </div>
+
+                {/* 하단: 간단한 정보 + 버튼 */}
+                <div className="card-footer">
+                    <div className="footer-stats">
+                        <div className="stat-item">
+                            <span className="stat-value">${parseFloat(min_investment || 50).toFixed(0)}</span>
+                            <span className="stat-label">최소</span>
+                        </div>
+                        <div className="stat-divider" />
+                        <div className="stat-item">
+                            <span className="stat-value">{active_users || 0}</span>
+                            <span className="stat-label">사용자</span>
+                        </div>
+                    </div>
+
+                    <Button
+                        className="start-button"
+                        onClick={handleUseClick}
+                        loading={loading}
+                        style={{
+                            background: `linear-gradient(135deg, ${coinColors.primary}, ${coinColors.secondary})`,
                         }}
-                    />
-                    <div className="symbol-section">
-                        <h3 className="symbol-name">{formatSymbol(symbol)}</h3>
-                        <div className="symbol-tags">
-                            {/* Long/Short 태그 */}
-                            <Tag className={`direction-tag ${isLong ? 'long' : isBoth ? 'both' : 'short'}`}>
-                                {isBoth ? 'Long/Short' :
-                                    isLong ? <><ArrowUpOutlined /> Long</> :
-                                        <><ArrowDownOutlined /> Short</>}
-                            </Tag>
-                            {/* 레버리지 태그 */}
-                            <Tag className="leverage-tag">
-                                {leverage}x
-                            </Tag>
-                        </div>
-                    </div>
+                    >
+                        시작하기
+                    </Button>
                 </div>
             </div>
-
-            {/* 중앙: ROI + 미니 차트 */}
-            <div className="bot-card-body">
-                <div className="roi-section">
-                    <span className="roi-label">30-day APY</span>
-                    <span className={`roi-value ${isPositiveRoi ? 'positive' : 'negative'}`}>
-                        {isPositiveRoi ? '+' : ''}{roiValue.toFixed(2)}%
-                    </span>
-                </div>
-
-                {/* 미니 SVG 라인 차트 */}
-                <div className="chart-container">
-                    <MiniChart isPositive={isPositiveRoi} />
-                </div>
-            </div>
-
-            {/* 하단: 상세 정보 */}
-            <div className="bot-card-footer">
-                <div className="info-grid">
-                    {/* 최소 투자금 */}
-                    <div className="info-item">
-                        <DollarOutlined className="info-icon" />
-                        <div className="info-content">
-                            <span className="info-label">Min investment</span>
-                            <span className="info-value">
-                                {parseFloat(min_investment || 50).toFixed(0)} USDT
-                            </span>
-                        </div>
-                    </div>
-
-                    {/* 운용 기간 */}
-                    <div className="info-item">
-                        <ClockCircleOutlined className="info-icon" />
-                        <div className="info-content">
-                            <span className="info-label">Duration</span>
-                            <span className="info-value">Flexible</span>
-                        </div>
-                    </div>
-
-                    {/* 사용자 수 */}
-                    <div className="info-item">
-                        <UserOutlined className="info-icon" />
-                        <div className="info-content">
-                            <span className="info-label">Users</span>
-                            <span className="info-value">
-                                {active_users || 0}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* 전략 타입 */}
-                <Tooltip title={`전략: ${getStrategyLabel(strategy_type)}`}>
-                    <div className="strategy-badge">
-                        <ThunderboltOutlined /> {getStrategyLabel(strategy_type)}
-                    </div>
-                </Tooltip>
-            </div>
-
-            {/* Use 버튼 */}
-            <Button
-                className="use-button"
-                onClick={handleUseClick}
-                loading={loading}
-            >
-                Use
-            </Button>
         </div>
     );
 };

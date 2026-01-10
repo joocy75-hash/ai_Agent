@@ -22,8 +22,9 @@ export const accountAPI = {
   },
 
   // API 키 저장
-  saveApiKeys: async (apiKey, secretKey, passphrase = '') => {
+  saveApiKeys: async (apiKey, secretKey, passphrase = '', exchange = 'bitget') => {
     const response = await apiClient.post('/account/save_keys', {
+      exchange: exchange,
       api_key: apiKey,
       secret_key: secretKey,
       passphrase: passphrase
