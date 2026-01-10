@@ -670,12 +670,11 @@ Is this a real anomaly or false positive? Provide analysis in JSON:"""
             if not response_text:
                 return None
 
-            # JSON 파싱
-            import re
-            json_match = re.search(r'\{[^{}]*\}', response_text)
+            # JSON 파싱 (ReDoS 안전한 방식)
+            from ...utils.safe_json_parser import extract_json_from_text
+            ai_analysis = extract_json_from_text(response_text)
 
-            if json_match:
-                ai_analysis = json.loads(json_match.group())
+            if ai_analysis:
 
                 severity_str = ai_analysis.get("severity", rule_based_severity.value).upper()
                 ai_confidence = float(ai_analysis.get("confidence", 0.5))

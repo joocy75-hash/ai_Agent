@@ -88,3 +88,4 @@ test_results.json
 # ==================== SSH Keys ====================
 id_rsa_new
 id_rsa_new.pub
+backend/.coverage

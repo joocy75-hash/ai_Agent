@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from typing import Any, Dict, Optional, Tuple
 
@@ -11,6 +12,16 @@ except Exception:
     FeaturePipeline = None
     EnsemblePredictor = None
     ML_AVAILABLE = False
+
+# FinBERT 감성 분석 에이전트 (선택적)
+try:
+    from src.agents.sentiment_analyzer import SentimentAnalyzerAgent
+    SENTIMENT_AVAILABLE = True
+except Exception:
+    SentimentAnalyzerAgent = None
+    SENTIMENT_AVAILABLE = False
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -39,6 +50,27 @@ class ETHAIFusionStrategy:
         self.symbol = self.params.get("symbol", "ETH/USDT")
         self.timeframe = self.params.get("timeframe", "5m")
         self.enable_ml = self.params.get("enable_ml", True) and ML_AVAILABLE
+
+        # FinBERT 감성 분석 에이전트 (선택적)
+        self.enable_sentiment = self.params.get("enable_sentiment", True) and SENTIMENT_AVAILABLE
+        self._sentiment_agent = None
+        if self.enable_sentiment:
+            try:
+                self._sentiment_agent = SentimentAnalyzerAgent(
+                    agent_id=f"sentiment_{user_id or 'default'}",
+                    name="SentimentAnalyzer",
+                    config={
+                        "extreme_positive": 0.5,
+                        "extreme_negative": -0.5,
+                        "block_entry": -0.7,
+                        "cache_ttl_minutes": 30,
+                    }
+                )
+                logger.info(f"✅ 감성 분석 에이전트 초기화 완료 (user_id={user_id})")
+            except Exception as e:
+                logger.error(f"❌ 감성 분석 에이전트 초기화 실패: {e}")
+                self._sentiment_agent = None
+                self.enable_sentiment = False
 
         self._state = PositionState()
         self._feature_pipeline = FeaturePipeline() if self.enable_ml and FeaturePipeline else None
@@ -105,7 +137,31 @@ class ETHAIFusionStrategy:
             if not ml_result.timing.is_good_entry and ml_result.timing.confidence > 0.6:
                 return self._hold("timing_block")
 
+        # FinBERT 감성 분석 필터 (선택적)
+        sentiment_signal = self._get_sentiment_signal()
+        confidence_multiplier = 1.0
+
+        if sentiment_signal:
+            # 극단적 부정 감성 시 진입 차단
+            if sentiment_signal.get("should_block", False):
+                return self._hold(f"sentiment_block: {sentiment_signal.get('reason', 'extreme_negative')}")
+
+            # 감성에 따른 신뢰도 조정
+            confidence_multiplier = sentiment_signal.get("confidence_multiplier", 1.0)
+
+            # 감성과 방향 불일치 시 신뢰도 감소
+            sentiment_score = sentiment_signal.get("score", 0)
+            if action == "buy" and sentiment_score < -0.3:
+                confidence_multiplier *= 0.8  # Long 진입 시 부정 감성이면 신뢰도 20% 감소
+            elif action == "sell" and sentiment_score > 0.3:
+                confidence_multiplier *= 0.8  # Short 진입 시 긍정 감성이면 신뢰도 20% 감소
+
+            if sentiment_signal.get("reason"):
+                reasons.append(f"sentiment: {sentiment_signal.get('reason')}")
+
         confidence = self._confidence_from_score(max(long_score, short_score), ml_result)
+        confidence = min(confidence * confidence_multiplier, 1.0)  # 감성 조정 적용
+
         stop_loss, take_profit = self._risk_targets(snapshot, ml_result)
         return {
             "action": action,
@@ -116,6 +172,57 @@ class ETHAIFusionStrategy:
             "size": None,
             "strategy_type": "eth_ai_fusion",
         }
+
+    def _get_sentiment_signal(self) -> Optional[Dict[str, Any]]:
+        """
+        감성 분석 시그널 가져오기 (동기 래퍼)
+
+        Returns:
+            감성 시그널 또는 None
+        """
+        if not self._sentiment_agent:
+            return None
+
+        try:
+            import asyncio
+
+            # 심볼에서 코인 이름 추출 (ETH/USDT -> ETH)
+            coin_symbol = self.symbol.split("/")[0] if "/" in self.symbol else self.symbol
+
+            # 비동기 메서드를 동기적으로 호출
+            try:
+                loop = asyncio.get_running_loop()
+            except RuntimeError:
+                loop = None
+
+            if loop and loop.is_running():
+                # 이미 이벤트 루프가 실행 중이면 캐시된 값 사용
+                cached = getattr(self, "_cached_sentiment", None)
+                if cached:
+                    return cached
+                return None
+            else:
+                # 새 이벤트 루프 생성
+                sentiment = asyncio.run(
+                    self._sentiment_agent.analyze_market_sentiment(coin_symbol, hours=24)
+                )
+
+            if sentiment:
+                signal = self._sentiment_agent.generate_sentiment_signal(sentiment)
+                result = {
+                    "score": sentiment.score,
+                    "strength": sentiment.strength.value if sentiment.strength else "unknown",
+                    "should_block": signal.should_block if signal else False,
+                    "confidence_multiplier": signal.confidence_multiplier if signal else 1.0,
+                    "reason": signal.reason if signal else None,
+                }
+                self._cached_sentiment = result  # 캐싱
+                return result
+
+        except Exception as e:
+            logger.debug(f"감성 분석 실패 (무시됨): {e}")
+
+        return None
 
     def _manage_position(
         self,

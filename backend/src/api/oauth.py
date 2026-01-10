@@ -113,8 +113,14 @@ async def google_callback(
             )
 
             if token_response.status_code != 200:
+                # 보안: 토큰 응답 본문에 민감 정보가 포함될 수 있으므로 상태 코드만 로깅
+                try:
+                    error_data = token_response.json()
+                    error_msg = error_data.get("error", "unknown")
+                except Exception:
+                    error_msg = "parse_failed"
                 logger.error(
-                    "google_token_error", f"Token error: {token_response.text}"
+                    "google_token_error", f"Token exchange failed (status={token_response.status_code}, error={error_msg})"
                 )
                 return RedirectResponse(
                     url=f"{frontend_url}/login?error=token_exchange_failed"
@@ -277,7 +283,13 @@ async def kakao_callback(
             )
 
             if token_response.status_code != 200:
-                logger.error("kakao_token_error", f"Token error: {token_response.text}")
+                # 보안: 토큰 응답 본문에 민감 정보가 포함될 수 있으므로 상태 코드만 로깅
+                try:
+                    error_data = token_response.json()
+                    error_msg = error_data.get("error", "unknown")
+                except Exception:
+                    error_msg = "parse_failed"
+                logger.error("kakao_token_error", f"Token exchange failed (status={token_response.status_code}, error={error_msg})")
                 return RedirectResponse(
                     url=f"{frontend_url}/login?error=token_exchange_failed"
                 )

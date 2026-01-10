@@ -638,12 +638,11 @@ Provide your AI-based signal validation. Return JSON only:"""
             if not response_text:
                 return None
 
-            # JSON 파싱
-            import re
-            json_match = re.search(r'\{[^{}]*\}', response_text)
+            # JSON 파싱 (ReDoS 안전한 방식)
+            from ...utils.safe_json_parser import extract_json_from_text
+            ai_validation = extract_json_from_text(response_text)
 
-            if json_match:
-                ai_validation = json.loads(json_match.group())
+            if ai_validation:
 
                 result_str = ai_validation.get("validation_result", "WARNING").upper()
                 ai_confidence = float(ai_validation.get("confidence_score", 0.5))

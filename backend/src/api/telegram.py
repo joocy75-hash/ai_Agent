@@ -93,10 +93,8 @@ async def save_telegram_settings(
             )
 
         # 먼저 연결 테스트
-        logger.info(
-            f"[Telegram] Testing connection with bot_token: {request.bot_token[:10]}...{request.bot_token[-4:] if len(request.bot_token) > 14 else ''}"
-        )
-        logger.info(f"[Telegram] Chat ID: {request.chat_id}")
+        # 보안: Bot Token과 Chat ID는 민감 정보이므로 로깅하지 않음
+        logger.info(f"[Telegram] Testing connection for user {user_id}")
 
         test_notifier = init_telegram_notifier(
             bot_token=request.bot_token,

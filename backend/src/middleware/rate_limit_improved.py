@@ -21,7 +21,12 @@ logger = logging.getLogger(__name__)
 
 
 class RateLimitStore:
-    """Rate Limit 요청 저장소 (메모리 기반)"""
+    """Rate Limit 요청 저장소 (메모리 기반, 메모리 누수 방지)"""
+
+    # 최대 저장소 크기 제한 (메모리 누수 방지)
+    MAX_IP_ENTRIES = 10000
+    MAX_USER_ENTRIES = 1000
+    CLEANUP_INTERVAL = 300  # 5분마다 정리
 
     def __init__(self):
         # IP 기반: ip -> [timestamp, ...]
@@ -29,6 +34,56 @@ class RateLimitStore:
 
         # 사용자별: user_id -> endpoint -> [timestamp, ...]
         self.user_requests: Dict[int, Dict[str, list]] = defaultdict(lambda: defaultdict(list))
+
+        # 마지막 정리 시간
+        self._last_cleanup = time.time()
+
+    def _maybe_cleanup(self, now: float) -> None:
+        """오래된 엔트리 정리 (메모리 누수 방지)"""
+        if now - self._last_cleanup < self.CLEANUP_INTERVAL:
+            return
+
+        self._last_cleanup = now
+
+        # IP 저장소 정리: 1시간 이상 된 엔트리 제거
+        keys_to_remove = []
+        for key, requests in self.ip_requests.items():
+            if not requests or (now - max(requests)) > 3600:
+                keys_to_remove.append(key)
+
+        for key in keys_to_remove:
+            del self.ip_requests[key]
+
+        # IP 저장소 크기 제한
+        if len(self.ip_requests) > self.MAX_IP_ENTRIES:
+            # 가장 오래된 엔트리 제거
+            sorted_keys = sorted(
+                self.ip_requests.keys(),
+                key=lambda k: max(self.ip_requests[k]) if self.ip_requests[k] else 0
+            )
+            for key in sorted_keys[:len(self.ip_requests) - self.MAX_IP_ENTRIES]:
+                del self.ip_requests[key]
+
+        # 사용자 저장소 정리
+        user_keys_to_remove = []
+        for user_id, endpoints in self.user_requests.items():
+            # 빈 엔드포인트 제거
+            empty_endpoints = [ep for ep, reqs in endpoints.items() if not reqs]
+            for ep in empty_endpoints:
+                del endpoints[ep]
+
+            # 빈 사용자 제거
+            if not endpoints:
+                user_keys_to_remove.append(user_id)
+
+        for user_id in user_keys_to_remove:
+            del self.user_requests[user_id]
+
+        # 사용자 저장소 크기 제한
+        if len(self.user_requests) > self.MAX_USER_ENTRIES:
+            sorted_users = sorted(self.user_requests.keys())
+            for user_id in sorted_users[:len(self.user_requests) - self.MAX_USER_ENTRIES]:
+                del self.user_requests[user_id]
 
     def check_and_record(
         self,
@@ -53,6 +108,10 @@ class RateLimitStore:
             - reset_time: Rate limit 리셋 시간 (Unix timestamp)
         """
         now = time.time()
+
+        # 주기적으로 오래된 엔트리 정리
+        self._maybe_cleanup(now)
+
         requests = storage[key]
 
         # 오래된 요청 제거 (Sliding Window)
@@ -262,31 +321,37 @@ class EnhancedRateLimitMiddleware(BaseHTTPMiddleware):
 
     async def _get_user_id_from_jwt(self, request: Request) -> Optional[int]:
         """
-        JWT 토큰에서 user_id 추출
+        JWT 토큰에서 user_id 추출 (캐싱된 값 우선 사용)
 
         Returns:
             user_id 또는 None (인증되지 않은 경우)
         """
+        # 1. RequestContextMiddleware에서 캐싱된 값 확인
+        from .request_context import get_cached_user_id, is_jwt_decoded
+
+        if is_jwt_decoded(request):
+            # 이미 디코딩됨 - 캐싱된 값 반환
+            return get_cached_user_id(request)
+
+        # 2. 캐싱되지 않은 경우 직접 디코딩 (미들웨어 순서에 따라 발생 가능)
         try:
-            # Authorization 헤더에서 토큰 추출
             auth_header = request.headers.get("Authorization") or request.headers.get("authorization")
 
             token = None
             if auth_header and auth_header.startswith("Bearer "):
-                token = auth_header[7:]  # "Bearer " 제거
+                token = auth_header[7:]
             if not token:
                 token = request.cookies.get("access_token")
             if not token:
                 return None
 
-            # JWT 검증 및 디코딩
             payload = JWTAuth.verify_token(token)
             user_id = payload.get("user_id")
 
             return user_id if isinstance(user_id, int) else None
 
-        except Exception as e:
-            logger.debug(f"Failed to extract user_id from JWT: {e}")
+        except Exception:
+            logger.debug("Failed to extract user_id from JWT: invalid or expired token")
             return None
 
 

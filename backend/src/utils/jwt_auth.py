@@ -267,7 +267,7 @@ def get_current_user_id(
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
 ) -> int:
     """
-    JWT 토큰에서 현재 사용자 ID 추출
+    JWT 토큰에서 현재 사용자 ID 추출 (캐싱된 값 우선 사용)
 
     FastAPI Dependency로 사용:
         @router.get("/me")
@@ -283,6 +283,19 @@ def get_current_user_id(
     Raises:
         HTTPException: 토큰이 유효하지 않거나 user_id가 없는 경우
     """
+    # 1. RequestContextMiddleware에서 캐싱된 값 확인
+    if hasattr(request.state, "jwt_decoded") and request.state.jwt_decoded:
+        user_id = getattr(request.state, "jwt_user_id", None)
+        if user_id is not None:
+            return user_id
+        # 캐싱되었지만 user_id가 None인 경우 (토큰 없거나 무효)
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # 2. 캐싱되지 않은 경우 직접 디코딩
     token = _extract_token(request, credentials)
     if not token:
         raise HTTPException(
@@ -308,7 +321,7 @@ def get_current_user(
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
 ) -> TokenData:
     """
-    JWT 토큰에서 현재 사용자 정보 추출 (전체)
+    JWT 토큰에서 현재 사용자 정보 추출 (캐싱된 값 우선 사용)
 
     FastAPI Dependency로 사용:
         @router.get("/me")
@@ -327,6 +340,22 @@ def get_current_user(
     Raises:
         HTTPException: 토큰이 유효하지 않거나 필수 정보가 없는 경우
     """
+    # 1. RequestContextMiddleware에서 캐싱된 payload 확인
+    if hasattr(request.state, "jwt_decoded") and request.state.jwt_decoded:
+        payload = getattr(request.state, "jwt_payload", None)
+        if payload:
+            user_id = payload.get("user_id")
+            email = payload.get("email")
+            if user_id is not None and email is not None:
+                return TokenData(user_id=user_id, email=email)
+        # 캐싱되었지만 정보가 없는 경우
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # 2. 캐싱되지 않은 경우 직접 디코딩
     token = _extract_token(request, credentials)
     if not token:
         raise HTTPException(
