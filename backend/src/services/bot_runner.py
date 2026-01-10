@@ -719,10 +719,10 @@ class BotRunner:
                                 # PnL 계산
                                 if position_side == "long":
                                     unrealized_pnl = (price - entry_price) * position_size
-                                    unrealized_pnl_percent = ((price - entry_price) / entry_price) * 100
+                                    unrealized_pnl_percent = ((price - entry_price) / entry_price) * 100 if entry_price > 0 else 0.0
                                 else:  # short
                                     unrealized_pnl = (entry_price - price) * position_size
-                                    unrealized_pnl_percent = ((entry_price - price) / entry_price) * 100
+                                    unrealized_pnl_percent = ((entry_price - price) / entry_price) * 100 if entry_price > 0 else 0.0
 
                                 # 청산가 계산 (간단한 추정)
                                 leverage = bot_instance.max_leverage
@@ -823,7 +823,7 @@ class BotRunner:
                             # 2. 현재 포지션 방향
                             current_position_side = None
                             if current_position:
-                                current_position_side = current_position.side  # "long" or "short"
+                                current_position_side = current_position.get("side")  # "long" or "short"
 
                             # 3. 최근 신호 목록
                             recent_signals = self._get_recent_signals(bot_instance_id)
@@ -1407,10 +1407,10 @@ class BotRunner:
 
             if position["side"] == "long":
                 pnl_usdt = (exit_price - entry_price) * position_size * leverage
-                pnl_percent = ((exit_price - entry_price) / entry_price) * 100 * leverage
+                pnl_percent = ((exit_price - entry_price) / entry_price) * 100 * leverage if entry_price > 0 else 0.0
             else:
                 pnl_usdt = (entry_price - exit_price) * position_size * leverage
-                pnl_percent = ((entry_price - exit_price) / entry_price) * 100 * leverage
+                pnl_percent = ((entry_price - exit_price) / entry_price) * 100 * leverage if entry_price > 0 else 0.0
 
             # Trade 레코드 업데이트
             if position.get("trade_id"):
@@ -1980,10 +1980,10 @@ class BotRunner:
                                 # PnL 계산 (Long: 청산가 - 진입가, Short: 진입가 - 청산가)
                                 if current_position["side"] == "long":
                                     pnl_usdt = (exit_price - entry_price) * position_size * leverage
-                                    pnl_percent = ((exit_price - entry_price) / entry_price) * 100 * leverage
+                                    pnl_percent = ((exit_price - entry_price) / entry_price) * 100 * leverage if entry_price > 0 else 0.0
                                 else:  # short
                                     pnl_usdt = (entry_price - exit_price) * position_size * leverage
-                                    pnl_percent = ((entry_price - exit_price) / entry_price) * 100 * leverage
+                                    pnl_percent = ((entry_price - exit_price) / entry_price) * 100 * leverage if entry_price > 0 else 0.0
 
                                 logger.info(
                                     f"💰 PnL calculated for user {user_id}: "
