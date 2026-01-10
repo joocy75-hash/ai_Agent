@@ -63,16 +63,18 @@ export default function MainLayout({ children }) {
             icon: <LineChartOutlined />,
             label: '트레이딩',
         },
-        {
-            key: '/strategy',
-            icon: <RocketOutlined />,
-            label: '전략 관리',
-        },
-        {
-            key: '/bots',
-            icon: <RobotOutlined />,
-            label: '봇 관리',
-        },
+        // 전략 관리 페이지 숨김 (재설계 후 활성화 예정)
+        // {
+        //     key: '/strategy',
+        //     icon: <RocketOutlined />,
+        //     label: '전략 관리',
+        // },
+        // 봇 관리 페이지 숨김 (멀티봇 시스템 재설계 후 활성화 예정)
+        // {
+        //     key: '/bots',
+        //     icon: <RobotOutlined />,
+        //     label: '봇 관리',
+        // },
         {
             key: '/history',
             icon: <FundOutlined />,
