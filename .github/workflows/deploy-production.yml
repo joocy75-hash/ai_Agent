@@ -203,7 +203,16 @@ jobs:
 
           # Ensure proxy-net network exists (required for external network)
           echo "🔗 Ensuring proxy-net network exists..."
-          docker network create proxy-net 2>/dev/null || echo "  proxy-net already exists"
+          if ! docker network inspect proxy-net > /dev/null 2>&1; then
+            echo "  Creating proxy-net network..."
+            docker network create proxy-net
+            echo "  ✅ proxy-net created"
+          else
+            echo "  ✅ proxy-net already exists"
+          fi
+
+          # Verify network exists before proceeding
+          docker network inspect proxy-net > /dev/null 2>&1 || { echo "❌ Failed to create proxy-net"; exit 1; }
 
           # Use 'up -d' which only recreates changed containers
           # This is safer than 'down' as it preserves data and doesn't affect other projects

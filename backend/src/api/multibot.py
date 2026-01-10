@@ -51,6 +51,9 @@ router = APIRouter(prefix="/multibot", tags=["Multi-Bot Trading"])
 
 def template_to_response(template: TrendBotTemplate) -> TrendTemplateResponse:
     """TrendBotTemplate을 응답 스키마로 변환"""
+    # tags 안전 처리: list가 아니면 빈 리스트
+    tags = template.tags if isinstance(template.tags, list) else []
+
     return TrendTemplateResponse(
         id=template.id,
         name=template.name,
@@ -70,7 +73,7 @@ def template_to_response(template: TrendBotTemplate) -> TrendTemplateResponse:
         backtest_total_trades=template.backtest_total_trades,
         is_active=template.is_active,
         is_featured=template.is_featured or False,
-        tags=template.tags,
+        tags=tags,
     )
 
 

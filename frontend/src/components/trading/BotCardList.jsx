@@ -35,7 +35,8 @@ const SkeletonCard = () => (
 
 // 봇 템플릿 카드 컴포넌트
 const TemplateCard = ({ template, onUse }) => {
-    const roiValue = template.roi || template.expected_roi || 0;
+    // 백엔드 API 필드명에 맞춤 (backtest_roi_30d, active_users 등)
+    const roiValue = template.backtest_roi_30d || template.roi || template.expected_roi || 0;
     const isPositive = roiValue >= 0;
 
     return (
@@ -133,7 +134,7 @@ const TemplateCard = ({ template, onUse }) => {
                         {template.symbol || 'ETHUSDT'}
                     </Tag>
                     <Text style={{ color: '#86868b', fontSize: 12 }}>
-                        {template.users_count || 0} users
+                        {template.active_users || template.users_count || 0} users
                     </Text>
                 </div>
 
@@ -168,7 +169,7 @@ const TemplateCard = ({ template, onUse }) => {
                             Win Rate
                         </Text>
                         <Text style={{ color: '#34c759', fontSize: 14, fontWeight: 600 }}>
-                            {template.win_rate || 0}%
+                            {(template.backtest_win_rate || template.win_rate || 0).toFixed(1)}%
                         </Text>
                     </div>
                     <div style={{
@@ -194,7 +195,7 @@ const TemplateCard = ({ template, onUse }) => {
                             Trades
                         </Text>
                         <Text style={{ color: '#fff', fontSize: 14, fontWeight: 600 }}>
-                            {template.total_trades || 0}
+                            {template.backtest_total_trades || template.total_trades || 0}
                         </Text>
                     </div>
                 </div>

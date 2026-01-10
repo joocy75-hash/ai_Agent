@@ -173,9 +173,38 @@ class EnhancedRateLimitMiddleware(BaseHTTPMiddleware):
         super().__init__(app)
         self.store = RateLimitStore()
 
+    def _get_real_client_ip(self, request: Request) -> str:
+        """
+        실제 클라이언트 IP 추출 (프록시/로드밸런서 지원)
+
+        우선순위:
+        1. X-Forwarded-For (첫 번째 IP)
+        2. X-Real-IP
+        3. CF-Connecting-IP (Cloudflare)
+        4. request.client.host (fallback)
+        """
+        # X-Forwarded-For: client, proxy1, proxy2
+        x_forwarded_for = request.headers.get("X-Forwarded-For")
+        if x_forwarded_for:
+            # 첫 번째 IP가 실제 클라이언트
+            return x_forwarded_for.split(",")[0].strip()
+
+        # X-Real-IP (nginx에서 설정)
+        x_real_ip = request.headers.get("X-Real-IP")
+        if x_real_ip:
+            return x_real_ip.strip()
+
+        # Cloudflare
+        cf_connecting_ip = request.headers.get("CF-Connecting-IP")
+        if cf_connecting_ip:
+            return cf_connecting_ip.strip()
+
+        # Fallback
+        return request.client.host if request.client else "unknown"
+
     async def dispatch(self, request: Request, call_next):
         """Rate limit 체크 및 헤더 추가"""
-        client_ip = request.client.host if request.client else "unknown"
+        client_ip = self._get_real_client_ip(request)
 
         # CORS 헤더를 위한 Origin 추출
         origin = request.headers.get("origin", "")
