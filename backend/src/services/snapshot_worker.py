@@ -17,14 +17,13 @@ Update Interval: 60 seconds
 import asyncio
 import logging
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any
-from decimal import Decimal
-from sqlalchemy import select, func
-from sqlalchemy.ext.asyncio import AsyncSession
+from typing import Any, Dict, List, Optional
 
-from ..utils.cache_manager import cache_manager
+from sqlalchemy import select
+
 from ..database.db import AsyncSessionLocal
-from ..database.models import User, Trade, BotInstance, Position
+from ..database.models import BotInstance, Position, Trade, User
+from ..utils.cache_manager import cache_manager
 
 logger = logging.getLogger(__name__)
 
@@ -193,7 +192,7 @@ async def update_user_snapshot(user_id: int) -> bool:
 
             # Query bot instances
             bots_stmt = select(BotInstance).where(
-                BotInstance.user_id == user_id, BotInstance.is_active == True
+                BotInstance.user_id == user_id, BotInstance.is_active is True
             )
             bots_result = await session.execute(bots_stmt)
             bot_instances = list(bots_result.scalars().all())
@@ -271,7 +270,7 @@ async def get_all_active_users() -> List[int]:
     """
     try:
         async with AsyncSessionLocal() as session:
-            stmt = select(User.id).where(User.is_active == True)
+            stmt = select(User.id).where(User.is_active is True)
             result = await session.execute(stmt)
             user_ids = [row[0] for row in result.all()]
             return user_ids

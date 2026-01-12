@@ -3,11 +3,25 @@
 
 파일 업로드 시 보안과 안정성을 위한 검증 기능을 제공합니다.
 """
+import logging
 import os
-import magic
 from pathlib import Path
-from typing import Optional, Set
-from fastapi import UploadFile, HTTPException, status
+from typing import TYPE_CHECKING, Optional, Set
+
+from fastapi import HTTPException, UploadFile, status
+from sqlalchemy import func, select
+
+# Optional magic import for MIME type detection
+try:
+    import magic
+    HAS_MAGIC = True
+except ImportError:
+    HAS_MAGIC = False
+
+if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncSession
+
+logger = logging.getLogger(__name__)
 
 
 class FileValidationRules:
@@ -74,16 +88,19 @@ async def validate_csv_upload(
         )
 
     # MIME 타입 검증 (python-magic 사용)
-    try:
-        mime_type = magic.from_buffer(contents, mime=True)
-        if mime_type not in FileValidationRules.ALLOWED_CSV_MIME_TYPES:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Invalid file type. Expected CSV, got {mime_type}"
-            )
-    except Exception as e:
-        # magic 라이브러리 사용 불가능한 경우 경고만 출력
-        pass
+    if HAS_MAGIC:
+        try:
+            mime_type = magic.from_buffer(contents, mime=True)
+            if mime_type not in FileValidationRules.ALLOWED_CSV_MIME_TYPES:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Invalid file type. Expected CSV, got {mime_type}"
+                )
+        except ImportError:
+            # magic 라이브러리 사용 불가능한 경우 경고만 출력
+            pass
+        except Exception:
+            pass
 
     # 파일 포인터를 처음으로 되돌림
     await file.seek(0)
@@ -128,16 +145,19 @@ async def validate_image_upload(
         )
 
     # MIME 타입 검증
-    try:
-        mime_type = magic.from_buffer(contents, mime=True)
-        if mime_type not in FileValidationRules.ALLOWED_IMAGE_MIME_TYPES:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Invalid file type. Expected image, got {mime_type}"
-            )
-    except Exception as e:
-        # magic 라이브러리 사용 불가능한 경우 경고만 출력
-        pass
+    if HAS_MAGIC:
+        try:
+            mime_type = magic.from_buffer(contents, mime=True)
+            if mime_type not in FileValidationRules.ALLOWED_IMAGE_MIME_TYPES:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Invalid file type. Expected image, got {mime_type}"
+                )
+        except ImportError:
+            # magic 라이브러리 사용 불가능한 경우 경고만 출력
+            pass
+        except Exception:
+            pass
 
     # 파일 포인터를 처음으로 되돌림
     await file.seek(0)
@@ -189,11 +209,11 @@ def validate_file_path_security(file_path: Path, allowed_base_dirs: Set[Path]) -
     """
     try:
         resolved_path = file_path.resolve()
-    except Exception:
+    except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid file path"
-        )
+        ) from e
 
     # 허용된 디렉토리 내에 있는지 확인
     is_allowed = any(
@@ -263,8 +283,137 @@ async def save_upload_file(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to save file: {str(e)}"
-        )
+        ) from e
     finally:
         await file.seek(0)
 
     return file_path
+
+
+class UploadQuotaManager:
+    """
+    업로드 쿼터 관리자
+
+    사용자별 및 전역 업로드 쿼터를 관리합니다.
+    - 사용자당 최대 100MB
+    - 사용자당 최대 50개 파일
+    - 전역 최대 100GB
+    """
+
+    MAX_PER_USER_MB: int = 100  # 100MB per user
+    MAX_TOTAL_STORAGE_GB: int = 100  # 100GB total
+    MAX_FILES_PER_USER: int = 50
+
+    async def check_user_quota(
+        self,
+        user_id: int,
+        file_size_bytes: int,
+        db: "AsyncSession"
+    ) -> tuple[bool, str]:
+        """
+        사용자 쿼터 확인
+
+        Args:
+            user_id: 사용자 ID
+            file_size_bytes: 업로드할 파일 크기 (바이트)
+            db: 데이터베이스 세션
+
+        Returns:
+            (허용 여부, 메시지) 튜플
+        """
+        from ..database.models import UserFile
+
+        # 현재 사용량 조회
+        result = await db.execute(
+            select(
+                func.coalesce(func.sum(UserFile.file_size_bytes), 0).label("total_bytes"),
+                func.count(UserFile.id).label("file_count")
+            ).where(UserFile.user_id == user_id)
+        )
+        row = result.first()
+        current_bytes = int(row.total_bytes) if row else 0
+        file_count = int(row.file_count) if row else 0
+
+        max_bytes = self.MAX_PER_USER_MB * 1024 * 1024
+
+        # 파일 개수 제한 확인
+        if file_count >= self.MAX_FILES_PER_USER:
+            return False, f"File count limit exceeded. Maximum: {self.MAX_FILES_PER_USER} files"
+
+        # 용량 제한 확인
+        if current_bytes + file_size_bytes > max_bytes:
+            used_mb = current_bytes / (1024 * 1024)
+            return False, f"Storage quota exceeded. Used: {used_mb:.1f}MB, Limit: {self.MAX_PER_USER_MB}MB"
+
+        return True, "OK"
+
+    async def check_global_quota(
+        self,
+        file_size_bytes: int,
+        db: "AsyncSession"
+    ) -> tuple[bool, str]:
+        """
+        전역 스토리지 쿼터 확인
+
+        Args:
+            file_size_bytes: 업로드할 파일 크기 (바이트)
+            db: 데이터베이스 세션
+
+        Returns:
+            (허용 여부, 메시지) 튜플
+        """
+        from ..database.models import UserFile
+
+        # 전체 사용량 조회
+        result = await db.execute(
+            select(func.coalesce(func.sum(UserFile.file_size_bytes), 0))
+        )
+        current_bytes = int(result.scalar() or 0)
+
+        max_bytes = self.MAX_TOTAL_STORAGE_GB * 1024 * 1024 * 1024
+
+        if current_bytes + file_size_bytes > max_bytes:
+            used_gb = current_bytes / (1024 * 1024 * 1024)
+            return False, f"Global storage quota exceeded. Used: {used_gb:.1f}GB, Limit: {self.MAX_TOTAL_STORAGE_GB}GB"
+
+        return True, "OK"
+
+    async def get_user_usage(
+        self,
+        user_id: int,
+        db: "AsyncSession"
+    ) -> dict:
+        """
+        사용자 사용량 통계 조회
+
+        Args:
+            user_id: 사용자 ID
+            db: 데이터베이스 세션
+
+        Returns:
+            사용량 통계 딕셔너리
+        """
+        from ..database.models import UserFile
+
+        result = await db.execute(
+            select(
+                func.coalesce(func.sum(UserFile.file_size_bytes), 0).label("total_bytes"),
+                func.count(UserFile.id).label("file_count")
+            ).where(UserFile.user_id == user_id)
+        )
+        row = result.first()
+
+        used_bytes = int(row.total_bytes) if row else 0
+        file_count = int(row.file_count) if row else 0
+
+        return {
+            "used_bytes": used_bytes,
+            "file_count": file_count,
+            "quota_bytes": self.MAX_PER_USER_MB * 1024 * 1024,
+            "quota_files": self.MAX_FILES_PER_USER,
+            "used_percent": (used_bytes / (self.MAX_PER_USER_MB * 1024 * 1024)) * 100 if self.MAX_PER_USER_MB > 0 else 0
+        }
+
+
+# 싱글톤 인스턴스
+upload_quota_manager = UploadQuotaManager()

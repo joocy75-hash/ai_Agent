@@ -3,14 +3,14 @@
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from pydantic import BaseModel
 
 from ..database.db import get_session
 from ..database.models import User
-from ..utils.jwt_auth import get_current_user_id
 from ..services.totp_service import totp_service
+from ..utils.jwt_auth import get_current_user_id
 
 router = APIRouter(prefix="/auth/2fa", tags=["2fa"])
 

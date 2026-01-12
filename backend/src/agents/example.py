@@ -8,7 +8,7 @@ import asyncio
 import logging
 from typing import Any
 
-from .base import BaseAgent, AgentTask, TaskPriority
+from .base import AgentTask, BaseAgent, TaskPriority
 
 # 로깅 설정
 logging.basicConfig(
@@ -198,7 +198,7 @@ async def example_single_agent():
     print("Agent Status:")
     print(f"  State: {status['state']}")
     print(f"  Queue Size: {status['queue_size']}")
-    print(f"  Metrics:")
+    print("  Metrics:")
     print(f"    Total Tasks: {status['metrics']['total_tasks']}")
     print(f"    Completed: {status['metrics']['completed_tasks']}")
     print(f"    Failed: {status['metrics']['failed_tasks']}")

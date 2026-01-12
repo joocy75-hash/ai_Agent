@@ -1,6 +1,8 @@
-from pydantic import BaseModel, field_validator
 from typing import Optional
-from ..utils.validators import validate_string_length, sanitize_html
+
+from pydantic import BaseModel, field_validator
+
+from ..utils.validators import sanitize_html
 
 
 class OrderSubmit(BaseModel):

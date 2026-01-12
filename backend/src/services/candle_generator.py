@@ -5,7 +5,6 @@ Converts real-time price ticks from LBank WebSocket into 1-minute OHLCV candles
 for chart visualization.
 """
 
-import asyncio
 import logging
 from collections import defaultdict
 from datetime import datetime, timezone

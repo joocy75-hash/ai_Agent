@@ -3,7 +3,8 @@
 """
 
 from datetime import datetime
-from typing import Optional, List, Literal
+from typing import List, Literal, Optional
+
 from pydantic import BaseModel
 
 

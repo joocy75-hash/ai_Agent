@@ -6,15 +6,15 @@ Market Regime Agent 사용 예제
 
 import asyncio
 import logging
-import sys
 import os
+import sys
 from pathlib import Path
 
 # 프로젝트 루트를 Python 경로에 추가
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
-from src.agents.market_regime import MarketRegimeAgent, RegimeType
 from src.agents.base import AgentTask, TaskPriority
+from src.agents.market_regime import MarketRegimeAgent, RegimeType
 from src.services.bitget_rest import get_bitget_rest
 from src.services.candle_cache import CandleCacheManager
 

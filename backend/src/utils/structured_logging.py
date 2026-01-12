@@ -2,12 +2,12 @@
 구조화된 로깅 시스템
 JSON 형식으로 로그를 출력하여 분석 및 모니터링을 용이하게 함
 """
-import logging
 import json
+import logging
 import sys
-from datetime import datetime
-from typing import Optional, Any, Dict
 from contextvars import ContextVar
+from datetime import datetime
+from typing import Any, Dict, Optional
 
 # Request context를 저장하기 위한 ContextVar
 request_id_var: ContextVar[Optional[str]] = ContextVar('request_id', default=None)

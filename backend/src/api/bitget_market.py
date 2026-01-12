@@ -4,30 +4,23 @@ Bitget 시장 데이터 API
 """
 
 import logging
+from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import Optional, List, Dict, Any
 
 from ..database.db import get_session
 from ..database.models import ApiKey
-from ..utils.jwt_auth import get_current_user_id
-from ..utils.crypto_secrets import decrypt_secret
-from ..services.bitget_rest import get_bitget_rest, BitgetRestClient
-from ..utils.bitget_exceptions import (
-    BitgetAPIError,
-    BitgetRateLimitError,
-    BitgetAuthenticationError,
-    BitgetInsufficientBalanceError,
-    BitgetNetworkError,
-    BitgetTimeoutError,
-)
 from ..schemas.market_schema import (
-    MarketOrderRequest,
-    LimitOrderRequest,
-    ClosePositionRequest,
-    SetLeverageRequest,
     CancelOrderRequest,
+    ClosePositionRequest,
+    LimitOrderRequest,
+    MarketOrderRequest,
+    SetLeverageRequest,
 )
+from ..services.bitget_rest import BitgetRestClient, get_bitget_rest
+from ..utils.crypto_secrets import decrypt_secret
+from ..utils.jwt_auth import get_current_user_id
 from ..utils.structured_logging import get_logger
 
 logger = logging.getLogger(__name__)
@@ -55,7 +48,6 @@ async def get_user_bitget_client(
     """
     # API 키 조회
     from sqlalchemy import select
-    from sqlalchemy.future import select as future_select
 
     result = await session.execute(select(ApiKey).where(ApiKey.user_id == user_id))
     api_key_obj = result.scalars().first()
@@ -84,7 +76,7 @@ async def get_user_bitget_client(
         raise HTTPException(
             status_code=500,
             detail="API 키 복호화에 실패했습니다. Settings에서 API 키를 다시 등록해주세요.",
-        )
+        ) from e
 
     if not all([api_key, api_secret, passphrase]):
         raise HTTPException(
@@ -111,8 +103,9 @@ async def get_ticker(
     """
     try:
         # Use public CCXT API without authentication
-        import ccxt.async_support as ccxt
         from decimal import Decimal
+
+        import ccxt.async_support as ccxt
 
         exchange = ccxt.bitget()
         ticker = await exchange.fetch_ticker(symbol)
@@ -136,7 +129,7 @@ async def get_ticker(
         raise HTTPException(
             status_code=500,
             detail=f"현재가 조회 중 예상치 못한 에러가 발생했습니다: {str(e)}",
-        )
+        ) from e
 
 
 @router.get("/orderbook/{symbol}")
@@ -167,7 +160,7 @@ async def get_orderbook(
         logger.error(f"Failed to get orderbook: {e}")
         raise HTTPException(
             status_code=500, detail=f"Failed to get orderbook: {str(e)}"
-        )
+        ) from e
 
 
 @router.get("/positions")
@@ -211,7 +204,7 @@ async def get_positions(
         logger.error(f"Failed to get positions: {e}", exc_info=True)
         raise HTTPException(
             status_code=500, detail=f"Failed to get positions: {str(e)}"
-        )
+        ) from e
 
 
 @router.get("/account")
@@ -282,7 +275,7 @@ async def get_account(
         raise
     except Exception as e:
         logger.error(f"Failed to get account: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Failed to get account: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get account: {str(e)}") from e
 
 
 @router.get("/orders/open")
@@ -311,7 +304,7 @@ async def get_open_orders(
         logger.error(f"Failed to get open orders: {e}")
         raise HTTPException(
             status_code=500, detail=f"Failed to get open orders: {str(e)}"
-        )
+        ) from e
 
 
 @router.post("/orders/market")
@@ -375,7 +368,7 @@ async def place_market_order(
             user_id=user_id,
             error=str(e),
         )
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
         structured_logger.error(
             "market_order_failed",
@@ -386,7 +379,7 @@ async def place_market_order(
             size=payload.size,
             error=str(e),
         )
-        raise HTTPException(status_code=500, detail=f"Failed to place order: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to place order: {str(e)}") from e
 
 
 @router.post("/orders/limit")
@@ -453,7 +446,7 @@ async def place_limit_order(
             user_id=user_id,
             error=str(e),
         )
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
         structured_logger.error(
             "limit_order_failed",
@@ -465,7 +458,7 @@ async def place_limit_order(
             price=payload.price,
             error=str(e),
         )
-        raise HTTPException(status_code=500, detail=f"Failed to place order: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to place order: {str(e)}") from e
 
 
 @router.post("/orders/cancel")
@@ -495,10 +488,10 @@ async def cancel_order(
     except ValueError as e:
         # Pydantic validation error
         logger.error(f"Validation error in cancel order: {e}")
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
         logger.error(f"Failed to cancel order: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to cancel order: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to cancel order: {str(e)}") from e
 
 
 @router.post("/positions/close")
@@ -537,12 +530,12 @@ async def close_position(
     except ValueError as e:
         # Pydantic validation error
         logger.error(f"Validation error in close position: {e}")
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
         logger.error(f"Failed to close position: {e}")
         raise HTTPException(
             status_code=500, detail=f"Failed to close position: {str(e)}"
-        )
+        ) from e
 
 
 @router.post("/leverage")
@@ -572,7 +565,7 @@ async def set_leverage(
     except ValueError as e:
         # Pydantic validation error
         logger.error(f"Validation error in set leverage: {e}")
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
         logger.error(f"Failed to set leverage: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to set leverage: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to set leverage: {str(e)}") from e

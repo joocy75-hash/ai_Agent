@@ -11,9 +11,10 @@
 import asyncio
 import logging
 from typing import List, Set
-from sqlalchemy import select, and_
 
-from ..database.models import BotStatus, BotInstance
+from sqlalchemy import and_, select
+
+from ..database.models import BotInstance, BotStatus
 from ..services.bot_runner import BotRunner
 
 logger = logging.getLogger(__name__)

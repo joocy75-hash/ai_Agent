@@ -4,9 +4,9 @@ Market Regime Models (시장 환경 데이터 모델)
 시장 환경 분석 결과를 저장하는 데이터 모델
 """
 
+from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from dataclasses import dataclass
 from typing import Optional
 
 

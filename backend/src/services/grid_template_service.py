@@ -8,16 +8,17 @@ Grid Template Service
 import math
 from decimal import Decimal
 from typing import List, Optional
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database.models import (
-    GridBotTemplate,
     BotInstance,
-    GridBotConfig,
-    GridOrder,
     BotType,
+    GridBotConfig,
+    GridBotTemplate,
     GridMode,
+    GridOrder,
     GridOrderStatus,
 )
 from ..schemas.grid_template_schema import (
@@ -45,7 +46,7 @@ class GridTemplateService:
         """
         query = (
             select(GridBotTemplate)
-            .where(GridBotTemplate.is_active == True)
+            .where(GridBotTemplate.is_active is True)
             .order_by(
                 GridBotTemplate.is_featured.desc(),
                 GridBotTemplate.sort_order.asc(),
@@ -77,7 +78,7 @@ class GridTemplateService:
         )
 
         if not include_inactive:
-            query = query.where(GridBotTemplate.is_active == True)
+            query = query.where(GridBotTemplate.is_active is True)
 
         result = await self.db.execute(query)
         return list(result.scalars().all())

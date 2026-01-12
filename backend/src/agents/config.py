@@ -7,9 +7,9 @@
 """
 
 import os
-from typing import Dict, Any, Optional
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import Any, Dict, Optional
 
 
 class AgentType(str, Enum):

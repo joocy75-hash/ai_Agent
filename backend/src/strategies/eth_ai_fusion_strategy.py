@@ -528,7 +528,7 @@ class ETHAIFusionStrategy:
             return 0.0
         ema_fast = self._ema_series(closes, 12)
         ema_slow = self._ema_series(closes, 26)
-        macd_line = [f - s for f, s in zip(ema_fast[-len(ema_slow):], ema_slow)]
+        macd_line = [f - s for f, s in zip(ema_fast[-len(ema_slow):], ema_slow, strict=False)]
         signal_line = self._ema_series(macd_line, 9)
         if not signal_line:
             return 0.0

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Response, Request
+from fastapi import APIRouter, Depends, Request, Response
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -6,16 +6,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ..database.db import get_session
 from ..database.models import User
 from ..schemas.auth_schema import (
+    AuthResponse,
     ChangePasswordRequest,
     LoginRequest,
     RegisterRequest,
-    AuthResponse,
     UserInfo,
 )
-from ..utils.jwt_auth import JWTAuth, get_current_user_id
-from ..utils.auth_cookies import set_auth_cookies, clear_auth_cookies, REFRESH_COOKIE
+from ..utils.auth_cookies import REFRESH_COOKIE, clear_auth_cookies, set_auth_cookies
 from ..utils.auth_dependencies import require_admin
-from ..utils.exceptions import DuplicateResourceError, AuthenticationError
+from ..utils.exceptions import AuthenticationError, DuplicateResourceError
+from ..utils.jwt_auth import JWTAuth, get_current_user_id
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -84,8 +84,8 @@ async def login(
     1. 첫 번째 요청: email + password -> requires_2fa: true, user_id 반환
     2. 두 번째 요청: email + password + totp_code -> access_token 반환
     """
-    from ..services.totp_service import totp_service
     from ..services.login_security import login_security
+    from ..services.totp_service import totp_service
 
     # 🔒 Step 1: 계정 잠금 확인
     (
@@ -231,7 +231,7 @@ async def change_password(
         raise
     except Exception as e:
         await session.rollback()
-        raise AuthenticationError(f"비밀번호 변경 실패: {str(e)}")
+        raise AuthenticationError(f"비밀번호 변경 실패: {str(e)}") from e
 
 
 class RefreshTokenRequest(BaseModel):
@@ -278,7 +278,7 @@ async def refresh_token(
         return response_payload
 
     except Exception as e:
-        raise AuthenticationError(f"토큰 갱신 실패: {str(e)}")
+        raise AuthenticationError(f"토큰 갱신 실패: {str(e)}") from e
 
 
 @router.get("/me")

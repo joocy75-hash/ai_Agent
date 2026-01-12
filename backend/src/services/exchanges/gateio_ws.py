@@ -6,13 +6,14 @@ Gate.io WebSocket API V4 (USDT Perpetual)
 """
 
 import asyncio
-import json
-import websockets
-import hmac
 import hashlib
-import time
-from typing import Dict, Callable, Optional, List
+import hmac
+import json
 import logging
+import time
+from typing import Callable, Dict, List, Optional
+
+import websockets
 
 logger = logging.getLogger(__name__)
 

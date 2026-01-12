@@ -11,18 +11,17 @@ AI Enhancement:
 
 import logging
 import uuid
-import json
-from typing import Any, List, Optional, Dict
-from datetime import datetime, timedelta
+from datetime import datetime
+from typing import Any, Dict, List, Optional
 
-from ..base import BaseAgent, AgentTask
+from ..base import AgentTask, BaseAgent
 from .models import (
-    AnomalyType,
-    AnomalySeverity,
     AnomalyAlert,
+    AnomalySeverity,
+    AnomalyType,
     BotBehaviorMetrics,
-    MarketAnomalyMetrics,
     CircuitBreakerStatus,
+    MarketAnomalyMetrics,
 )
 
 logger = logging.getLogger(__name__)
@@ -157,7 +156,7 @@ class AnomalyDetectionAgent(BaseAgent):
 
         # 2. 연속 손실 체크
         if metrics.recent_trades_count >= 10:
-            losing_rate = metrics.losing_trades_count / metrics.recent_trades_count
+            metrics.losing_trades_count / metrics.recent_trades_count
 
             if metrics.losing_trades_count >= self.losing_streak_threshold:
                 alert = await self._create_alert(

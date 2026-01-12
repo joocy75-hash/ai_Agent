@@ -2,9 +2,9 @@
 Bitget Market API 요청/응답 스키마
 거래 주문 파라미터에 대한 강화된 검증 포함
 """
-from pydantic import BaseModel, field_validator, Field
-from typing import Optional, Literal
-from decimal import Decimal
+from typing import Literal, Optional
+
+from pydantic import BaseModel, Field, field_validator
 
 
 class MarketOrderRequest(BaseModel):

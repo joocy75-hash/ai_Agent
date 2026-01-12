@@ -9,19 +9,18 @@ Gemini 2.0 Flash Thinking / DeepSeek-V3 API + 비용 최적화 통합 서비스
 """
 
 import logging
-import hashlib
-import json
-import requests
-from typing import Dict, Any, Optional, List
-from datetime import datetime
+import threading
+from typing import Any, Dict, List, Optional
 
+import requests
+
+from src.config import settings
+
+from .cost_tracker import CostTracker
+from .event_driven_optimizer import EventDrivenOptimizer, EventPriority, MarketEvent
 from .prompt_cache import PromptCacheManager
 from .response_cache import ResponseCacheManager
 from .smart_sampling import SamplingStrategy, get_global_sampling_manager
-from .cost_tracker import CostTracker
-from .event_driven_optimizer import EventDrivenOptimizer, MarketEvent, EventType, EventPriority
-from src.config import settings
-import threading
 
 logger = logging.getLogger(__name__)
 
@@ -92,7 +91,7 @@ class IntegratedAIService:
                 raise ValueError("Gemini API key not configured. Set GEMINI_API_KEY environment variable.")
             masked_key = f"{'*' * 8}{self.api_key[-4:]}" if len(self.api_key) > 4 else "****"
             logger.info(f"🌟 Gemini API key configured: {masked_key}")
-            logger.info(f"🧠 Using Gemini 2.0 Flash Thinking for advanced market analysis")
+            logger.info("🧠 Using Gemini 2.0 Flash Thinking for advanced market analysis")
         else:
             self.api_key = settings.deepseek_api_key
             if not self.api_key or self.api_key == "":
@@ -148,8 +147,6 @@ class IntegratedAIService:
             }
         """
         # 1. 스마트 샘플링 체크
-        sampled = True
-        skip_reason = None
 
         if enable_sampling:
             should_sample, reason = await self.sampling_manager.should_sample(
@@ -185,7 +182,6 @@ class IntegratedAIService:
                 }
 
         # 2. 응답 캐시 조회
-        cache_hit = False
 
         if enable_caching and self.response_cache.should_cache(response_type, context):
             cached_response = await self.response_cache.get_cached_response(
@@ -195,7 +191,6 @@ class IntegratedAIService:
 
             if cached_response:
                 logger.info(f"✅ Response cache HIT for {agent_type}")
-                cache_hit = True
 
                 return {
                     "response": cached_response.get("response", ""),
@@ -684,15 +679,4 @@ Provide a comprehensive analysis of these events and their combined implications
         logger.info(f"Sampling strategy updated: {agent_type} -> {strategy.value}")
 
 
-# 싱글톤 인스턴스 (Redis 클라이언트는 나중에 주입)
-_integrated_ai_service_instance = None
 
-
-def get_integrated_ai_service(redis_client=None) -> IntegratedAIService:
-    """통합 AI 서비스 싱글톤 인스턴스 조회"""
-    global _integrated_ai_service_instance
-
-    if _integrated_ai_service_instance is None:
-        _integrated_ai_service_instance = IntegratedAIService(redis_client)
-
-    return _integrated_ai_service_instance

@@ -47,7 +47,7 @@ async def close_all_positions():
         api_secret = decrypt_secret(api_key_obj.encrypted_secret_key)
         passphrase = decrypt_secret(api_key_obj.encrypted_passphrase) if api_key_obj.encrypted_passphrase else ""
 
-        print(f"✅ Using API keys for Bitget")
+        print("✅ Using API keys for Bitget")
         print()
 
         # Use CCXT to close positions
@@ -110,7 +110,7 @@ async def close_all_positions():
 
             # Summary
             print("=" * 50)
-            print(f"📊 Summary:")
+            print("📊 Summary:")
             print(f"   ✅ Successfully closed: {closed_count}")
             print(f"   ❌ Failed: {failed_count}")
             print("=" * 50)

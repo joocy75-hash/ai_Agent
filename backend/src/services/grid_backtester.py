@@ -3,15 +3,15 @@ Grid Bot Backtester
 - 과거 데이터로 그리드 트레이딩 시뮬레이션
 - 수익률, 낙폭, 승률 등 계산
 """
-from decimal import Decimal, ROUND_DOWN
-from typing import List, Optional, Dict
-from dataclasses import dataclass, field
-from datetime import datetime
 import logging
 import math
+from dataclasses import dataclass, field
+from datetime import datetime
+from decimal import ROUND_DOWN, Decimal
+from typing import Dict, List, Optional
 
-from .candle_data_service import CandleDataService, Candle, get_candle_data_service
 from ..database.models import GridMode, PositionDirection
+from .candle_data_service import Candle, CandleDataService, get_candle_data_service
 
 logger = logging.getLogger(__name__)
 

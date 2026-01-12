@@ -5,8 +5,8 @@
 
 import asyncio
 import logging
-from typing import Optional, Callable, Dict
 from datetime import datetime
+from typing import Callable, Dict, Optional
 
 import httpx
 
@@ -162,9 +162,11 @@ class TelegramBotHandler:
 
     async def _get_user_trades_today(self, session) -> dict:
         """오늘 거래 데이터 조회"""
-        from ...database.models import Trade
-        from sqlalchemy import select, func
         from datetime import date
+
+        from sqlalchemy import func, select
+
+        from ...database.models import Trade
 
         today = date.today()
 
@@ -185,9 +187,11 @@ class TelegramBotHandler:
 
     async def _get_profit_summary(self, session) -> dict:
         """수익 요약 조회"""
-        from ...database.models import Trade
-        from sqlalchemy import select, func
         from datetime import date, timedelta
+
+        from sqlalchemy import func, select
+
+        from ...database.models import Trade
 
         today = date.today()
         week_start = today - timedelta(days=today.weekday())
@@ -211,9 +215,11 @@ class TelegramBotHandler:
 
     async def _get_trade_counts(self, session) -> dict:
         """거래 횟수 조회"""
-        from ...database.models import Trade
-        from sqlalchemy import select, func
         from datetime import date, timedelta
+
+        from sqlalchemy import func, select
+
+        from ...database.models import Trade
 
         today = date.today()
         week_start = today - timedelta(days=today.weekday())
@@ -340,9 +346,10 @@ class TelegramBotHandler:
 
     async def _get_user_by_chat_id(self, session, chat_id: int):
         """텔레그램 chat_id로 사용자 찾기"""
+        from sqlalchemy import select
+
         from ...database.models import UserSettings
         from ...utils.crypto_secrets import decrypt_secret
-        from sqlalchemy import select
 
         # 모든 UserSettings 조회하여 chat_id 매칭
         result = await session.execute(
@@ -365,10 +372,11 @@ class TelegramBotHandler:
     async def handle_balance(self, chat_id: int):
         """잔고 조회 (실제 거래소 API 연동)"""
         try:
-            from ...database.models import ApiKey
-            from ...utils.crypto_secrets import decrypt_secret
-            from ...services.bitget_rest import BitgetRestClient
             from sqlalchemy import select
+
+            from ...database.models import ApiKey
+            from ...services.bitget_rest import BitgetRestClient
+            from ...utils.crypto_secrets import decrypt_secret
 
             async with await self._get_db_session() as session:
                 # 1. chat_id로 user_id 찾기
@@ -480,13 +488,14 @@ class TelegramBotHandler:
     async def handle_status(self, chat_id: int):
         """봇 상태 (실제 DB 연동)"""
         try:
-            from ...database.models import BotInstance
             from sqlalchemy import select
+
+            from ...database.models import BotInstance
 
             async with await self._get_db_session() as session:
                 # 실행 중인 봇 조회
                 result = await session.execute(
-                    select(BotInstance).where(BotInstance.is_running == True)
+                    select(BotInstance).where(BotInstance.is_running is True)
                 )
                 running_bots = result.scalars().all()
 
@@ -504,7 +513,7 @@ class TelegramBotHandler:
                 total_bots = (
                     (
                         await session.execute(
-                            select(BotInstance).where(BotInstance.is_active == True)
+                            select(BotInstance).where(BotInstance.is_active is True)
                         )
                     )
                     .scalars()
@@ -535,10 +544,11 @@ class TelegramBotHandler:
     async def handle_status_table(self, chat_id: int):
         """상태 테이블 (사용자별 + 거래소 실시간 포지션)"""
         try:
-            from ...database.models import ApiKey
-            from ...utils.crypto_secrets import decrypt_secret
-            from ...services.bitget_rest import BitgetRestClient
             from sqlalchemy import select
+
+            from ...database.models import ApiKey
+            from ...services.bitget_rest import BitgetRestClient
+            from ...utils.crypto_secrets import decrypt_secret
 
             async with await self._get_db_session() as session:
                 # 1. chat_id로 user_id 찾기
@@ -651,9 +661,11 @@ class TelegramBotHandler:
     async def handle_performance(self, chat_id: int):
         """성과 분석 (실제 DB 연동)"""
         try:
-            from ...database.models import Trade
-            from sqlalchemy import select, func
             from datetime import timedelta
+
+            from sqlalchemy import select
+
+            from ...database.models import Trade
 
             async with await self._get_db_session() as session:
                 # 최근 30일 거래
@@ -784,10 +796,11 @@ def get_bot_handler() -> TelegramBotHandler:
 
 async def load_telegram_settings_from_db():
     """DB에서 활성화된 텔레그램 설정 로드"""
+    from sqlalchemy import select
+
     from ...database.db import AsyncSessionLocal
     from ...database.models import UserSettings
     from ...utils.crypto_secrets import decrypt_secret
-    from sqlalchemy import select
 
     try:
         async with AsyncSessionLocal() as session:
@@ -829,7 +842,7 @@ async def start_telegram_bot():
 
         notifier = init_telegram_notifier(bot_token=bot_token, chat_id=chat_id)
         _handler_instance = TelegramBotHandler(notifier=notifier)
-        logger.info(f"[Telegram] Bot handler initialized with DB settings")
+        logger.info("[Telegram] Bot handler initialized with DB settings")
     else:
         # 환경변수 기반 (기존 방식)
         handler = get_bot_handler()

@@ -6,9 +6,10 @@ Williams %R, Volume 지표, Price Pattern 등
 """
 
 import logging
+from typing import List
+
 import numpy as np
 import pandas as pd
-from typing import List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -169,7 +170,7 @@ class TechnicalFeatures:
         """ADX (Average Directional Index)"""
         high = df['high']
         low = df['low']
-        close = df['close']
+        df['close']
 
         # +DM, -DM
         plus_dm = high.diff()

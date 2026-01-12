@@ -3,18 +3,19 @@ AI 전략 생성 API
 DeepSeek AI를 사용하여 자동으로 거래 전략을 생성합니다.
 """
 
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
-from typing import List, Optional
-from pydantic import BaseModel
 import json
 import logging
+from typing import Optional
+
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database.db import get_session
-from ..database.models import Strategy, User
-from ..utils.jwt_auth import get_current_user_id
-from ..services.deepseek_service import deepseek_service
+from ..database.models import Strategy
 from ..middleware.rate_limit_improved import ai_strategy_limiter
+from ..services.deepseek_service import deepseek_service
+from ..utils.jwt_auth import get_current_user_id
 
 logger = logging.getLogger(__name__)
 
@@ -109,7 +110,7 @@ async def generate_strategies(
 
     except Exception as e:
         await session.rollback()
-        raise HTTPException(status_code=500, detail=f"전략 생성 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"전략 생성 실패: {str(e)}") from e
 
 
 @router.get("/strategies/list")
@@ -124,14 +125,14 @@ async def list_ai_strategies(
     1. 공용 전략 (user_id=NULL, is_active=True) - 모든 사용자가 볼 수 있는 활성화된 공용 전략
     2. 현재 사용자가 생성한 전략 - 활성화 여부 무관
     """
-    from sqlalchemy import select, or_
+    from sqlalchemy import or_, select
 
     result = await session.execute(
         select(Strategy)
         .where(
             or_(
                 # 공용 전략: user_id=NULL이고 활성화된 것만
-                (Strategy.user_id.is_(None)) & (Strategy.is_active == True),
+                (Strategy.user_id.is_(None)) & (Strategy.is_active is True),
                 # 사용자 본인의 전략: 활성화 여부 무관
                 Strategy.user_id == user_id,
             )
@@ -144,6 +145,42 @@ async def list_ai_strategies(
     )
 
     def parse_strategy(s):
+        """Strategy 객체의 JSON 파라미터를 파싱하여 구조화된 딕셔너리로 변환합니다.
+
+        데이터베이스에 저장된 Strategy 객체의 params 필드(JSON 문자열)를
+        파싱하고, 프론트엔드에서 사용할 수 있는 표준화된 형식으로 변환합니다.
+        레거시 데이터와의 호환성을 위해 JSON 파싱 실패 시에도 안전하게 처리합니다.
+
+        Args:
+            s (Strategy): 파싱할 Strategy 데이터베이스 모델 객체.
+                필수 속성:
+                - id (int): 전략 ID
+                - name (str): 전략 이름
+                - description (str, optional): 전략 설명
+                - params (str, optional): JSON 형식의 파라미터 문자열
+                - is_active (bool, optional): 활성화 상태
+
+        Returns:
+            dict: 구조화된 전략 정보 딕셔너리.
+                - id (int): 전략 ID
+                - name (str): 전략 이름
+                - description (str): 전략 설명 (없으면 빈 문자열)
+                - type (str): 전략 유형 (기본값: "CUSTOM")
+                - symbol (str): 거래 심볼 (기본값: "BTC/USDT")
+                - timeframe (str): 타임프레임 (기본값: "1h")
+                - leverage (int): 레버리지 배수 (기본값: 1)
+                - risk_level (str): 위험도 ("low", "medium", "high")
+                - stop_loss (float): 손절 비율 (기본값: 1.5)
+                - take_profit (float): 익절 비율 (기본값: 3.0)
+                - parameters (dict): 원본 파라미터 딕셔너리
+                - is_active (bool): 활성화 상태
+                - created_at (None): 생성 시각 (현재 미구현)
+
+        Note:
+            - risk_level은 leverage 값에 따라 자동 결정됩니다:
+              leverage >= 10: "high", leverage >= 5: "medium", 그 외: "low"
+            - JSON 파싱 실패 시 원본 문자열이 {"_raw": 원본값} 형태로 보존됩니다.
+        """
         # JSON 파싱 시 예외 처리 (레거시 데이터 호환)
         params = {}
         if s.params:

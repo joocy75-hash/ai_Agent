@@ -8,12 +8,13 @@ Health Check 엔드포인트
 """
 import time
 from datetime import datetime
+
 from fastapi import APIRouter, Depends
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..database.db import get_session
 from ..config import settings
+from ..database.db import get_session
 
 router = APIRouter(prefix="/health", tags=["health"])
 

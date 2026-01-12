@@ -1,6 +1,7 @@
-from sqlalchemy.orm import Session
-from datetime import datetime
 import json
+from datetime import datetime
+
+from sqlalchemy.orm import Session
 
 from ..database.models import BacktestResult, BacktestTrade
 

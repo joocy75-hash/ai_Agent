@@ -85,7 +85,7 @@ async def ccxt_price_collector(market_queue: asyncio.Queue, chart_queue: asyncio
                             try:
                                 market_queue.get_nowait()
                                 market_queue.put_nowait(market_data)
-                            except:
+                            except Exception:
                                 pass
 
                         # Put to chart queue (for chart service) if provided
@@ -96,7 +96,7 @@ async def ccxt_price_collector(market_queue: asyncio.Queue, chart_queue: asyncio
                                 try:
                                     chart_queue.get_nowait()
                                     chart_queue.put_nowait(market_data)
-                                except:
+                                except Exception:
                                     pass
 
                         # Update price alert service for annotation alerts
@@ -105,7 +105,7 @@ async def ccxt_price_collector(market_queue: asyncio.Queue, chart_queue: asyncio
                             await price_alert_service.update_price(
                                 simple_symbol, market_data['price']
                             )
-                        except Exception as alert_err:
+                        except Exception:
                             # Non-critical - don't break the collector
                             pass
 
@@ -136,5 +136,5 @@ async def ccxt_price_collector(market_queue: asyncio.Queue, chart_queue: asyncio
             try:
                 await exchange.close()
                 logger.info("CCXT exchange connection closed")
-            except:
+            except Exception:
                 pass

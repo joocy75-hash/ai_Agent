@@ -7,7 +7,7 @@ Analytics API endpoints
 import logging
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter, Depends, Query, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -82,7 +82,29 @@ async def get_dashboard_summary(
         all_equities = equity_result.scalars().all()
 
         def calculate_performance(trades, equities, period):
-            """기간별 성과 계산 헬퍼 함수"""
+            """기간별 거래 성과 지표를 계산합니다.
+
+            주어진 거래 목록과 자산 데이터를 분석하여 총 수익률, 손익,
+            승패 거래 수, 최고/최악 거래 등의 성과 지표를 계산합니다.
+
+            Args:
+                trades: Trade 객체들의 리스트. 각 Trade는 pnl, pnl_percent,
+                    symbol 등의 속성을 가져야 합니다. 빈 리스트 허용.
+                equities: Equity 객체들의 리스트. 시간순으로 정렬된 자산 가치
+                    기록으로, 총 수익률 계산에 사용됩니다.
+                period: 기간 식별자 문자열 (예: "1d", "1w", "1m", "all").
+                    현재는 로깅/디버깅 목적으로만 사용됩니다.
+
+            Returns:
+                dict: 성과 지표를 담은 딕셔너리.
+                    - total_return (float): 총 수익률 (%)
+                    - total_pnl (float): 총 손익 금액
+                    - total_trades (int): 총 거래 수
+                    - winning_trades (int): 수익 거래 수
+                    - losing_trades (int): 손실 거래 수
+                    - best_trade (dict|None): 최고 수익 거래 정보
+                    - worst_trade (dict|None): 최악 손실 거래 정보
+            """
             if not trades:
                 return {
                     "total_return": 0.0,
@@ -139,7 +161,26 @@ async def get_dashboard_summary(
             }
 
         def calculate_risk_metrics(trades, equities):
-            """리스크 지표 계산 헬퍼 함수"""
+            """거래 리스크 지표를 계산합니다.
+
+            거래 내역과 자산 곡선 데이터를 분석하여 최대 낙폭(MDD),
+            샤프 비율, 승률, 손익비, 일일 변동성 등의 리스크 지표를 계산합니다.
+
+            Args:
+                trades: Trade 객체들의 리스트. 각 Trade는 pnl 속성을 가져야
+                    합니다. 승률과 손익비 계산에 사용됩니다.
+                equities: Equity 객체들의 리스트. 시간순으로 정렬된 자산 가치
+                    기록으로, MDD, 변동성, 샤프 비율 계산에 사용됩니다.
+
+            Returns:
+                dict: 리스크 지표를 담은 딕셔너리.
+                    - max_drawdown (float): 최대 낙폭 (%, 음수)
+                    - sharpe_ratio (float): 샤프 비율 (평균 수익률/변동성)
+                    - win_rate (float): 승률 (%)
+                    - profit_loss_ratio (float): 평균 손익비 (평균 수익/평균 손실)
+                    - daily_volatility (float): 일일 변동성 (%, 표준편차)
+                    - total_trades (int): 총 거래 수
+            """
             if not trades:
                 return {
                     "max_drawdown": 0.0,

@@ -9,10 +9,10 @@ from pathlib import Path
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from src.database.db import AsyncSessionLocal, engine
-from src.database.models import Base, User
 from passlib.context import CryptContext
 from sqlalchemy import select
+from src.database.db import AsyncSessionLocal, engine
+from src.database.models import Base, User
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -58,7 +58,7 @@ async def create_admin():
 
         print("✅ Admin user created successfully!")
         print(f"   Email: {admin_user.email}")
-        print(f"   Password: Admin123!")
+        print("   Password: Admin123!")
         print(f"   Role: {admin_user.role}")
         print("")
         print("🔐 Please change the password after first login!")

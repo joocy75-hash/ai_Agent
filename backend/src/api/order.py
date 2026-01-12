@@ -1,13 +1,14 @@
+import logging
+from typing import Optional, Tuple
+
 from fastapi import APIRouter, Depends, Query
+from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from pydantic import BaseModel
-from typing import Optional, Tuple
-import logging
 
 from ..config import PaginationConfig
 from ..database.db import get_session
-from ..database.models import Equity, Position, Trade, RiskSettings
+from ..database.models import Equity, Position, RiskSettings, Trade
 from ..schemas.order_schema import OrderResponse, OrderSubmit
 from ..services.trade_executor import ensure_client
 from ..utils.jwt_auth import get_current_user_id
@@ -278,6 +279,7 @@ async def submit_order(
         OrderResponse: 주문 결과
     """
     import logging
+
     from ..services.trade_executor import place_market_order
 
     logger = logging.getLogger(__name__)
@@ -377,6 +379,7 @@ async def close_position(
         OrderResponse: 청산 주문 결과
     """
     import logging
+
     from ..services.trade_executor import place_market_order
 
     logger = logging.getLogger(__name__)

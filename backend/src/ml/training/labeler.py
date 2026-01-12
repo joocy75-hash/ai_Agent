@@ -10,9 +10,10 @@ Labeler - 학습용 라벨 생성
 """
 
 import logging
+from typing import Dict, Tuple
+
 import numpy as np
 import pandas as pd
-from typing import Dict, Tuple
 
 logger = logging.getLogger(__name__)
 

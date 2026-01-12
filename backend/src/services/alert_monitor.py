@@ -1,11 +1,12 @@
 import logging
 from datetime import datetime, timedelta
 from typing import Optional
-from sqlalchemy import select, and_
+
+from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..database.models import SystemAlert, User, Trade
 from ..database.db import AsyncSessionLocal
+from ..database.models import SystemAlert, Trade
 from ..services.exchange_service import ExchangeService
 from ..websockets.ws_server import ws_manager
 
@@ -55,7 +56,7 @@ class AlertMonitor:
                             SystemAlert.user_id == user_id,
                             SystemAlert.message.like(f"%{alert_type}%"),
                             SystemAlert.created_at >= recent_time,
-                            SystemAlert.is_resolved == False,
+                            SystemAlert.is_resolved is False,
                         )
                     )
                 )

@@ -28,7 +28,7 @@ from datetime import datetime, timedelta
 from enum import Enum
 from typing import Dict, Optional, Tuple
 
-from sqlalchemy import select, update
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database.models import BotInstance
@@ -370,8 +370,8 @@ class BotRecoveryManager:
             # is_running=True이지만 실제로 실행 중이지 않은 봇 찾기
             result = await session.execute(
                 select(BotInstance).where(
-                    BotInstance.is_running == True,
-                    BotInstance.is_active == True
+                    BotInstance.is_running is True,
+                    BotInstance.is_active is True
                 )
             )
             bots = result.scalars().all()

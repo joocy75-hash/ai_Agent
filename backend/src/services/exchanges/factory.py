@@ -4,14 +4,15 @@
 여러 거래소를 통합 관리하는 모듈
 """
 
+import logging
 from typing import Dict, Optional, Type
+
 from .base import BaseExchange
-from .bitget import BitgetExchange
 from .binance import BinanceExchange
-from .okx import OKXExchange
+from .bitget import BitgetExchange
 from .bybit import BybitExchange
 from .gateio import GateioExchange
-import logging
+from .okx import OKXExchange
 
 logger = logging.getLogger(__name__)
 
@@ -159,7 +160,7 @@ class ExchangeManager:
 
     async def close_all(self):
         """모든 거래소 클라이언트 종료"""
-        for cache_key, client in self._clients.items():
+        for _cache_key, client in self._clients.items():
             if hasattr(client, 'close'):
                 await client.close()
         self._clients.clear()

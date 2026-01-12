@@ -1,11 +1,13 @@
-from pydantic import BaseModel, field_validator
 from typing import Optional
+
+from pydantic import BaseModel, field_validator
+
 from ..utils.validators import (
+    ValidationRules,
+    sanitize_html,
+    validate_no_sql_injection,
     validate_strategy_name,
     validate_string_length,
-    validate_no_sql_injection,
-    sanitize_html,
-    ValidationRules,
 )
 
 

@@ -9,16 +9,16 @@ AI Enhancement:
 - 비용 최적화 (Prompt Caching, Response Caching, Smart Sampling)
 """
 
-import logging
 import asyncio
-import json
-from typing import Any, Dict, List, Optional
+import logging
+from typing import Any, List, Optional
 
-from ..base import BaseAgent, AgentTask
+from src.ml.features import FeaturePipeline
+from src.ml.models import EnsemblePredictor
+
+from ..base import AgentTask, BaseAgent
 from .models import SignalValidation, ValidationResult, ValidationRule
 from .rules import ValidationRules
-from src.ml.models import EnsemblePredictor
-from src.ml.features import FeaturePipeline
 
 logger = logging.getLogger(__name__)
 
@@ -375,7 +375,7 @@ class SignalValidatorAgent(BaseAgent):
                         logger.warning(f"🔬 ML rejects entry timing: {ml_timing.reason}")
                     elif ml_timing.is_good_entry and ml_timing.confidence > 0.6:
                         ml_confidence_adjustment += 0.05
-                        logger.info(f"🔬 ML confirms good entry timing (boost: +0.05)")
+                        logger.info("🔬 ML confirms good entry timing (boost: +0.05)")
 
                     # 3. 종합 신뢰도 체크
                     if ml_prediction.combined_confidence < 0.4:

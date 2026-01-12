@@ -6,8 +6,7 @@ Prompt Cache Manager (프롬프트 캐싱 매니저)
 
 import hashlib
 import logging
-from typing import Optional, Dict, Any
-from datetime import datetime, timedelta
+from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
 

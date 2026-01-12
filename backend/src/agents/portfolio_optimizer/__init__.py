@@ -5,7 +5,7 @@ Portfolio Optimization Agent (포트폴리오 최적화 에이전트)
 """
 
 from .agent import PortfolioOptimizationAgent
-from .models import RiskLevel, PortfolioAnalysis, RebalancingSuggestion
+from .models import PortfolioAnalysis, RebalancingSuggestion, RiskLevel
 
 __all__ = [
     "PortfolioOptimizationAgent",

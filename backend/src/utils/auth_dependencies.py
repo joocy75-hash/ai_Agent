@@ -10,8 +10,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database.db import get_session
 from ..database.models import User
+from .exceptions import AdminRequiredError, UserNotFoundError
 from .jwt_auth import get_current_user_id
-from .exceptions import UserNotFoundError, AdminRequiredError
 
 
 async def require_admin(

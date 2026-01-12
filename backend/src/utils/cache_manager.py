@@ -2,13 +2,13 @@
 캐싱 매니저 - Redis와 In-Memory 캐싱 지원
 Redis가 없어도 In-Memory 캐시로 작동 (Graceful Degradation)
 """
-import logging
 import asyncio
 import json
-from decimal import Decimal
-from typing import Optional, Any, Dict
-from datetime import datetime, timedelta
+import logging
 from dataclasses import dataclass, field
+from datetime import datetime, timedelta
+from decimal import Decimal
+from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -121,10 +121,10 @@ class CacheManager:
 
         # Redis 연결 시도 (optional)
         try:
-            import redis.asyncio as redis
-
             # Redis 연결 설정 (환경변수에서 가져오기)
             import os
+
+            import redis.asyncio as redis
             redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 
             self.redis_client = redis.from_url(

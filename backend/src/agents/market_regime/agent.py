@@ -9,19 +9,19 @@ AI Enhancement:
 - 비용 최적화 (Prompt Caching, Response Caching, Smart Sampling)
 """
 
-import logging
 import asyncio
-import json
+import logging
 import threading
 import time
-from typing import Any, Optional, Dict
 from datetime import datetime
+from typing import Any, Dict, Optional
 
-from ..base import BaseAgent, AgentTask
-from .models import MarketRegime, RegimeType
-from .indicators import RegimeIndicators
-from src.ml.models import EnsemblePredictor
 from src.ml.features import FeaturePipeline
+from src.ml.models import EnsemblePredictor
+
+from ..base import AgentTask, BaseAgent
+from .indicators import RegimeIndicators
+from .models import MarketRegime, RegimeType
 
 logger = logging.getLogger(__name__)
 
@@ -448,7 +448,7 @@ class MarketRegimeAgent(BaseAgent):
                 logger.error(f"Bitget API fetch failed: {e}", exc_info=True)
 
         # 3. 둘 다 실패
-        logger.error(f"Failed to fetch candles from both cache and API")
+        logger.error("Failed to fetch candles from both cache and API")
         return []
 
     def _determine_regime_enhanced(
@@ -573,7 +573,7 @@ class MarketRegimeAgent(BaseAgent):
             return None
 
         # 시스템 프롬프트
-        system_prompt = f"""You are an expert cryptocurrency market regime analyzer.
+        system_prompt = """You are an expert cryptocurrency market regime analyzer.
 
 Analyze technical indicators and classify the market regime into one of these categories:
 - TRENDING_UP: Strong upward trend (ADX > 25, price above EMAs)
@@ -584,7 +584,7 @@ Analyze technical indicators and classify the market regime into one of these ca
 - UNKNOWN: Unclear market state
 
 Return ONLY a valid JSON object:
-{{"regime_type": "TRENDING_UP|TRENDING_DOWN|RANGING|VOLATILE|LOW_VOLUME|UNKNOWN", "confidence": 0.0-1.0, "reason": "brief explanation"}}"""
+{"regime_type": "TRENDING_UP|TRENDING_DOWN|RANGING|VOLATILE|LOW_VOLUME|UNKNOWN", "confidence": 0.0-1.0, "reason": "brief explanation"}"""
 
         # 사용자 프롬프트
         user_prompt = f"""Analyze {symbol} market regime:

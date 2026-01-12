@@ -15,29 +15,26 @@ v2.0 변경사항:
 
 import logging
 from typing import List, Optional
-from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Query
-from sqlalchemy import select, desc
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database.db import get_session
-from ..database.models import TrendBotTemplate, BotInstance, BotType
-from ..utils.jwt_auth import get_current_user_id
-from ..services.balance_controller import BalanceController
-from ..services.multibot_manager import MultiBotManager
+from ..database.models import BotInstance, TrendBotTemplate
 from ..schemas.multibot_schema import (
-    TrendTemplateResponse,
-    TrendTemplateListResponse,
-    BotStartRequest,
-    BotStopRequest,
-    BotInstanceResponse,
-    BalanceSummaryResponse,
     BalanceCheckRequest,
     BalanceCheckResponse,
+    BalanceSummaryResponse,
+    BotInstanceResponse,
+    BotStartRequest,
     MultiBotSuccessResponse,
-    MultiBotErrorResponse,
+    TrendTemplateListResponse,
+    TrendTemplateResponse,
 )
+from ..services.balance_controller import BalanceController
+from ..services.multibot_manager import MultiBotManager
+from ..utils.jwt_auth import get_current_user_id
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +47,33 @@ router = APIRouter(prefix="/multibot", tags=["Multi-Bot Trading"])
 
 
 def template_to_response(template: TrendBotTemplate) -> TrendTemplateResponse:
-    """TrendBotTemplate을 응답 스키마로 변환"""
+    """TrendBotTemplate ORM 모델을 멀티봇 API 응답 스키마로 변환합니다.
+
+    데이터베이스에서 조회한 TrendBotTemplate ORM 객체를 클라이언트에
+    반환할 TrendTemplateResponse Pydantic 스키마로 변환합니다.
+    Decimal 타입은 float로, Enum은 문자열로 변환합니다.
+
+    Args:
+        template: TrendBotTemplate ORM 모델 인스턴스. AI 추세 봇 템플릿의
+            모든 설정 정보를 포함합니다:
+            - id, name, symbol, description: 기본 정보
+            - strategy_type: 전략 유형 (기본값: "trend_following")
+            - direction: 거래 방향 (TrendDirection Enum)
+            - leverage: 레버리지 배수
+            - stop_loss_percent, take_profit_percent: 리스크 설정
+            - min_investment, recommended_investment: 투자금 설정
+            - risk_level: 위험도 등급
+            - backtest_*: 백테스트 결과 필드들
+            - is_active, is_featured: 상태 플래그
+            - tags: 태그 목록 (list 또는 None)
+
+    Returns:
+        TrendTemplateResponse: 멀티봇 API 응답용 Pydantic 스키마 객체.
+            - direction: Enum의 value 문자열로 변환됨 (기본값: "long")
+            - Decimal 필드들: float로 변환됨
+            - tags: list가 아닌 경우 빈 리스트로 처리됨
+            - None 값들: 적절한 기본값으로 대체됨
+    """
     # tags 안전 처리: list가 아니면 빈 리스트
     tags = template.tags if isinstance(template.tags, list) else []
 
@@ -78,7 +101,34 @@ def template_to_response(template: TrendBotTemplate) -> TrendTemplateResponse:
 
 
 def bot_to_response(bot: BotInstance, template: Optional[TrendBotTemplate] = None) -> BotInstanceResponse:
-    """BotInstance를 응답 스키마로 변환"""
+    """BotInstance ORM 모델을 멀티봇 API 응답 스키마로 변환합니다.
+
+    데이터베이스에서 조회한 BotInstance ORM 객체와 선택적으로 연관된
+    TrendBotTemplate을 클라이언트에 반환할 BotInstanceResponse Pydantic
+    스키마로 변환합니다. 수익률과 승률을 자동으로 계산합니다.
+
+    Args:
+        bot: BotInstance ORM 모델 인스턴스. 봇의 모든 설정과 상태 정보를
+            포함합니다:
+            - id, name, symbol: 기본 정보
+            - trend_template_id: 연관 템플릿 ID
+            - allocated_amount: 할당된 투자금 (USDT)
+            - max_leverage: 최대 레버리지
+            - total_pnl: 총 손익
+            - total_trades, winning_trades: 거래 통계
+            - is_running: 실행 상태
+            - last_error, last_signal_at: 상태 정보
+            - created_at, last_started_at: 시간 정보
+        template: 선택적 TrendBotTemplate ORM 모델 인스턴스.
+            제공되면 템플릿 이름과 전략 유형이 응답에 포함됩니다.
+            None이면 해당 필드들은 None으로 설정됩니다.
+
+    Returns:
+        BotInstanceResponse: 멀티봇 API 응답용 Pydantic 스키마 객체.
+            - current_pnl_percent: 투자금 대비 수익률 (%) 자동 계산
+            - win_rate: 승률 (%) 자동 계산
+            - template_name, strategy_type: 템플릿 정보 (있는 경우)
+    """
     allocated = float(bot.allocated_amount or 0)
     pnl = float(bot.total_pnl or 0)
     pnl_percent = (pnl / allocated * 100) if allocated > 0 else 0
@@ -131,7 +181,7 @@ async def get_templates(
     """
     query = (
         select(TrendBotTemplate)
-        .where(TrendBotTemplate.is_active == True)
+        .where(TrendBotTemplate.is_active is True)
         .order_by(
             desc(TrendBotTemplate.is_featured),
             TrendBotTemplate.sort_order,
@@ -143,7 +193,7 @@ async def get_templates(
         query = query.where(TrendBotTemplate.symbol == symbol.upper())
 
     if featured_only:
-        query = query.where(TrendBotTemplate.is_featured == True)
+        query = query.where(TrendBotTemplate.is_featured is True)
 
     query = query.offset(offset).limit(limit)
 
@@ -221,7 +271,7 @@ async def start_bot(
             name=payload.name,
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
     # 3. BotRunner에 시작 요청
     try:

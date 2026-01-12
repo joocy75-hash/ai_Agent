@@ -13,10 +13,10 @@
 import asyncio
 import logging
 from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, Optional, Set
-from dataclasses import dataclass, field
 
 logger = logging.getLogger(__name__)
 
@@ -370,12 +370,12 @@ class BaseAgent(ABC):
 
             # 타임아웃 설정
             if task.timeout:
-                result = await asyncio.wait_for(
+                await asyncio.wait_for(
                     self.process_task(task),
                     timeout=task.timeout
                 )
             else:
-                result = await self.process_task(task)
+                await self.process_task(task)
 
             logger.info(f"✅ Task '{task.task_id}' completed successfully")
             task_succeeded = True

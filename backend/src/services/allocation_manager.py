@@ -22,13 +22,12 @@
 import asyncio
 import logging
 import time
-from decimal import Decimal
 from typing import Dict, Optional, Tuple
 
-from sqlalchemy import select, func, and_
+from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..database.models import BotInstance, Trade
+from ..database.models import BotInstance
 
 logger = logging.getLogger(__name__)
 
@@ -141,7 +140,7 @@ class AllocationManager:
                 and_(
                     BotInstance.id == bot_instance_id,
                     BotInstance.user_id == user_id,
-                    BotInstance.is_active == True
+                    BotInstance.is_active is True
                 )
             )
         )
@@ -214,7 +213,7 @@ class AllocationManager:
         query = select(func.coalesce(func.sum(BotInstance.allocation_percent), 0)).where(
             and_(
                 BotInstance.user_id == user_id,
-                BotInstance.is_active == True
+                BotInstance.is_active is True
             )
         )
         if exclude_bot_id:

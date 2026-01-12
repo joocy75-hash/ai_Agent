@@ -5,14 +5,15 @@ Bitget WebSocket 클라이언트
 """
 
 import asyncio
-import json
-import websockets
-import hmac
-import hashlib
-import time
 import base64
-from typing import Dict, Callable, Optional, Any
+import hashlib
+import hmac
+import json
 import logging
+import time
+from typing import Callable, Dict, Optional
+
+import websockets
 
 logger = logging.getLogger(__name__)
 

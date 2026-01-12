@@ -4,14 +4,14 @@ Admin Bot Control API
 관리자 전용 봇 제어 엔드포인트.
 봇 강제 정지, 재시작, 전체 봇 긴급 정지 등의 기능 제공.
 """
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select, func
-from sqlalchemy.ext.asyncio import AsyncSession
-from typing import List, Optional
 import logging
 
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from ..database.db import get_session
-from ..database.models import BotStatus, User, Strategy
+from ..database.models import BotStatus, Strategy, User
 from ..utils.auth_dependencies import require_admin
 from ..utils.structured_logging import get_logger
 
@@ -38,7 +38,7 @@ async def get_active_bots(
             select(BotStatus, User, Strategy)
             .join(User, BotStatus.user_id == User.id)
             .outerjoin(Strategy, BotStatus.strategy_id == Strategy.id)
-            .where(BotStatus.is_running == True)
+            .where(BotStatus.is_running is True)
         )
 
         bots_data = result.all()
@@ -73,7 +73,7 @@ async def get_active_bots(
             admin_id=admin_id,
             error=str(e)
         )
-        raise HTTPException(status_code=500, detail=f"Failed to fetch active bots: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch active bots: {str(e)}") from e
 
 
 @router.post("/{user_id}/pause")
@@ -145,7 +145,7 @@ async def pause_user_bot(
             target_user_id=user_id,
             error=str(e)
         )
-        raise HTTPException(status_code=500, detail=f"Failed to pause bot: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to pause bot: {str(e)}") from e
 
 
 @router.post("/{user_id}/restart")
@@ -217,7 +217,7 @@ async def restart_user_bot(
             target_user_id=user_id,
             error=str(e)
         )
-        raise HTTPException(status_code=500, detail=f"Failed to restart bot: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to restart bot: {str(e)}") from e
 
 
 @router.post("/pause-all")
@@ -237,7 +237,7 @@ async def pause_all_bots(
     try:
         # 현재 실행 중인 모든 봇 조회
         result = await session.execute(
-            select(BotStatus).where(BotStatus.is_running == True)
+            select(BotStatus).where(BotStatus.is_running is True)
         )
         active_bots = result.scalars().all()
 
@@ -273,7 +273,7 @@ async def pause_all_bots(
             admin_id=admin_id,
             error=str(e)
         )
-        raise HTTPException(status_code=500, detail=f"Failed to pause all bots: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to pause all bots: {str(e)}") from e
 
 
 @router.get("/statistics")
@@ -294,7 +294,7 @@ async def get_bot_statistics(
 
         # 실행 중인 봇 수
         running_result = await session.execute(
-            select(func.count(BotStatus.user_id)).where(BotStatus.is_running == True)
+            select(func.count(BotStatus.user_id)).where(BotStatus.is_running is True)
         )
         running_bots = running_result.scalar() or 0
 
@@ -323,4 +323,4 @@ async def get_bot_statistics(
             admin_id=admin_id,
             error=str(e)
         )
-        raise HTTPException(status_code=500, detail=f"Failed to fetch bot statistics: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch bot statistics: {str(e)}") from e

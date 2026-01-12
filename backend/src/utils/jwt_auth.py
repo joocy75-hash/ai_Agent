@@ -6,10 +6,11 @@ JWT 인증 유틸리티
 
 from datetime import datetime, timedelta, timezone
 from typing import Optional
+
+from fastapi import Depends, HTTPException, Request, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from fastapi import Depends, HTTPException, status, Request
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from ..config import settings
 
@@ -144,12 +145,12 @@ class JWTAuth:
                 token, settings.jwt_secret, algorithms=[settings.jwt_algorithm]
             )
             return payload
-        except JWTError:
+        except JWTError as e:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Could not validate credentials",
                 headers={"WWW-Authenticate": "Bearer"},
-            )
+            ) from e
 
     @staticmethod
     def verify_token(token: str) -> dict:
@@ -190,12 +191,12 @@ class JWTAuth:
 
             return payload
 
-        except JWTError:
+        except JWTError as e:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Could not validate refresh token",
                 headers={"WWW-Authenticate": "Bearer"},
-            )
+            ) from e
 
     @staticmethod
     def refresh_access_token(refresh_token: str) -> tuple:

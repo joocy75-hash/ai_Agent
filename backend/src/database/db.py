@@ -34,6 +34,7 @@ async def lifespan(app):
     """Application lifespan - startup and shutdown logic"""
     import asyncio
     import logging
+
     from ..database.models import Base
     from ..services.chart_data_service import get_chart_service
 

@@ -2,20 +2,21 @@
 OAuth (Google, Kakao) 소셜 로그인 API
 """
 
-import httpx
 import secrets
 import time
 from urllib.parse import urlencode
+
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from ..config import settings
 from ..database.db import get_session
 from ..database.models import User
-from ..config import settings
-from ..utils.jwt_auth import JWTAuth
 from ..utils.auth_cookies import set_auth_cookies
+from ..utils.jwt_auth import JWTAuth
 from ..utils.structured_logging import get_logger
 
 router = APIRouter(prefix="/auth", tags=["oauth"])
@@ -27,6 +28,34 @@ OAUTH_STATE_TTL_SECONDS = 600
 
 
 def _cleanup_oauth_states(now: float) -> None:
+    """만료된 OAuth 상태 토큰을 정리합니다.
+
+    OAuth 인증 흐름에서 CSRF 방지를 위해 사용되는 state 토큰 중
+    TTL(Time To Live)이 만료된 항목들을 oauth_states 딕셔너리에서 제거합니다.
+    이 함수는 새로운 OAuth 요청이 들어올 때마다 호출되어 메모리 누수를 방지합니다.
+
+    Args:
+        now (float): 현재 시각의 Unix 타임스탬프 (초 단위).
+            일반적으로 time.time()의 반환값을 전달합니다.
+
+    Returns:
+        None: 이 함수는 반환값이 없습니다. oauth_states 전역 딕셔너리를
+            직접 수정합니다.
+
+    Side Effects:
+        - oauth_states 전역 딕셔너리에서 만료된 state 토큰을 제거합니다.
+        - 만료 기준은 OAUTH_STATE_TTL_SECONDS (기본 600초 = 10분)입니다.
+
+    Note:
+        - 이 함수는 스레드 안전하지 않습니다. 프로덕션 환경에서는
+          Redis 등의 외부 저장소 사용을 권장합니다.
+        - state 토큰의 created_at 필드가 없는 경우 0으로 처리되어
+          즉시 만료된 것으로 간주됩니다.
+
+    Example:
+        >>> import time
+        >>> _cleanup_oauth_states(time.time())
+    """
     expired = [
         state
         for state, data in oauth_states.items()

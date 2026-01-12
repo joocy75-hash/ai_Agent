@@ -2,10 +2,10 @@
 거래 포지션 API
 """
 
+
 from fastapi import APIRouter, Depends
-from sqlalchemy import select, desc
+from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from datetime import datetime
 
 from ..database.db import get_session
 from ..database.models import Trade

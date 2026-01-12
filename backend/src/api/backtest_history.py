@@ -3,13 +3,13 @@
 """
 
 from fastapi import APIRouter, Depends
-from sqlalchemy import select, desc
+from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database.db import get_session
 from ..database.models import BacktestResult
-from ..utils.jwt_auth import get_current_user_id
 from ..services.candle_cache import get_candle_cache
+from ..utils.jwt_auth import get_current_user_id
 
 router = APIRouter(prefix="/backtest_history", tags=["backtest_history"])
 

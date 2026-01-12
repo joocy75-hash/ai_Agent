@@ -16,14 +16,13 @@
 """
 
 import logging
-import math
 from datetime import datetime
 from decimal import Decimal
-from typing import List, Optional
+from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
-from sqlalchemy import select, func, and_, delete
+from sqlalchemy import and_, delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -32,17 +31,16 @@ from ..database.models import (
     BotInstance,
     BotType,
     GridBotConfig,
+    GridMode,
     GridOrder,
     GridOrderStatus,
-    GridMode,
 )
 from ..schemas.bot_instance_schema import (
     GridBotConfigCreate,
     GridBotConfigResponse,
-    GridOrderResponse,
-    GridStatusResponse,
-    SuccessResponse,
     GridModeEnum,
+    GridOrderResponse,
+    SuccessResponse,
 )
 from ..utils.jwt_auth import get_current_user_id
 
@@ -120,7 +118,7 @@ async def get_bot_instance_with_grid(
             and_(
                 BotInstance.id == bot_id,
                 BotInstance.user_id == user_id,
-                BotInstance.is_active == True,
+                BotInstance.is_active is True,
             )
         )
     )
@@ -138,7 +136,39 @@ async def get_bot_instance_with_grid(
 def calculate_grid_prices(
     lower_price: float, upper_price: float, grid_count: int, grid_mode: str
 ) -> List[float]:
-    """그리드 가격 계산"""
+    """그리드 트레이딩을 위한 가격 레벨을 계산합니다.
+
+    지정된 가격 범위와 그리드 수에 따라 매수/매도 주문을 배치할
+    가격 레벨들을 계산합니다. 등차(arithmetic) 또는 등비(geometric)
+    방식으로 그리드를 생성할 수 있습니다.
+
+    Args:
+        lower_price: 그리드 하한가. 가장 낮은 매수 주문 가격입니다.
+            양수여야 합니다.
+        upper_price: 그리드 상한가. 가장 높은 매도 주문 가격입니다.
+            lower_price보다 커야 합니다.
+        grid_count: 생성할 그리드 라인 수. 2 이상이어야 합니다.
+            실제 주문 수는 grid_count - 1개가 됩니다.
+        grid_mode: 그리드 생성 방식.
+            - "arithmetic": 등차 그리드 (가격 간격이 일정)
+            - "geometric": 등비 그리드 (가격 비율이 일정)
+
+    Returns:
+        List[float]: 계산된 그리드 가격 레벨 리스트.
+            lower_price부터 upper_price까지 grid_count개의 가격이
+            오름차순으로 정렬되어 반환됩니다.
+            각 가격은 소수점 8자리로 반올림됩니다.
+
+    Examples:
+        >>> calculate_grid_prices(100, 200, 5, "arithmetic")
+        [100.0, 125.0, 150.0, 175.0, 200.0]
+        >>> calculate_grid_prices(100, 200, 3, "geometric")
+        [100.0, 141.42135624, 200.0]
+
+    Note:
+        - 등차 그리드: 변동성이 낮은 횡보장에 적합
+        - 등비 그리드: 변동성이 높은 시장에 적합 (저가에서 더 촘촘)
+    """
     prices = []
 
     if grid_mode == "geometric":
@@ -597,7 +627,7 @@ async def get_market_price(symbol: str, user_id: int = Depends(get_current_user_
         raise
     except aiohttp.ClientError as e:
         logger.error(f"Network error fetching market price: {e}")
-        raise HTTPException(status_code=502, detail="거래소 연결 실패")
+        raise HTTPException(status_code=502, detail="거래소 연결 실패") from e
     except Exception as e:
         logger.error(f"Unexpected error fetching market price: {e}")
-        raise HTTPException(status_code=500, detail="시장 가격 조회 실패")
+        raise HTTPException(status_code=500, detail="시장 가격 조회 실패") from e

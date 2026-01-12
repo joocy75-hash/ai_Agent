@@ -1,13 +1,14 @@
 import logging
 from datetime import datetime
-from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
+from typing import List
+
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database.db import get_session
-from ..utils.jwt_auth import get_current_user_id
 from ..services.exchange_service import ExchangeService
+from ..utils.jwt_auth import get_current_user_id
 
 logger = logging.getLogger(__name__)
 

@@ -7,12 +7,13 @@
 - 동일 심볼 중복 방지
 """
 import logging
-from typing import List, Optional
 from datetime import datetime
-from sqlalchemy import select, and_
+from typing import List, Optional
+
+from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..database.models import TrendBotTemplate, BotInstance, BotType
+from ..database.models import BotInstance, BotType, TrendBotTemplate
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +28,7 @@ class MultiBotManager:
         """활성화된 전략 템플릿 목록"""
         result = await self.db.execute(
             select(TrendBotTemplate)
-            .where(TrendBotTemplate.is_active == True)
+            .where(TrendBotTemplate.is_active is True)
             .order_by(TrendBotTemplate.is_featured.desc(), TrendBotTemplate.sort_order)
         )
         return result.scalars().all()
@@ -94,7 +95,7 @@ class MultiBotManager:
                 and_(
                     BotInstance.id == bot_id,
                     BotInstance.user_id == user_id,
-                    BotInstance.is_running == True
+                    BotInstance.is_running is True
                 )
             )
         )
@@ -122,12 +123,12 @@ class MultiBotManager:
         query = select(BotInstance).where(
             and_(
                 BotInstance.user_id == user_id,
-                BotInstance.is_active == True
+                BotInstance.is_active is True
             )
         )
 
         if running_only:
-            query = query.where(BotInstance.is_running == True)
+            query = query.where(BotInstance.is_running is True)
 
         query = query.order_by(BotInstance.created_at.desc())
 
@@ -141,7 +142,7 @@ class MultiBotManager:
                 and_(
                     BotInstance.id == bot_id,
                     BotInstance.user_id == user_id,
-                    BotInstance.is_active == True
+                    BotInstance.is_active is True
                 )
             )
         )
@@ -154,7 +155,7 @@ class MultiBotManager:
                 and_(
                     BotInstance.user_id == user_id,
                     BotInstance.symbol == symbol,
-                    BotInstance.is_running == True
+                    BotInstance.is_running is True
                 )
             )
         )

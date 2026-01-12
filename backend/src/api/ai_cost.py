@@ -5,17 +5,16 @@ AI Cost Optimization API (AI 비용 최적화 API)
 """
 
 import logging
-from typing import Dict, Any, Optional
 from datetime import datetime
+from typing import Any, Dict, Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from src.services.ai_optimization import (
-    get_integrated_ai_service,
-    get_event_optimizer,
-    IntegratedAIService,
     EventDrivenOptimizer,
-    SamplingStrategy
+    IntegratedAIService,
+    SamplingStrategy,
 )
 from src.utils.jwt_auth import get_current_user_id
 
@@ -137,7 +136,7 @@ async def get_cost_stats(
 
     except Exception as e:
         logger.error(f"Failed to get cost stats: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.get("/daily", response_model=DailyCostResponse)
@@ -157,19 +156,19 @@ async def get_daily_cost(
     """
     try:
         if date:
-            target_date = datetime.strptime(date, "%Y-%m-%d")
+            datetime.strptime(date, "%Y-%m-%d")
         else:
-            target_date = datetime.utcnow()
+            datetime.utcnow()
 
         daily_cost = await ai_service.get_daily_cost()
         return daily_cost
 
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=f"Invalid date format: {e}")
+        raise HTTPException(status_code=400, detail=f"Invalid date format: {e}") from e
 
     except Exception as e:
         logger.error(f"Failed to get daily cost: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.get("/monthly", response_model=MonthlyCostResponse)
@@ -195,7 +194,7 @@ async def get_monthly_cost(
 
     except Exception as e:
         logger.error(f"Failed to get monthly cost: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.get("/budget-alert", response_model=BudgetAlertResponse)
@@ -224,7 +223,7 @@ async def get_budget_alert(
 
     except Exception as e:
         logger.error(f"Failed to get budget alert: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.get("/agent-breakdown", response_model=list[AgentBreakdownResponse])
@@ -244,7 +243,7 @@ async def get_agent_breakdown(
 
     except Exception as e:
         logger.error(f"Failed to get agent breakdown: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.get("/event-stats", response_model=EventStatsResponse)
@@ -266,7 +265,7 @@ async def get_event_stats(
 
     except Exception as e:
         logger.error(f"Failed to get event stats: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.post("/sampling-strategy")
@@ -295,7 +294,7 @@ async def update_sampling_strategy(
             raise HTTPException(
                 status_code=400,
                 detail=f"Invalid strategy: {request.strategy}. Must be one of: ALWAYS, PERIODIC, CHANGE_BASED, THRESHOLD, ADAPTIVE"
-            )
+            ) from None
 
         # 설정 구성
         config = {}
@@ -323,7 +322,7 @@ async def update_sampling_strategy(
 
     except Exception as e:
         logger.error(f"Failed to update sampling strategy: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.post("/event-thresholds")
@@ -416,7 +415,7 @@ async def update_event_thresholds(
 
     except Exception as e:
         logger.error(f"Failed to update event thresholds: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.post("/clear-cache")
@@ -464,4 +463,4 @@ async def clear_cache(
 
     except Exception as e:
         logger.error(f"Failed to clear cache: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e

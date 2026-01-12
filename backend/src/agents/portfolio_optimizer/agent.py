@@ -11,21 +11,21 @@ AI Enhancement:
 
 import logging
 import uuid
-import json
-import numpy as np
-from typing import Any, List, Dict, Optional
-from datetime import datetime, timedelta
+from datetime import datetime
+from typing import Any, Dict, List, Optional
 
-from ..base import BaseAgent, AgentTask
+import numpy as np
+
+from ..base import AgentTask, BaseAgent
 from .models import (
-    RiskLevel,
+    AllocationSuggestion,
     BotPerformanceMetrics,
     CorrelationMatrix,
-    RiskContribution,
     PortfolioAnalysis,
-    AllocationSuggestion,
-    RebalancingSuggestion,
     RebalancingHistory,
+    RebalancingSuggestion,
+    RiskContribution,
+    RiskLevel,
 )
 
 logger = logging.getLogger(__name__)
@@ -113,7 +113,7 @@ class PortfolioOptimizationAgent(BaseAgent):
         """
         user_id = params.get("user_id")
         bot_performance_data = params.get("bot_performance", [])
-        period_days = params.get("analysis_period_days", 30)
+        params.get("analysis_period_days", 30)
 
         # BotPerformanceMetrics 객체 리스트 생성
         bot_performance = [
@@ -483,10 +483,10 @@ class PortfolioOptimizationAgent(BaseAgent):
         weights = np.array([bot.current_allocation_percent / 100 for bot in bot_performance])
 
         # ROI: 가중 평균
-        portfolio_roi = sum(bot.roi * w for bot, w in zip(bot_performance, weights))
+        portfolio_roi = sum(bot.roi * w for bot, w in zip(bot_performance, weights, strict=False))
 
         # 샤프 비율: 가중 평균 (간소화)
-        portfolio_sharpe = sum(bot.sharpe_ratio * w for bot, w in zip(bot_performance, weights))
+        portfolio_sharpe = sum(bot.sharpe_ratio * w for bot, w in zip(bot_performance, weights, strict=False))
 
         # 변동성: 공분산 고려
         volatilities = np.array([bot.volatility for bot in bot_performance])
@@ -498,10 +498,10 @@ class PortfolioOptimizationAgent(BaseAgent):
             portfolio_volatility = np.sqrt(portfolio_variance)
         else:
             # 상관관계 없으면 단순 가중 평균
-            portfolio_volatility = sum(vol * w for vol, w in zip(volatilities, weights))
+            portfolio_volatility = sum(vol * w for vol, w in zip(volatilities, weights, strict=False))
 
         # MDD: 가중 평균
-        portfolio_mdd = sum(bot.max_drawdown * w for bot, w in zip(bot_performance, weights))
+        portfolio_mdd = sum(bot.max_drawdown * w for bot, w in zip(bot_performance, weights, strict=False))
 
         return {
             "roi": portfolio_roi,
@@ -529,7 +529,7 @@ class PortfolioOptimizationAgent(BaseAgent):
         volatilities = np.array([bot.volatility for bot in bot_performance])
 
         # 가중 평균 변동성
-        weighted_avg_vol = sum(vol * w for vol, w in zip(volatilities, weights))
+        weighted_avg_vol = sum(vol * w for vol, w in zip(volatilities, weights, strict=False))
 
         # 포트폴리오 변동성 (상관관계 고려)
         corr_matrix = np.array(correlation_matrix.matrix)
@@ -592,7 +592,8 @@ class PortfolioOptimizationAgent(BaseAgent):
             elif risk_level == RiskLevel.MODERATE:
                 objective = sharpe_ratio  # 최대 샤프
             else:  # AGGRESSIVE
-                objective = lambda w: -portfolio_return(w)  # 최대 수익
+                def objective(w):
+                    return -portfolio_return(w)  # 최대 수익
 
             # 초기값: 균등 배분
             initial_weights = np.array([1.0 / n_assets] * n_assets)

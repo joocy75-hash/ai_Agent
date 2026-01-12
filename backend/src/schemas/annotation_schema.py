@@ -3,9 +3,8 @@ Chart Annotation Schemas
 
 차트 어노테이션 API 요청/응답 스키마
 """
-from datetime import datetime
-from typing import Optional, List, Dict, Any
 from enum import Enum
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field, field_validator
 

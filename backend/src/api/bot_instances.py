@@ -19,10 +19,10 @@
 import logging
 from datetime import datetime
 from decimal import Decimal
-from typing import List, Optional
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from sqlalchemy import select, func, and_
+from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -30,20 +30,17 @@ from ..database.db import get_session
 from ..database.models import (
     BotInstance,
     BotType,
-    GridBotConfig,
     Strategy,
     Trade,
-    TradeSource,
 )
 from ..schemas.bot_instance_schema import (
-    BotInstanceCreate,
-    BotInstanceUpdate,
-    BotInstanceResponse,
-    BotInstanceListResponse,
-    BotStatsResponse,
     AllBotsSummaryResponse,
+    BotInstanceCreate,
+    BotInstanceListResponse,
+    BotInstanceResponse,
+    BotInstanceUpdate,
+    BotStatsResponse,
     SuccessResponse,
-    ErrorResponse,
 )
 from ..utils.jwt_auth import get_current_user_id
 from ..utils.structured_logging import get_logger
@@ -72,7 +69,7 @@ async def get_user_allocation_sum(
     query = select(func.coalesce(func.sum(BotInstance.allocation_percent), 0)).where(
         and_(
             BotInstance.user_id == user_id,
-            BotInstance.is_active == True
+            BotInstance.is_active is True
         )
     )
     if exclude_bot_id:
@@ -95,7 +92,7 @@ async def get_bot_by_id(
             and_(
                 BotInstance.id == bot_id,
                 BotInstance.user_id == user_id,
-                BotInstance.is_active == True
+                BotInstance.is_active is True
             )
         )
     )
@@ -106,7 +103,33 @@ async def get_bot_by_id(
 
 
 def bot_to_response(bot: BotInstance) -> BotInstanceResponse:
-    """BotInstance를 응답 스키마로 변환"""
+    """BotInstance ORM 모델을 API 응답 스키마로 변환합니다.
+
+    데이터베이스에서 조회한 BotInstance ORM 객체를 클라이언트에 반환할
+    BotInstanceResponse Pydantic 스키마로 변환합니다. Decimal 타입은
+    float로, Enum은 문자열로 변환하고, 연관된 Strategy 정보도 포함합니다.
+
+    Args:
+        bot: BotInstance ORM 모델 인스턴스. 봇의 모든 설정과 상태 정보를
+            포함합니다:
+            - id, user_id, name, description: 기본 정보
+            - bot_type: 봇 유형 (BotType Enum)
+            - strategy_id, symbol: 전략 및 거래 심볼
+            - allocation_percent, max_leverage, max_positions: 자금 설정
+            - stop_loss_percent, take_profit_percent: 리스크 설정
+            - telegram_notify: 알림 설정
+            - is_running, is_active: 실행 상태
+            - last_started_at, last_stopped_at, last_trade_at: 시간 정보
+            - last_error: 마지막 에러 메시지
+            - total_trades, winning_trades, total_pnl: 성과 통계
+            - strategy: 연관된 Strategy 객체 (selectinload로 로드)
+
+    Returns:
+        BotInstanceResponse: API 응답용 Pydantic 스키마 객체.
+            - bot_type: Enum의 value 문자열로 변환됨
+            - Decimal 필드들: float로 변환됨
+            - strategy_name: 연관 Strategy의 이름 (없으면 None)
+    """
     return BotInstanceResponse(
         id=bot.id,
         user_id=bot.user_id,
@@ -167,7 +190,7 @@ async def create_bot_instance(
         select(func.count(BotInstance.id)).where(
             and_(
                 BotInstance.user_id == user_id,
-                BotInstance.is_active == True
+                BotInstance.is_active is True
             )
         )
     )
@@ -202,7 +225,7 @@ async def create_bot_instance(
                 and_(
                     Strategy.id == payload.strategy_id,
                     # 공용 전략이거나 사용자 소유
-                    (Strategy.user_id == None) | (Strategy.user_id == user_id)
+                    (Strategy.user_id is None) | (Strategy.user_id == user_id)
                 )
             )
         )
@@ -215,7 +238,7 @@ async def create_bot_instance(
             and_(
                 BotInstance.user_id == user_id,
                 BotInstance.name == payload.name,
-                BotInstance.is_active == True
+                BotInstance.is_active is True
             )
         )
     )
@@ -268,7 +291,7 @@ async def list_bot_instances(
         .where(
             and_(
                 BotInstance.user_id == user_id,
-                BotInstance.is_active == True
+                BotInstance.is_active is True
             )
         )
         .order_by(BotInstance.created_at.desc())
@@ -333,7 +356,7 @@ async def update_bot_instance(
                 and_(
                     BotInstance.user_id == user_id,
                     BotInstance.name == payload.name,
-                    BotInstance.is_active == True,
+                    BotInstance.is_active is True,
                     BotInstance.id != bot_id
                 )
             )
@@ -436,7 +459,7 @@ async def start_bot_instance(
         await manager.start_bot_instance(bot_id, user_id)
     except Exception as e:
         logger.error(f"Failed to start bot instance {bot_id}: {e}")
-        raise HTTPException(status_code=500, detail=f"봇 시작 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"봇 시작 실패: {str(e)}") from e
 
     # 상태 업데이트
     bot.is_running = True
@@ -512,8 +535,8 @@ async def start_all_bots(
         select(BotInstance).where(
             and_(
                 BotInstance.user_id == user_id,
-                BotInstance.is_active == True,
-                BotInstance.is_running == False
+                BotInstance.is_active is True,
+                BotInstance.is_running is False
             )
         )
     )
@@ -570,8 +593,8 @@ async def stop_all_bots(
         select(BotInstance).where(
             and_(
                 BotInstance.user_id == user_id,
-                BotInstance.is_active == True,
-                BotInstance.is_running == True
+                BotInstance.is_active is True,
+                BotInstance.is_running is True
             )
         )
     )
@@ -671,7 +694,7 @@ async def get_all_bots_summary(
         select(BotInstance).where(
             and_(
                 BotInstance.user_id == user_id,
-                BotInstance.is_active == True
+                BotInstance.is_active is True
             )
         )
     )

@@ -5,17 +5,16 @@ Trend Template API - 사용자용
 - 템플릿으로 AI 추세 봇 생성
 """
 
-from typing import Optional, List
-from datetime import datetime
+from typing import List, Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
-from sqlalchemy import select, desc
+from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database.db import get_session
-from ..utils.jwt_auth import get_current_user, TokenData
-from ..database.models import TrendBotTemplate, TrendDirection, BotInstance, BotType
-
+from ..database.models import BotInstance, BotType, TrendBotTemplate
+from ..utils.jwt_auth import TokenData, get_current_user
 
 router = APIRouter(prefix="/trend-templates", tags=["Trend Templates"])
 
@@ -78,7 +77,33 @@ class UseTrendTemplateResponse(BaseModel):
 
 
 def template_to_list_item(template: TrendBotTemplate) -> dict:
-    """템플릿을 목록 항목으로 변환"""
+    """TrendBotTemplate을 목록 표시용 딕셔너리로 변환합니다.
+
+    데이터베이스에서 조회한 TrendBotTemplate ORM 객체를 템플릿 목록
+    API 응답에 사용할 딕셔너리로 변환합니다. 목록 표시에 필요한
+    핵심 정보만 포함하며, 상세 설명이나 태그는 제외됩니다.
+
+    Args:
+        template: TrendBotTemplate ORM 모델 인스턴스. AI 추세 봇 템플릿의
+            설정 정보를 포함합니다:
+            - id, name, symbol: 기본 식별 정보
+            - direction: 거래 방향 (TrendDirection Enum)
+            - leverage: 레버리지 배수
+            - strategy_type: 전략 유형
+            - stop_loss_percent, take_profit_percent: 리스크 설정
+            - backtest_*: 백테스트 결과 (ROI, 승률, MDD)
+            - recommended_period: 권장 운용 기간
+            - min_investment: 최소 투자금
+            - risk_level: 위험도 등급
+            - active_users: 현재 사용자 수
+            - is_featured: 추천 템플릿 여부
+
+    Returns:
+        dict: 목록 표시용 딕셔너리. JSON 직렬화 가능한 형태로 변환됨.
+            - direction: Enum의 value 문자열로 변환됨 (기본값: "long")
+            - Decimal 필드들: float로 변환됨
+            - None 값들: 적절한 기본값으로 대체됨
+    """
     return {
         "id": template.id,
         "name": template.name,
@@ -106,7 +131,34 @@ def template_to_list_item(template: TrendBotTemplate) -> dict:
 
 
 def template_to_detail(template: TrendBotTemplate) -> dict:
-    """템플릿을 상세 정보로 변환"""
+    """TrendBotTemplate을 상세 정보용 딕셔너리로 변환합니다.
+
+    데이터베이스에서 조회한 TrendBotTemplate ORM 객체를 템플릿 상세
+    조회 API 응답에 사용할 딕셔너리로 변환합니다. template_to_list_item의
+    모든 필드에 추가로 상세 설명, 권장 투자금, 백테스트 거래 수, 태그를
+    포함합니다.
+
+    Args:
+        template: TrendBotTemplate ORM 모델 인스턴스. AI 추세 봇 템플릿의
+            모든 설정 정보를 포함합니다:
+            - template_to_list_item에서 사용하는 모든 필드
+            - description: 템플릿 상세 설명
+            - recommended_investment: 권장 투자금액
+            - backtest_total_trades: 백테스트 총 거래 수
+            - tags: 태그 목록
+
+    Returns:
+        dict: 상세 정보용 딕셔너리. template_to_list_item의 결과에
+            다음 필드들이 추가됨:
+            - description (str|None): 템플릿 설명
+            - recommended_investment (float|None): 권장 투자금
+            - backtest_total_trades (int|None): 백테스트 거래 수
+            - tags (list|None): 태그 목록
+
+    Note:
+        내부적으로 template_to_list_item을 호출하여 기본 필드를 가져온 후
+        추가 필드를 덧붙입니다.
+    """
     item = template_to_list_item(template)
     item.update(
         {
@@ -143,7 +195,7 @@ async def list_trend_templates(
     """
     query = (
         select(TrendBotTemplate)
-        .where(TrendBotTemplate.is_active == True)
+        .where(TrendBotTemplate.is_active is True)
         .order_by(
             desc(TrendBotTemplate.is_featured),
             TrendBotTemplate.sort_order,
@@ -257,9 +309,9 @@ async def use_trend_template(
 
         return UseTrendTemplateResponse(
             bot_instance_id=bot_instance.id,
-            message=f"AI 추세 봇이 생성되었습니다. 시작 준비 완료!",
+            message="AI 추세 봇이 생성되었습니다. 시작 준비 완료!",
         )
 
     except Exception as e:
         await db.rollback()
-        raise HTTPException(status_code=500, detail=f"Failed to create bot: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to create bot: {str(e)}") from e

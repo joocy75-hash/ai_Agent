@@ -4,10 +4,10 @@ Risk Monitor Models (리스크 모니터링 데이터 모델)
 리스크 알림 및 조치 데이터 모델
 """
 
+from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import Optional
 
 
 class RiskLevel(str, Enum):

@@ -6,16 +6,15 @@ Services initialization and dependency management
 This module provides global service instances and initialization functions.
 """
 
-import os
 import logging
-import redis.asyncio as redis
+import os
 from typing import Optional
 
+import redis.asyncio as redis
+
 from src.services.ai_optimization import (
-    get_integrated_ai_service,
-    get_event_optimizer,
     IntegratedAIService,
-    EventDrivenOptimizer
+    get_integrated_ai_service,
 )
 
 logger = logging.getLogger(__name__)

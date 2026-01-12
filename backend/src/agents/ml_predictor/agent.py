@@ -5,22 +5,22 @@ BaseAgent를 상속받아 비동기 예측 처리
 5개 모델 앙상블로 거래 신호 강화
 """
 
-import logging
 import asyncio
-from datetime import datetime
-from typing import Dict, Any, Optional, List
-from pathlib import Path
+import logging
 import uuid
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
-from ..base import BaseAgent, AgentTask, TaskPriority
+from ..base import AgentTask, BaseAgent
 from .models import (
+    DirectionLabel,
     MLPredictionRequest,
     MLPredictionResult,
     MLPredictorConfig,
     PredictionConfidence,
-    DirectionLabel,
-    VolatilityLabel,
     TimingLabel,
+    VolatilityLabel,
 )
 
 logger = logging.getLogger(__name__)
@@ -292,7 +292,7 @@ class MLPredictorAgent(BaseAgent):
         import statistics
         try:
             volatility_raw = statistics.stdev(closes) / statistics.mean(closes) * 100
-        except:
+        except (statistics.StatisticsError, ZeroDivisionError):
             volatility_raw = 1.0
 
         if volatility_raw < 0.5:

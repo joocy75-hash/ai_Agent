@@ -16,7 +16,8 @@ TODO: 비즈니스 로직 커스터마이징
 - 임계값 설정 (언제 자동 실행?)
 """
 
-from typing import Dict, Any
+from typing import Any, Dict
+
 from .models import EventType, OrchestrationEvent
 
 
@@ -114,7 +115,7 @@ class OrchestrationDecisionLogic:
         TODO: 이상 징후 타입별로 다른 대응 전략 구현 가능
         """
         anomaly_data = event.data
-        anomaly_type = anomaly_data.get("anomaly_type", "unknown")
+        anomaly_data.get("anomaly_type", "unknown")
         severity = anomaly_data.get("severity", "low")
 
         # 심각도별 대응

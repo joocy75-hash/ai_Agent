@@ -5,9 +5,11 @@ JWT 디코딩 결과를 캐싱하여 중복 디코딩 방지
 """
 import uuid
 from typing import Optional
+
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
-from ..utils.structured_logging import set_request_id, set_user_id, clear_context
+
+from ..utils.structured_logging import clear_context, set_request_id, set_user_id
 
 
 class RequestContextMiddleware(BaseHTTPMiddleware):
@@ -17,6 +19,39 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
     - JWT에서 user_id 추출하여 context에 저장
     - JWT 디코딩 결과를 request.state에 캐싱 (중복 디코딩 방지)
     """
+
+    # Sensitive headers that should be masked in logs (case-insensitive)
+    SENSITIVE_HEADERS = frozenset({
+        'authorization',
+        'cookie',
+        'x-api-key',
+        'x-auth-token',
+    })
+
+    def _sanitize_headers(self, headers: dict) -> dict:
+        """
+        Remove sensitive information from headers before logging.
+
+        Args:
+            headers: Dictionary of HTTP headers
+
+        Returns:
+            Sanitized headers with sensitive values masked as '[MASKED]'
+        """
+        if not headers:
+            return {}
+
+        sanitized = {}
+        for key, value in headers.items():
+            if key is None:
+                continue
+            # Case-insensitive check for sensitive headers
+            key_lower = str(key).lower()
+            if key_lower in self.SENSITIVE_HEADERS:
+                sanitized[key] = '[MASKED]'
+            else:
+                sanitized[key] = value
+        return sanitized
 
     async def dispatch(self, request: Request, call_next):
         # Request ID 생성 (헤더에 있으면 사용, 없으면 생성)
@@ -51,8 +86,6 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
             user_id 또는 None (인증되지 않은 경우)
         """
         try:
-            from ..utils.jwt_auth import JWTAuth
-            from jose import JWTError
 
             # Bearer 토큰 추출
             authorization = request.headers.get("Authorization", "")
@@ -71,6 +104,7 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
 
             # JWT 디코딩 (예외 발생하지 않도록 직접 디코딩)
             from jose import jwt
+
             from ..config import settings
 
             payload = jwt.decode(

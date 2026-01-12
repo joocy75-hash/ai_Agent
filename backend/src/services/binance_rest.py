@@ -14,11 +14,12 @@ Rate Limit:
 - 권장 딜레이: 50-100ms
 """
 
-import aiohttp
 import asyncio
 import logging
-from typing import List, Dict, Any, Optional
 from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional
+
+import aiohttp
 
 logger = logging.getLogger(__name__)
 
@@ -206,9 +207,9 @@ class BinanceRestClient:
                 )
                 return candles
 
-        except asyncio.TimeoutError:
+        except asyncio.TimeoutError as e:
             logger.error(f"Binance API 타임아웃: {symbol} {interval}")
-            raise Exception("API Timeout")
+            raise Exception("API Timeout") from e
 
         except aiohttp.ClientError as e:
             logger.error(f"Binance 네트워크 에러: {e}")

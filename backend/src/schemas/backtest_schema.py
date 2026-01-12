@@ -1,14 +1,14 @@
 from decimal import Decimal
+from typing import List, Optional
+
 from pydantic import BaseModel, Field, field_validator
-from typing import Optional, Dict, Any, List
+
+from ..database.models import GridMode, PositionDirection
 from ..utils.validators import (
+    ValidationRules,
     validate_file_path,
     validate_positive_number,
-    validate_strategy_name,
-    ValidationRules,
-    sanitize_html
 )
-from ..database.models import GridMode, PositionDirection
 
 
 class BacktestStartRequest(BaseModel):
@@ -55,8 +55,8 @@ class BacktestStartRequest(BaseModel):
         try:
             datetime.strptime(v, '%Y-%m-%d')
             return v
-        except ValueError:
-            raise ValueError(f"Invalid date format: {v}. Expected YYYY-MM-DD")
+        except ValueError as e:
+            raise ValueError(f"Invalid date format: {v}. Expected YYYY-MM-DD") from e
 
 
 # ===== Grid Bot Backtest Schemas =====

@@ -5,8 +5,7 @@ Signal Validation Rules (시그널 검증 규칙)
 """
 
 import logging
-from typing import Dict, Any, Tuple, Optional, List
-from datetime import datetime, timedelta
+from typing import Any, Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 

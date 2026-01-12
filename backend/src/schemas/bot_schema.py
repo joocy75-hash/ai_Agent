@@ -1,5 +1,6 @@
-from pydantic import BaseModel, field_validator, Field
 from typing import Optional
+
+from pydantic import BaseModel, Field, field_validator
 
 
 class BotStartRequest(BaseModel):

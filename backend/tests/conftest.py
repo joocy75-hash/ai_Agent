@@ -105,6 +105,7 @@ async def async_client(async_engine) -> AsyncGenerator[AsyncClient, None]:
     from src.api import (
         auth, bot, strategy, chart, annotations, health,
         account, order, trades, positions, alerts,
+        backtest, backtest_result, backtest_history,
     )
     from src.middleware.error_handler import register_exception_handlers
     from unittest.mock import MagicMock, AsyncMock
@@ -149,6 +150,9 @@ async def async_client(async_engine) -> AsyncGenerator[AsyncClient, None]:
     app.include_router(trades.router)
     app.include_router(positions.router)
     app.include_router(alerts.router)
+    app.include_router(backtest.router)
+    app.include_router(backtest_result.router)
+    app.include_router(backtest_history.router)
 
     # DB 세션 오버라이드
     async def override_get_session():

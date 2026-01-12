@@ -3,8 +3,8 @@
 봇 실행 로그를 WebSocket을 통해 프론트엔드로 전송
 """
 import logging
-from datetime import datetime
 from collections import deque
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +68,7 @@ class LogBroadcastHandler(logging.Handler):
                     "data": log_entry,
                 }
             )
-        except Exception as e:
+        except Exception:
             # Silently ignore errors to prevent infinite loops
             pass
 

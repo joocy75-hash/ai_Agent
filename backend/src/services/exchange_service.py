@@ -7,13 +7,13 @@
 import logging
 from typing import Tuple
 
+from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import HTTPException
 
 from ..config import ExchangeConfig
-from ..database.models import User, ApiKey
-from ..services.exchanges import exchange_manager, BaseExchange
+from ..database.models import ApiKey, User
+from ..services.exchanges import BaseExchange, exchange_manager
 from ..utils.crypto_secrets import decrypt_secret
 
 logger = logging.getLogger(__name__)
@@ -88,7 +88,7 @@ class ExchangeService:
             raise HTTPException(
                 status_code=500,
                 detail=f"Failed to connect to exchange: {str(e)}"
-            )
+            ) from e
 
     @staticmethod
     async def has_api_key(session: AsyncSession, user_id: int) -> bool:

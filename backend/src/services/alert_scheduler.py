@@ -1,9 +1,11 @@
 import asyncio
 import logging
 from typing import Set
+
 from sqlalchemy import select
-from ..database.models import User, BotStatus
+
 from ..database.db import AsyncSessionLocal
+from ..database.models import BotStatus
 from .alert_monitor import alert_monitor
 
 logger = logging.getLogger(__name__)
@@ -23,7 +25,7 @@ class AlertScheduler:
             async with AsyncSessionLocal() as session:
                 # 봇이 실행 중인 사용자 조회
                 result = await session.execute(
-                    select(BotStatus.user_id).where(BotStatus.is_running == True)
+                    select(BotStatus.user_id).where(BotStatus.is_running is True)
                 )
                 user_ids = set(result.scalars().all())
 

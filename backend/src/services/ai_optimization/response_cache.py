@@ -8,8 +8,7 @@ import hashlib
 import json
 import logging
 import re
-from typing import Optional, Dict, Any, List
-from datetime import datetime
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -94,7 +93,7 @@ class ResponseCacheManager:
             query_str = json.dumps(query_data, sort_keys=True)
         except (TypeError, ValueError) as e:
             logger.error(f"Failed to serialize query_data: {e}")
-            raise ValueError(f"Invalid query_data: cannot serialize to JSON")
+            raise ValueError("Invalid query_data: cannot serialize to JSON") from e
 
         # SECURITY: Remove any Redis special characters from query string
         # This prevents potential command injection via crafted query data
@@ -160,12 +159,12 @@ class ResponseCacheManager:
 
                     # SECURITY: Validate expected structure
                     if not isinstance(parsed, dict):
-                        logger.error(f"Invalid cached response structure: not a dict")
+                        logger.error("Invalid cached response structure: not a dict")
                         return None
 
                     # Validate it has expected fields (basic sanity check)
                     if 'response' not in parsed and 'result' not in parsed:
-                        logger.warning(f"Cached response missing expected fields")
+                        logger.warning("Cached response missing expected fields")
                         # Still return it, might be valid but different format
 
                     return parsed
@@ -184,7 +183,7 @@ class ResponseCacheManager:
         except RuntimeError as e:
             # Event loop closed 에러 등 런타임 에러는 조용히 처리
             if "Event loop is closed" in str(e):
-                logger.debug(f"Event loop closed, skipping cache read")
+                logger.debug("Event loop closed, skipping cache read")
             else:
                 logger.warning(f"Runtime error in cache read: {e}")
             return None
@@ -393,7 +392,7 @@ class ResponseCacheManager:
         # TODO: 실제 구현 시 AI API 호출 후 캐싱
         # 여기서는 예시만 제공
 
-        for query_data in common_queries:
+        for _query_data in common_queries:
             # response = await call_ai_api(response_type, query_data)
             # await self.set_cached_response(response_type, query_data, response)
             pass

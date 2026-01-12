@@ -5,10 +5,11 @@ Metrics Collector - ML 모델 성능 지표 수집
 """
 
 import logging
-from dataclasses import dataclass, field
-from datetime import datetime, timedelta
-from typing import Dict, List, Any, Optional
 from collections import deque
+from dataclasses import dataclass
+from datetime import datetime, timedelta
+from typing import Any, Dict, List, Optional
+
 import numpy as np
 
 logger = logging.getLogger(__name__)
@@ -243,7 +244,7 @@ class MetricsCollector:
         # 신뢰도 보정 (Calibration)
         # 높은 신뢰도 예측이 실제로 더 정확한지
         high_conf = [r for r in records if r.predicted_confidence >= 0.7]
-        low_conf = [r for r in records if r.predicted_confidence < 0.7]
+        [r for r in records if r.predicted_confidence < 0.7]
 
         if high_conf:
             high_conf_accuracy = len([r for r in high_conf if r.was_correct]) / len(high_conf)

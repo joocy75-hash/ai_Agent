@@ -12,9 +12,8 @@ from pathlib import Path
 # 프로젝트 루트를 Python 경로에 추가
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
-from src.agents.risk_monitor import RiskMonitorAgent, RiskAlert, RiskLevel, RiskAction
-from src.agents.risk_monitor.models import PositionRisk
 from src.agents.base import AgentTask, TaskPriority
+from src.agents.risk_monitor import RiskMonitorAgent
 
 # 로깅 설정
 logging.basicConfig(
@@ -359,8 +358,8 @@ async def example_auto_execute_actions():
             print(f"  Auto-Execute: {alert.auto_execute}")
             print(f"  Action: {alert.recommended_action.value}")
             if alert.auto_execute:
-                print(f"  ⚡ Action would be executed automatically in production")
-                print(f"     (Currently in simulation mode - no actual orders)")
+                print("  ⚡ Action would be executed automatically in production")
+                print("     (Currently in simulation mode - no actual orders)")
     print("-"*60 + "\n")
 
     # 활성 알림 확인

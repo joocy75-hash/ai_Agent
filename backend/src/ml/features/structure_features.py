@@ -5,9 +5,10 @@ Structure Features - 10개 시장 구조 피처
 """
 
 import logging
+from typing import Tuple
+
 import numpy as np
 import pandas as pd
-from typing import List, Tuple
 
 logger = logging.getLogger(__name__)
 

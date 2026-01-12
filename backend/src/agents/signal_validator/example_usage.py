@@ -12,8 +12,8 @@ from pathlib import Path
 # 프로젝트 루트를 Python 경로에 추가
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
-from src.agents.signal_validator import SignalValidatorAgent, ValidationResult
 from src.agents.base import AgentTask, TaskPriority
+from src.agents.signal_validator import SignalValidatorAgent
 
 # 로깅 설정
 logging.basicConfig(
@@ -78,7 +78,7 @@ async def example_basic_validation():
         print(f"  Passed Rules: {len(validation.passed_rules)}")
         print(f"  Failed Rules: {len(validation.failed_rules)}")
         if validation.warnings:
-            print(f"  Warnings:")
+            print("  Warnings:")
             for warning in validation.warnings:
                 print(f"    - {warning}")
         print("-"*60 + "\n")
@@ -139,7 +139,7 @@ async def example_low_confidence_signal():
         print(f"  Original Order: ${validation.metadata.get('original_order_size', 0):.2f}")
         print(f"  Adjusted Order: ${validation.metadata.get('order_size_adjustment', 0):.2f}")
         if validation.warnings:
-            print(f"  Warnings:")
+            print("  Warnings:")
             for warning in validation.warnings:
                 print(f"    - {warning}")
         print("-"*60 + "\n")
@@ -310,8 +310,8 @@ async def example_order_size_adjustment():
         print("\n" + "-"*60)
         print("Order Size Adjustment:")
         print(f"  Original Order: ${validation.metadata.get('original_order_size', 0):.2f}")
-        print(f"  Available Balance: $4000.00")
-        print(f"  Max Allowed (30%): $1200.00")
+        print("  Available Balance: $4000.00")
+        print("  Max Allowed (30%): $1200.00")
         print(f"  Adjusted Order: ${validation.metadata.get('order_size_adjustment', 0):.2f}")
         print(f"  Result: {validation.validation_result.value}")
         print("-"*60 + "\n")

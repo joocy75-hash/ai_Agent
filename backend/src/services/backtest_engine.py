@@ -5,8 +5,8 @@ from io import StringIO
 import aiofiles
 
 from ..config import BacktestConfig
-from .backtest_trade_recorder import BacktestTradeRecorder
 from .backtest_metrics import BacktestMetricsCalculator
+from .backtest_trade_recorder import BacktestTradeRecorder
 from .strategies.eth_ai_fusion import EthAIFusionBacktestStrategy
 
 
@@ -110,7 +110,7 @@ class BacktestEngine:
         last_price = None
 
         for candle in candles:
-            o = candle["open"]
+            candle["open"]
             c = candle["close"]
             ts = candle["timestamp"]
 

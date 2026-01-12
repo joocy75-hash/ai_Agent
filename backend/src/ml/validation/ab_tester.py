@@ -6,10 +6,11 @@ A/B Tester - ML 모델 A/B 테스트 프레임워크
 
 import logging
 import random
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
-from typing import Dict, List, Any, Optional, Callable
 from enum import Enum
+from typing import Any, Dict, List, Optional
+
 import numpy as np
 
 logger = logging.getLogger(__name__)
@@ -230,7 +231,7 @@ class ABTester:
         # Welch-Satterthwaite degrees of freedom
         num = (var1/n1 + var2/n2) ** 2
         denom = (var1/n1)**2/(n1-1) + (var2/n2)**2/(n2-1)
-        df = num / denom if denom > 0 else 1
+        num / denom if denom > 0 else 1
 
         # p-value (two-tailed) using t-distribution approximation
         # 간단한 근사: 정규분포 사용

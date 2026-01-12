@@ -26,12 +26,12 @@ import asyncio
 import logging
 from datetime import datetime
 from decimal import Decimal
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, Optional, Set, Tuple
 
-from sqlalchemy import select, and_, or_
+from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..database.models import BotInstance, Position, Trade
+from ..database.models import Position
 
 logger = logging.getLogger(__name__)
 

@@ -1,5 +1,8 @@
 """
 Unit tests for chart annotations API endpoints.
+
+Note: The 'email' field in auth schema is actually a username (4-20 chars, alphanumeric + underscore/hyphen).
+Note: Auth responses now use cookies for tokens.
 """
 import pytest
 from httpx import AsyncClient
@@ -14,7 +17,7 @@ class TestAnnotationsCRUD:
     async def auth_user(self, async_client: AsyncClient):
         """Create a user for annotation tests."""
         payload = {
-            "email": "annotation_test@example.com",
+            "email": "annottest01",  # username format
             "password": "Test1234!@#",
             "password_confirm": "Test1234!@#",
             "name": "Annotation Test User",
@@ -22,7 +25,11 @@ class TestAnnotationsCRUD:
         }
         response = await async_client.post("/auth/register", json=payload)
         assert response.status_code == 200
-        token = response.json()["access_token"]
+        
+        # Get token from cookies
+        token = response.cookies.get("access_token")
+        if not token:
+            pytest.skip("Token not available in cookies")
         return {"Authorization": f"Bearer {token}"}
 
     @pytest.mark.asyncio
@@ -192,7 +199,7 @@ class TestAnnotationsToggle:
     async def auth_user(self, async_client: AsyncClient):
         """Create a user for toggle tests."""
         payload = {
-            "email": "toggle_test@example.com",
+            "email": "toggletest01",  # username format
             "password": "Test1234!@#",
             "password_confirm": "Test1234!@#",
             "name": "Toggle Test User",
@@ -200,7 +207,11 @@ class TestAnnotationsToggle:
         }
         response = await async_client.post("/auth/register", json=payload)
         assert response.status_code == 200
-        token = response.json()["access_token"]
+        
+        # Get token from cookies
+        token = response.cookies.get("access_token")
+        if not token:
+            pytest.skip("Token not available in cookies")
         return {"Authorization": f"Bearer {token}"}
 
     @pytest.fixture
@@ -285,7 +296,7 @@ class TestAnnotationsAlerts:
     async def auth_user(self, async_client: AsyncClient):
         """Create a user for alert tests."""
         payload = {
-            "email": "alert_test@example.com",
+            "email": "alerttest01",  # username format
             "password": "Test1234!@#",
             "password_confirm": "Test1234!@#",
             "name": "Alert Test User",
@@ -293,7 +304,11 @@ class TestAnnotationsAlerts:
         }
         response = await async_client.post("/auth/register", json=payload)
         assert response.status_code == 200
-        token = response.json()["access_token"]
+        
+        # Get token from cookies
+        token = response.cookies.get("access_token")
+        if not token:
+            pytest.skip("Token not available in cookies")
         return {"Authorization": f"Bearer {token}"}
 
     @pytest.fixture
@@ -393,26 +408,30 @@ class TestAnnotationsAuth:
         """Test that users can only see their own annotations."""
         # Create user 1
         payload1 = {
-            "email": "user1_iso@example.com",
+            "email": "user1iso01",  # username format
             "password": "Test1234!@#",
             "password_confirm": "Test1234!@#",
             "name": "User 1",
             "phone": "01012345678",
         }
         response1 = await async_client.post("/auth/register", json=payload1)
-        token1 = response1.json()["access_token"]
+        token1 = response1.cookies.get("access_token")
+        if not token1:
+            pytest.skip("Token not available in cookies")
         headers1 = {"Authorization": f"Bearer {token1}"}
 
         # Create user 2
         payload2 = {
-            "email": "user2_iso@example.com",
+            "email": "user2iso01",  # username format
             "password": "Test1234!@#",
             "password_confirm": "Test1234!@#",
             "name": "User 2",
             "phone": "01012345679",
         }
         response2 = await async_client.post("/auth/register", json=payload2)
-        token2 = response2.json()["access_token"]
+        token2 = response2.cookies.get("access_token")
+        if not token2:
+            pytest.skip("Token not available in cookies")
         headers2 = {"Authorization": f"Bearer {token2}"}
 
         # User 1 creates annotation

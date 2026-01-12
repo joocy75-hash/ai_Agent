@@ -6,14 +6,15 @@ Binance USDT-M Futures WebSocket API
 """
 
 import asyncio
-import json
-import websockets
-import hmac
 import hashlib
-import time
-from typing import Dict, Callable, Optional, Any, List
+import hmac
+import json
 import logging
+import time
+from typing import Callable, Dict, List, Optional
 from urllib.parse import urlencode
+
+import websockets
 
 logger = logging.getLogger(__name__)
 

@@ -1,13 +1,14 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select, func, desc
-from sqlalchemy.ext.asyncio import AsyncSession
+import logging
 from datetime import datetime, timedelta
 
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import desc, func, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from ..database.db import get_session
-from ..database.models import User, BotStatus, Trade, Equity, Position
+from ..database.models import BotStatus, Equity, Position, Trade, User
 from ..utils.auth_dependencies import require_admin
 from ..utils.structured_logging import get_logger
-import logging
 
 logger = logging.getLogger(__name__)
 structured_logger = get_logger(__name__)
@@ -38,7 +39,7 @@ async def get_global_summary(
         total_users = total_users_result.scalar() or 0
 
         active_users_result = await session.execute(
-            select(func.count(User.id)).where(User.is_active == True)
+            select(func.count(User.id)).where(User.is_active is True)
         )
         active_users = active_users_result.scalar() or 0
 
@@ -47,7 +48,7 @@ async def get_global_summary(
         total_bots = total_bots_result.scalar() or 0
 
         running_bots_result = await session.execute(
-            select(func.count(BotStatus.user_id)).where(BotStatus.is_running == True)
+            select(func.count(BotStatus.user_id)).where(BotStatus.is_running is True)
         )
         running_bots = running_bots_result.scalar() or 0
 
@@ -123,7 +124,7 @@ async def get_global_summary(
             admin_id=admin_id,
             error=str(e)
         )
-        raise HTTPException(status_code=500, detail=f"Failed to get global summary: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get global summary: {str(e)}") from e
 
 
 @router.get("/risk-users")
@@ -223,7 +224,7 @@ async def get_risk_users(
             admin_id=admin_id,
             error=str(e)
         )
-        raise HTTPException(status_code=500, detail=f"Failed to get risk users: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get risk users: {str(e)}") from e
 
 
 @router.get("/trading-volume")
@@ -343,4 +344,4 @@ async def get_trading_volume(
             admin_id=admin_id,
             error=str(e)
         )
-        raise HTTPException(status_code=500, detail=f"Failed to get trading volume: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get trading volume: {str(e)}") from e

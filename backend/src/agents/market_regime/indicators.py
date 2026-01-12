@@ -5,7 +5,8 @@ Market Regime Indicators (시장 환경 지표 계산)
 """
 
 import logging
-from typing import List, Dict, Tuple, Optional
+from typing import List, Optional, Tuple
+
 import numpy as np
 
 logger = logging.getLogger(__name__)

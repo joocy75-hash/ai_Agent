@@ -1,13 +1,14 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select, desc, or_
-from sqlalchemy.ext.asyncio import AsyncSession
+import logging
 from typing import Optional
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import desc, or_, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database.db import get_session
 from ..database.models import BotLog, Trade, User
 from ..utils.auth_dependencies import require_admin
 from ..utils.structured_logging import get_logger
-import logging
 
 logger = logging.getLogger(__name__)
 structured_logger = get_logger(__name__)
@@ -99,7 +100,7 @@ async def get_system_logs(
             admin_id=admin_id,
             error=str(e)
         )
-        raise HTTPException(status_code=500, detail=f"Failed to get system logs: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get system logs: {str(e)}") from e
 
 
 @router.get("/bot")
@@ -186,7 +187,7 @@ async def get_bot_logs(
             admin_id=admin_id,
             error=str(e)
         )
-        raise HTTPException(status_code=500, detail=f"Failed to get bot logs: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get bot logs: {str(e)}") from e
 
 
 @router.get("/trading")
@@ -280,4 +281,4 @@ async def get_trading_logs(
             admin_id=admin_id,
             error=str(e)
         )
-        raise HTTPException(status_code=500, detail=f"Failed to get trading logs: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get trading logs: {str(e)}") from e

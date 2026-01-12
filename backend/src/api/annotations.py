@@ -5,20 +5,20 @@ Chart Annotations API endpoints
 """
 import logging
 from datetime import datetime
-from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database.db import get_session
-from ..database.models import ChartAnnotation, AnnotationType as DBAnnotationType
+from ..database.models import AnnotationType as DBAnnotationType
+from ..database.models import ChartAnnotation
 from ..schemas.annotation_schema import (
     AnnotationCreateRequest,
-    AnnotationUpdateRequest,
-    AnnotationResponse,
-    AnnotationListResponse,
     AnnotationDeleteResponse,
+    AnnotationListResponse,
+    AnnotationResponse,
+    AnnotationUpdateRequest,
 )
 from ..utils.jwt_auth import get_current_user_id
 
@@ -28,7 +28,31 @@ router = APIRouter(prefix="/annotations", tags=["annotations"])
 
 
 def _annotation_to_response(annotation: ChartAnnotation) -> AnnotationResponse:
-    """DB 모델을 응답 스키마로 변환"""
+    """ChartAnnotation DB 모델을 API 응답 스키마로 변환합니다.
+
+    데이터베이스에서 조회한 ChartAnnotation ORM 객체를 클라이언트에
+    반환할 AnnotationResponse Pydantic 스키마로 변환합니다.
+    datetime 필드는 Unix timestamp로, Decimal은 float로 변환합니다.
+
+    Args:
+        annotation: ChartAnnotation ORM 모델 인스턴스. 차트 어노테이션의
+            모든 정보를 포함합니다:
+            - id, user_id, symbol: 식별 정보
+            - annotation_type: 어노테이션 유형 (Enum)
+            - label, text: 표시 텍스트
+            - timestamp, start_timestamp, end_timestamp: 시간 정보 (datetime)
+            - price, start_price, end_price: 가격 정보 (Decimal)
+            - style: 스타일 설정 (JSON dict)
+            - alert_*: 알림 관련 설정
+            - is_active, is_locked: 상태 플래그
+            - created_at, updated_at: 메타데이터 (datetime)
+
+    Returns:
+        AnnotationResponse: API 응답용 Pydantic 스키마 객체.
+            - datetime 필드들: Unix timestamp (int)로 변환됨
+            - Decimal 필드들: float로 변환됨
+            - annotation_type: Enum의 value 문자열로 변환됨
+    """
     return AnnotationResponse(
         id=annotation.id,
         user_id=annotation.user_id,
@@ -97,7 +121,7 @@ async def get_annotations(
 
     except Exception as e:
         logger.error(f"Error fetching annotations for {symbol}: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.get("/detail/{annotation_id}", response_model=AnnotationResponse)
@@ -135,7 +159,7 @@ async def get_annotation(
         raise
     except Exception as e:
         logger.error(f"Error fetching annotation {annotation_id}: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.post("", response_model=AnnotationResponse)
@@ -190,7 +214,7 @@ async def create_annotation(
     except Exception as e:
         await session.rollback()
         logger.error(f"Error creating annotation: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.put("/{annotation_id}", response_model=AnnotationResponse)
@@ -252,7 +276,7 @@ async def update_annotation(
     except Exception as e:
         await session.rollback()
         logger.error(f"Error updating annotation {annotation_id}: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.delete("/{annotation_id}", response_model=AnnotationDeleteResponse)
@@ -303,7 +327,7 @@ async def delete_annotation(
     except Exception as e:
         await session.rollback()
         logger.error(f"Error deleting annotation {annotation_id}: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.post("/{annotation_id}/toggle", response_model=AnnotationResponse)
@@ -351,7 +375,7 @@ async def toggle_annotation_visibility(
     except Exception as e:
         await session.rollback()
         logger.error(f"Error toggling annotation {annotation_id}: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.post("/{annotation_id}/lock", response_model=AnnotationResponse)
@@ -399,7 +423,7 @@ async def toggle_annotation_lock(
     except Exception as e:
         await session.rollback()
         logger.error(f"Error toggling lock for annotation {annotation_id}: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.post("/{annotation_id}/reset-alert", response_model=AnnotationResponse)
@@ -457,7 +481,7 @@ async def reset_alert(
     except Exception as e:
         await session.rollback()
         logger.error(f"Error resetting alert for annotation {annotation_id}: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.delete("/symbol/{symbol}", response_model=dict)
@@ -508,4 +532,4 @@ async def delete_all_annotations_for_symbol(
     except Exception as e:
         await session.rollback()
         logger.error(f"Error deleting annotations for {symbol}: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e

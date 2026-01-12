@@ -8,9 +8,10 @@ DeepSeek AI 서비스
 """
 
 import logging
-import os
+from typing import Any, Dict, List, Optional
+
 import requests
-from typing import Dict, List, Any, Optional
+
 from src.config import settings
 
 logger = logging.getLogger(__name__)
@@ -60,9 +61,9 @@ class DeepSeekAIService:
         # Issue #4: Rate Limiting 체크 (user_id가 있는 경우)
         if user_id:
             from src.middleware.rate_limit_improved import (
-                deepseek_limiter_minute,
+                deepseek_limiter_day,
                 deepseek_limiter_hour,
-                deepseek_limiter_day
+                deepseek_limiter_minute,
             )
             # 분당, 시간당, 일당 제한 모두 체크
             deepseek_limiter_minute.check(user_id)

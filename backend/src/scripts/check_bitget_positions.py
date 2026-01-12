@@ -36,7 +36,7 @@ async def check_positions():
         api_secret = decrypt_secret(api_key_obj.encrypted_secret_key)
         passphrase = decrypt_secret(api_key_obj.encrypted_passphrase) if api_key_obj.encrypted_passphrase else ""
 
-        print(f"✅ Found API keys for user 1")
+        print("✅ Found API keys for user 1")
         print()
 
         # Use CCXT to fetch positions

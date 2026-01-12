@@ -7,10 +7,10 @@ converting real-time tick data into OHLCV candles for chart visualization.
 
 import asyncio
 import logging
-from typing import Dict, List, Optional
+from typing import List, Optional
 
-from .candle_generator import CandleGenerator, get_candle_generator
-from ..websockets.ws_server import broadcast_to_user, broadcast_to_all
+from ..websockets.ws_server import broadcast_to_all
+from .candle_generator import get_candle_generator
 
 logger = logging.getLogger(__name__)
 

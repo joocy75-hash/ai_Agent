@@ -10,7 +10,7 @@ Risk Monitor Agent (리스크 모니터링 에이전트)
 """
 
 from .agent import RiskMonitorAgent
-from .models import RiskAlert, RiskLevel, RiskAction
+from .models import RiskAction, RiskAlert, RiskLevel
 
 __all__ = [
     "RiskMonitorAgent",

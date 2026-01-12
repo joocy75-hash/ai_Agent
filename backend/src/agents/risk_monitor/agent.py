@@ -8,9 +8,9 @@ import logging
 import uuid
 from typing import Any, List, Optional
 
-from ..base import BaseAgent, AgentTask
-from .models import RiskAlert, RiskLevel, RiskAction, PositionRisk
+from ..base import AgentTask, BaseAgent
 from .actions import RiskActions
+from .models import PositionRisk, RiskAction, RiskAlert, RiskLevel
 
 logger = logging.getLogger(__name__)
 

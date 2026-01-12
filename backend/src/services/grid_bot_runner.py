@@ -17,31 +17,28 @@
 
 import asyncio
 import logging
-import math
 from datetime import datetime
 from decimal import Decimal
 from typing import Dict, List, Optional, Tuple
 
-from sqlalchemy import select, and_, update
+from sqlalchemy import and_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from ..database.models import (
+    ApiKey,
     BotInstance,
-    BotType,
     GridBotConfig,
+    GridMode,
     GridOrder,
     GridOrderStatus,
-    GridMode,
     Trade,
     TradeSource,
-    ApiKey,
 )
-from ..services.bitget_rest import get_bitget_rest, OrderSide
-from ..services.allocation_manager import allocation_manager
-from ..utils.crypto_secrets import decrypt_secret
+from ..services.bitget_rest import OrderSide, get_bitget_rest
+from ..services.telegram import TradeResult, get_telegram_notifier
 from ..services.trade_executor import InvalidApiKeyError
-from ..services.telegram import get_telegram_notifier, TradeResult
+from ..utils.crypto_secrets import decrypt_secret
 
 logger = logging.getLogger(__name__)
 
@@ -628,7 +625,7 @@ class GridBotRunner:
                 and_(
                     BotInstance.id == bot_instance_id,
                     BotInstance.user_id == user_id,
-                    BotInstance.is_active == True,
+                    BotInstance.is_active is True,
                 )
             )
         )

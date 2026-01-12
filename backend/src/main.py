@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import sys
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -16,57 +17,54 @@ logging.getLogger("src.services.bot_runner").setLevel(logging.INFO)
 logging.getLogger("src.workers.manager").setLevel(logging.INFO)
 
 from .api import (
+    account,
+    admin_analytics,
+    admin_bots,
     admin_diagnostics,
+    admin_grid_template,  # 그리드 템플릿 관리자 API (NEW)
+    admin_logs,
     admin_monitoring,
     admin_users,
-    admin_bots,
-    admin_analytics,
-    admin_logs,
-    admin_grid_template,  # 그리드 템플릿 관리자 API (NEW)
     ai_cost,  # AI 비용 최적화 API (NEW)
+    ai_strategy,
+    alerts,
+    analytics,
     annotations,  # 차트 어노테이션 API (NEW)
+    api_status,
     auth,
-    oauth,
+    backtest,
+    backtest_history,
+    backtest_result,
+    bitget_market,
     bot,
     bot_instances,  # 다중 봇 시스템 API (NEW)
+    chart,
     grid_bot,  # 그리드 봇 API (NEW)
     grid_template,  # 그리드 템플릿 사용자 API (NEW)
-    multibot,  # 멀티봇 트레이딩 API v2.0 (NEW)
-    strategy,
-    account,
-    order,
-    chart,
-    backtest,
-    backtest_result,
-    backtest_history,
-    ai_strategy,
-    api_status,
-    trades,
     health,
-    analytics,
+    multibot,  # 멀티봇 트레이딩 API v2.0 (NEW)
+    oauth,
+    order,
     positions,
-    alerts,
-    bitget_market,
-    upload,
-    two_factor,
+    strategy,
     telegram,
-    user_backtest,  # 일반 회원용 캐시 백테스트 (NEW)
+    trades,
     trend_template,  # AI 추세 템플릿 사용자 API (NEW)
+    two_factor,
+    upload,
+    user_backtest,  # 일반 회원용 캐시 백테스트 (NEW)
 )
-from .config import settings
+from .config import RateLimitConfig, settings
 from .database import db
-from .database.models import Base
 from .database.db import lifespan
-from .websockets import ws_server
-from .services.bitget_ws_collector import bitget_ws_collector
-from .workers.manager import BotManager
-from .middleware.rate_limit_improved import EnhancedRateLimitMiddleware
-from .middleware.error_handler import register_exception_handlers
-from .middleware.request_context import RequestContextMiddleware
 from .middleware.admin_ip_whitelist import AdminIPWhitelistMiddleware
-from .middleware.security_headers import SecurityHeadersMiddleware
 from .middleware.csrf import CSRFMiddleware
-from .config import RateLimitConfig
+from .middleware.error_handler import register_exception_handlers
+from .middleware.rate_limit_improved import EnhancedRateLimitMiddleware
+from .middleware.request_context import RequestContextMiddleware
+from .middleware.security_headers import SecurityHeadersMiddleware
+from .websockets import ws_server
+from .workers.manager import BotManager
 
 
 def create_app() -> FastAPI:

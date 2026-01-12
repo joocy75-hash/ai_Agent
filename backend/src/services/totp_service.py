@@ -4,14 +4,15 @@ TOTP (Time-based One-Time Password) 2FA 서비스
 Google Authenticator, Microsoft Authenticator 등의 앱과 호환됩니다.
 """
 
+import base64
+import io
+import logging
+import os
+from typing import Optional, Tuple
+
 import pyotp
 import qrcode
-import io
-import base64
-import logging
-from typing import Tuple, Optional
 from cryptography.fernet import Fernet, InvalidToken
-import os
 
 logger = logging.getLogger(__name__)
 

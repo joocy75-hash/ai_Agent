@@ -3,14 +3,14 @@ Bitget WebSocket Client
 실시간 가격, 포지션, 잔고 데이터 수신
 """
 import asyncio
-import json
-import time
-import hmac
-import hashlib
 import base64
+import hashlib
+import hmac
+import json
 import logging
-from typing import Optional, Callable, Dict, Any
-from datetime import datetime
+import time
+from typing import Any, Callable, Dict, Optional
+
 import websockets
 
 logger = logging.getLogger(__name__)
@@ -149,7 +149,6 @@ class BitgetWebSocket:
             logger.error("Public WebSocket not connected")
             return
 
-        channel = f"ticker.{symbol}"
         subscribe_msg = {
             "op": "subscribe",
             "args": [{"instType": "USDT-FUTURES", "channel": "ticker", "instId": symbol}],

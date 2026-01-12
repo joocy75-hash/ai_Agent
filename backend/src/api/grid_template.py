@@ -6,21 +6,22 @@ Grid Template API - 사용자용
 """
 
 from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database.db import get_session
-from ..utils.jwt_auth import get_current_user, TokenData
 from ..database.models import User
-from ..services.grid_template_service import GridTemplateService
 from ..schemas.grid_template_schema import (
-    GridTemplateListItem,
-    GridTemplateListResponse,
     GridTemplateDetail,
     GridTemplateDetailResponse,
+    GridTemplateListItem,
+    GridTemplateListResponse,
     UseTemplateRequest,
     UseTemplateResponse,
 )
+from ..services.grid_template_service import GridTemplateService
+from ..utils.jwt_auth import TokenData, get_current_user
 
 router = APIRouter(prefix="/grid-templates", tags=["Grid Templates"])
 
@@ -164,10 +165,10 @@ async def use_template(
         return UseTemplateResponse(
             bot_instance_id=bot_instance.id,
             grid_config_id=grid_config.id,
-            message=f"Grid bot created from template. Ready to start!",
+            message="Grid bot created from template. Ready to start!",
         )
 
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to create bot: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to create bot: {str(e)}") from e

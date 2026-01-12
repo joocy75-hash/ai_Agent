@@ -14,9 +14,10 @@
         app.add_middleware(AdminIPWhitelistMiddleware)
 """
 
-import os
 import logging
-from typing import Set, Optional
+import os
+from typing import Optional, Set
+
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse

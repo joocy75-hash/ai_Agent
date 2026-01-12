@@ -10,11 +10,11 @@
 작성일: 2025-12-13
 """
 
-from decimal import Decimal
-from typing import Optional, List
+import logging
+from typing import List
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
-import logging
 
 from ..database.models import GridMode, PositionDirection
 from ..services.cache_backtest_service import get_cache_backtest_service
@@ -155,7 +155,7 @@ async def run_grid_backtest(
             else GridMode.GEOMETRIC
         )
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"잘못된 파라미터: {e}")
+        raise HTTPException(status_code=400, detail=f"잘못된 파라미터: {e}") from e
 
     # 가격 검증
     if request.lower_price >= request.upper_price:
@@ -201,12 +201,12 @@ async def run_grid_backtest(
             status_code=404,
             detail=f"데이터 없음: {request.symbol} {request.timeframe}. "
             f"사용 가능한 데이터는 /available-data에서 확인하세요.",
-        )
+        ) from e
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
         logger.error(f"Backtest error: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"백테스트 실행 중 오류: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"백테스트 실행 중 오류: {str(e)}") from e
 
 
 @router.get("/quick")
@@ -303,7 +303,7 @@ async def get_recommended_settings(
             "note": "이 추천은 최근 7일 데이터를 기반으로 합니다. 시장 상황에 따라 조정이 필요할 수 있습니다.",
         }
 
-    except FileNotFoundError:
-        raise HTTPException(status_code=404, detail=f"데이터 없음: {symbol}")
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=f"데이터 없음: {symbol}") from e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e

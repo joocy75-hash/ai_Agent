@@ -4,10 +4,10 @@ Signal Validator Models (시그널 검증 데이터 모델)
 시그널 검증 결과를 저장하는 데이터 모델
 """
 
+from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import List
 
 
 class ValidationResult(str, Enum):

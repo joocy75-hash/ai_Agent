@@ -4,12 +4,13 @@ Candle Data Service
 - 캐싱을 통한 효율적인 데이터 관리
 """
 import asyncio
-import aiohttp
-from datetime import datetime, timedelta
-from typing import List, Optional, Dict
-from decimal import Decimal
-from dataclasses import dataclass
 import logging
+from dataclasses import dataclass
+from datetime import datetime, timedelta
+from decimal import Decimal
+from typing import Dict, List, Optional
+
+import aiohttp
 
 logger = logging.getLogger(__name__)
 

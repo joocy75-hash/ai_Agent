@@ -2,19 +2,21 @@ from datetime import datetime
 from enum import Enum
 
 from sqlalchemy import (
+    JSON,
     Boolean,
     CheckConstraint,
     Column,
     DateTime,
-    Enum as SQLEnum,
     Float,
     ForeignKey,
     Index,
     Integer,
-    JSON,
     Numeric,
     String,
     Text,
+)
+from sqlalchemy import (
+    Enum as SQLEnum,
 )
 from sqlalchemy.orm import declarative_base, relationship
 
@@ -996,3 +998,43 @@ class UserMarginUsage(Base):
 
     # Relationships
     user = relationship("User", backref="margin_usage")
+
+
+# ============================================================
+# 사용자 파일 업로드 추적 (User File Upload Tracking)
+# 목적: 업로드 쿼터 관리를 위한 파일 추적
+# ============================================================
+
+
+class UserFile(Base):
+    """
+    사용자 파일 업로드 추적 모델
+
+    - 사용자별 업로드 파일 추적
+    - 쿼터 관리를 위한 파일 크기 및 개수 추적
+    - 100MB/사용자, 50개 파일/사용자 제한
+    """
+
+    __tablename__ = "user_files"
+
+    __table_args__ = (
+        Index("idx_user_files_user_id", "user_id"),
+        Index("idx_user_files_created_at", "created_at"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+
+    # 파일 정보
+    filename = Column(String(255), nullable=False)  # 원본 파일명
+    file_size_bytes = Column(Integer, nullable=False)  # 파일 크기 (바이트)
+    file_path = Column(String(500), nullable=False)  # 저장 경로
+    mime_type = Column(String(100), nullable=True)  # MIME 타입
+
+    # 타임스탬프
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    # Relationships
+    user = relationship("User", backref="uploaded_files")

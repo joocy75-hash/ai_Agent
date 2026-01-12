@@ -3,22 +3,23 @@ Bitget REST API Client
 주문 실행, 포지션 관리, 잔고 조회
 """
 
-import time
-import hmac
-import hashlib
+import asyncio
 import base64
+import hashlib
+import hmac
 import json
 import logging
-import asyncio
-from typing import Optional, Dict, Any, List
+import time
 from enum import Enum
+from typing import Any, Dict, List, Optional
+
 import aiohttp
 
 from ..utils.bitget_exceptions import (
     BitgetAPIError,
-    BitgetRateLimitError,
     BitgetAuthenticationError,
     BitgetNetworkError,
+    BitgetRateLimitError,
     BitgetTimeoutError,
     classify_bitget_error,
 )
@@ -237,7 +238,7 @@ class BitgetRestClient:
                         else:
                             raise exception
 
-            except asyncio.TimeoutError as e:
+            except asyncio.TimeoutError:
                 logger.error(f"Request timeout: {url}")
                 last_exception = BitgetTimeoutError(
                     f"요청 시간이 초과되었습니다: {endpoint}"
@@ -788,7 +789,7 @@ class BitgetRestClient:
         Returns:
             캔들 데이터 리스트
         """
-        from datetime import datetime, timedelta, timezone
+        from datetime import datetime, timezone
 
         endpoint = "/api/v2/mix/market/candles"
 
@@ -925,7 +926,7 @@ class BitgetRestClient:
         Returns:
             캔들 데이터 리스트 (오래된 것부터 최신순)
         """
-        from datetime import datetime, timedelta, timezone
+        from datetime import datetime, timezone
 
         # Bitget Futures 오픈일 (2020년 5월)
         BITGET_FUTURES_LAUNCH = "2020-05-01"

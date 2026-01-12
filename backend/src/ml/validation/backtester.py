@@ -7,9 +7,10 @@ ML 모델의 실제 거래 성능을 시뮬레이션하여 검증
 import logging
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Dict, List, Any, Optional, Callable
-import pandas as pd
+from typing import Any, Dict, List, Optional
+
 import numpy as np
+import pandas as pd
 
 logger = logging.getLogger(__name__)
 
@@ -153,7 +154,7 @@ class Backtester:
         result.end_date = str(candles.index[-1])
 
         # 캔들 순회
-        for i, (timestamp, candle) in enumerate(candles.iterrows()):
+        for _i, (timestamp, candle) in enumerate(candles.iterrows()):
             current_price = float(candle['close'])
             high = float(candle['high'])
             low = float(candle['low'])

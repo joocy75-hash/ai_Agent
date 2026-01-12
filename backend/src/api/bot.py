@@ -7,13 +7,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ..database.db import get_session
 from ..database.models import BotStatus
 from ..schemas.bot_schema import BotStartRequest, BotStatusResponse
-from ..services.trade_executor import InvalidApiKeyError, ensure_client
 from ..services.telegram import get_telegram_notifier
 from ..services.telegram.types import BotConfig, PositionInfo
-from ..workers.manager import BotManager
+from ..services.trade_executor import InvalidApiKeyError, ensure_client
 from ..utils.jwt_auth import get_current_user_id
 from ..utils.resource_manager import resource_manager
 from ..utils.structured_logging import get_logger
+from ..workers.manager import BotManager
 
 logger = logging.getLogger(__name__)
 structured_logger = get_logger(__name__)
@@ -50,7 +50,7 @@ async def start_bot(
 
     try:
         await ensure_client(user_id, session)
-    except InvalidApiKeyError:
+    except InvalidApiKeyError as e:
         structured_logger.warning(
             "bot_start_invalid_api_key",
             "Bot start failed - invalid API key",
@@ -59,7 +59,7 @@ async def start_bot(
         raise HTTPException(
             status_code=400,
             detail="API key not found. Please save your API keys in the settings first.",
-        )
+        ) from e
 
     # app.state에서 bot_manager 가져오기
     manager: BotManager = request.app.state.bot_manager
@@ -85,9 +85,11 @@ async def start_bot(
 
     # 텔레그램 알림 전송
     try:
-        from ..database.models import Strategy
-        from sqlalchemy import select as sql_select
         import json
+
+        from sqlalchemy import select as sql_select
+
+        from ..database.models import Strategy
 
         # 전략 정보 조회
         strategy_result = await session.execute(
@@ -217,8 +219,8 @@ async def stop_bot(
     closed_positions = []
     try:
         from ..database.models import ApiKey
+        from ..services.bitget_rest import get_bitget_rest
         from ..utils.crypto_secrets import decrypt_secret
-        from ..services.bitget_rest import get_bitget_rest, PositionSide
 
         # 사용자 API 키 조회
         api_key_result = await session.execute(
@@ -405,7 +407,7 @@ async def _attempt_bot_restart(user_id, status, session, manager, cache_manager)
 
     try:
         # API 키 유효성 확인
-        from ..services.trade_executor import ensure_client, InvalidApiKeyError
+        from ..services.trade_executor import InvalidApiKeyError, ensure_client
         try:
             await ensure_client(user_id, session)
         except InvalidApiKeyError:
@@ -441,10 +443,10 @@ async def bot_status(
 ):
     """봇 상태 조회 (강화 버전 - JWT 인증 필요) - 자동 복구 지원"""
     from datetime import datetime
-    from ..services.bot_runner import BotRunner
-    from ..workers.manager import BotManager
+
     from ..services.exchange_service import ExchangeService
     from ..utils.cache_manager import cache_manager, make_cache_key
+    from ..workers.manager import BotManager
 
     # 캐시 확인 (10초 TTL - 빠른 응답 위해)
     cache_key = make_cache_key("bot_status", user_id)

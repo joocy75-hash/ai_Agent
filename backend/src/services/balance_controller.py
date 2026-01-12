@@ -9,9 +9,9 @@
 
 import logging
 from dataclasses import dataclass
-from typing import Tuple, Optional, List
+from typing import List, Tuple
 
-from sqlalchemy import select, and_
+from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database.models import BotInstance, TrendBotTemplate
@@ -118,8 +118,8 @@ class BalanceController:
             select(BotInstance).where(
                 and_(
                     BotInstance.user_id == user_id,
-                    BotInstance.is_running == True,
-                    BotInstance.is_active == True
+                    BotInstance.is_running is True,
+                    BotInstance.is_active is True
                 )
             )
         )

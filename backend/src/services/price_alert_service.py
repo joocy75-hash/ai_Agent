@@ -8,14 +8,13 @@ Price Alert Service
 import asyncio
 import logging
 from datetime import datetime
-from typing import Dict, Set, Optional
-from decimal import Decimal
+from typing import Dict, Set
 
-from sqlalchemy import select, and_
+from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database.db import AsyncSessionLocal
-from ..database.models import ChartAnnotation, AnnotationType
+from ..database.models import ChartAnnotation
 from ..websockets.ws_server import WebSocketManager
 
 logger = logging.getLogger(__name__)
@@ -81,9 +80,9 @@ class PriceAlertService:
                     select(ChartAnnotation).where(
                         and_(
                             ChartAnnotation.symbol == symbol.upper(),
-                            ChartAnnotation.is_active == True,
-                            ChartAnnotation.alert_enabled == True,
-                            ChartAnnotation.alert_triggered == False,
+                            ChartAnnotation.is_active is True,
+                            ChartAnnotation.alert_enabled is True,
+                            ChartAnnotation.alert_triggered is False,
                         )
                     )
                 )

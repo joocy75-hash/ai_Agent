@@ -5,7 +5,7 @@ ReDoS(Regular Expression Denial of Service) 취약점을 방지하기 위한
 안전한 JSON 추출 함수를 제공합니다.
 """
 import json
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
 
 
 def extract_json_from_text(text: str, max_length: int = 5000) -> Optional[Dict[str, Any]]:

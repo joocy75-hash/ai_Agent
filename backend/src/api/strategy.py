@@ -1,14 +1,15 @@
+import json
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-import logging
-import json
 
 from ..database.db import get_session
 from ..database.models import BotStatus, Strategy
 from ..schemas.strategy_schema import StrategyCreate, StrategySelect, StrategyUpdate
-from ..utils.jwt_auth import get_current_user_id
 from ..utils.auth_dependencies import require_admin
+from ..utils.jwt_auth import get_current_user_id
 
 logger = logging.getLogger(__name__)
 
@@ -96,7 +97,7 @@ async def create_strategy(
             f"[Strategy Create] Error creating strategy for user {user_id}: {str(e)}"
         )
         await session.rollback()
-        raise HTTPException(status_code=500, detail=f"전략 생성 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"전략 생성 실패: {str(e)}") from e
 
 
 @router.post("/update/{strategy_id}")

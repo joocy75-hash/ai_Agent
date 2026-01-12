@@ -1,16 +1,14 @@
 import asyncio
 import logging
-from typing import Dict, List, Set, Optional
-from datetime import datetime, timedelta
 from dataclasses import dataclass, field
+from datetime import datetime
+from typing import Dict, List, Optional, Set
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query, status
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect, status
 
-from ..utils.jwt_auth import JWTAuth
 from ..database.db import AsyncSessionLocal
 from ..services.exchange_service import ExchangeService
+from ..utils.jwt_auth import JWTAuth
 
 logger = logging.getLogger(__name__)
 
@@ -461,7 +459,7 @@ async def user_socket(websocket: WebSocket, user_id: int, token: str | None = Qu
                 code=status.WS_1008_POLICY_VIOLATION, reason="User ID mismatch"
             )
             return
-    except Exception as e:
+    except Exception:
         await websocket.close(
             code=status.WS_1008_POLICY_VIOLATION, reason="Invalid or expired token"
         )

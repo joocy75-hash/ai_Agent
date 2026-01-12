@@ -5,17 +5,18 @@
 
 import logging
 from typing import Optional
-from fastapi import APIRouter, HTTPException, Depends
+
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database.db import get_session
 from ..database.models import UserSettings
-from ..utils.jwt_auth import get_current_user, TokenData
 from ..services.telegram import init_telegram_notifier
 from ..services.telegram.types import BotConfig, TradeInfo
-from ..utils.crypto_secrets import encrypt_secret, decrypt_secret
+from ..utils.crypto_secrets import decrypt_secret, encrypt_secret
+from ..utils.jwt_auth import get_current_user
 
 logger = logging.getLogger(__name__)
 
@@ -60,14 +61,58 @@ class TestMessageResponse(BaseModel):
 
 
 def mask_token(token: str) -> str:
-    """토큰을 마스킹 (앞 8자, 뒤 4자만 표시)"""
+    """텔레그램 봇 토큰을 보안 표시용으로 마스킹합니다.
+
+    민감한 텔레그램 봇 토큰을 UI에 표시할 때 전체 토큰을 노출하지 않고
+    앞 8자리와 뒤 4자리만 보여주고 나머지는 생략 표시(...)로 마스킹합니다.
+    이를 통해 사용자가 어떤 봇인지 식별할 수 있으면서도 보안을 유지합니다.
+
+    Args:
+        token: 마스킹할 원본 텔레그램 봇 토큰 문자열.
+            일반적으로 "123456789:ABCdefGHIjklMNOpqrSTUvwxYZ" 형식입니다.
+
+    Returns:
+        str: 마스킹된 토큰 문자열.
+            - 토큰이 None이거나 12자 미만인 경우: "***" 반환
+            - 그 외: "XXXXXXXX...YYYY" 형식 (X=앞 8자, Y=뒤 4자)
+
+    Examples:
+        >>> mask_token("123456789:ABCdefGHIjklMNOpqrSTUvwxYZ")
+        '12345678...wxYZ'
+        >>> mask_token("short")
+        '***'
+    """
     if not token or len(token) < 12:
         return "***"
     return token[:8] + "..." + token[-4:]
 
 
 def mask_chat_id(chat_id: str) -> str:
-    """Chat ID를 마스킹 (앞 4자만 표시)"""
+    """텔레그램 Chat ID를 보안 표시용으로 마스킹합니다.
+
+    민감한 텔레그램 Chat ID를 UI에 표시할 때 전체 ID를 노출하지 않고
+    앞 4자리와 뒤 2자리만 보여주고 나머지는 생략 표시(...)로 마스킹합니다.
+    이를 통해 사용자가 어떤 채팅방인지 대략 식별할 수 있으면서도
+    보안을 유지합니다.
+
+    Args:
+        chat_id: 마스킹할 원본 텔레그램 Chat ID 문자열.
+            개인 채팅은 양수, 그룹 채팅은 음수(-)로 시작합니다.
+            예: "123456789" 또는 "-1001234567890"
+
+    Returns:
+        str: 마스킹된 Chat ID 문자열.
+            - Chat ID가 None이거나 5자 미만인 경우: "***" 반환
+            - 그 외: "XXXX...YY" 형식 (X=앞 4자, Y=뒤 2자)
+
+    Examples:
+        >>> mask_chat_id("123456789")
+        '1234...89'
+        >>> mask_chat_id("-1001234567890")
+        '-100...90'
+        >>> mask_chat_id("1234")
+        '***'
+    """
     if not chat_id or len(chat_id) < 5:
         return "***"
     return chat_id[:4] + "..." + chat_id[-2:]
@@ -118,10 +163,10 @@ async def save_telegram_settings(
             }
 
         # 암호화
-        logger.info(f"[Telegram] Encrypting secrets...")
+        logger.info("[Telegram] Encrypting secrets...")
         encrypted_bot_token = encrypt_secret(request.bot_token)
         encrypted_chat_id = encrypt_secret(request.chat_id)
-        logger.info(f"[Telegram] Encryption successful")
+        logger.info("[Telegram] Encryption successful")
 
         logger.info(f"[Telegram] Saving settings for user {user_id}")
 
@@ -170,7 +215,7 @@ async def save_telegram_settings(
         )
         raise HTTPException(
             status_code=500, detail=f"텔레그램 설정 저장 중 오류 발생: {str(e)}"
-        )
+        ) from e
 
 
 @router.get("/settings", response_model=TelegramSettingsResponse)
@@ -282,11 +327,11 @@ async def send_test_message(
     try:
         bot_token = decrypt_secret(user_settings.encrypted_telegram_bot_token)
         chat_id = decrypt_secret(user_settings.encrypted_telegram_chat_id)
-    except Exception:
+    except Exception as e:
         raise HTTPException(
             status_code=500,
             detail="텔레그램 설정 복호화에 실패했습니다. 설정을 다시 저장해주세요.",
-        )
+        ) from e
 
     if not bot_token or not chat_id:
         raise HTTPException(

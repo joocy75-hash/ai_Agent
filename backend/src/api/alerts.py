@@ -1,10 +1,11 @@
 import logging
 from datetime import datetime, timedelta
 from typing import List
+
 from fastapi import APIRouter, Depends
-from sqlalchemy import select, and_
-from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import BaseModel
+from sqlalchemy import and_, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database.db import get_session
 from ..database.models import SystemAlert
@@ -40,7 +41,7 @@ async def get_urgent_alerts(
             .where(
                 and_(
                     SystemAlert.user_id == user_id,
-                    SystemAlert.is_resolved == False,
+                    SystemAlert.is_resolved is False,
                     SystemAlert.level.in_(["ERROR", "WARNING"]),
                 )
             )
@@ -141,7 +142,7 @@ async def resolve_all_alerts(
     try:
         result = await session.execute(
             select(SystemAlert).where(
-                and_(SystemAlert.user_id == user_id, SystemAlert.is_resolved == False)
+                and_(SystemAlert.user_id == user_id, SystemAlert.is_resolved is False)
             )
         )
 
@@ -218,7 +219,7 @@ async def clear_resolved_alerts(
     try:
         result = await session.execute(
             select(SystemAlert).where(
-                and_(SystemAlert.user_id == user_id, SystemAlert.is_resolved == True)
+                and_(SystemAlert.user_id == user_id, SystemAlert.is_resolved is True)
             )
         )
 

@@ -96,12 +96,12 @@ class BitgetWebSocketCollector:
                         self.market_queue.put_nowait(market_data)
                         logger.debug(f"✅ Market data queued: {symbol} @ ${market_data['price']}")
                     except asyncio.QueueFull:
-                        logger.warning(f"⚠️ Market queue full, removing old data")
+                        logger.warning("⚠️ Market queue full, removing old data")
                         try:
                             self.market_queue.get_nowait()
                             self.market_queue.put_nowait(market_data)
                             logger.debug(f"✅ Market data queued after cleanup: {symbol}")
-                        except:
+                        except Exception:
                             pass
 
         except Exception as e:

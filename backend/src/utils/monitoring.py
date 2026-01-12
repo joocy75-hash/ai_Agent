@@ -5,10 +5,11 @@
 메모리 기반으로 간단하게 구현.
 """
 import time
-import psutil
 from collections import defaultdict, deque
 from datetime import datetime
-from typing import Dict, List
+from typing import Dict
+
+import psutil
 
 
 class SimpleMonitor:
@@ -29,33 +30,56 @@ class SimpleMonitor:
         self.errors_count = defaultdict(int)
         self.active_users = set()
         self.backtest_stats = {
-            "total": 0,
             "queued": 0,
             "running": 0,
             "completed": 0,
             "failed": 0,
         }
 
-    def record_request(self, endpoint: str, duration: float, success: bool = True):
-        """API 요청 기록"""
+    def track_request(self, endpoint: str):
+        """API 요청 추적"""
         self.requests_count[endpoint] += 1
-        self.response_times[endpoint].append(duration)
 
-        if not success:
-            self.errors_count[endpoint] += 1
+    def track_response_time(self, endpoint: str, response_time: float):
+        """응답 시간 추적"""
+        self.response_times[endpoint].append(response_time)
 
-    def record_user_activity(self, user_id: int):
-        """사용자 활동 기록"""
+    def track_error(self, endpoint: str):
+        """에러 추적"""
+        self.errors_count[endpoint] += 1
+
+    def track_user(self, user_id: int):
+        """사용자 활동 추적"""
         self.active_users.add(user_id)
 
-    def update_backtest_stats(self, status: str, increment: int = 1):
-        """백테스트 통계 업데이트"""
+    def update_backtest_status(self, status: str, increment: int = 1):
+        """백테스트 상태 업데이트"""
         if status in self.backtest_stats:
             self.backtest_stats[status] += increment
+
+    def record_request(self, endpoint: str, duration: float, success: bool = True):
+        """API 요청 기록 (레거시 호환)"""
+        self.track_request(endpoint)
+        self.track_response_time(endpoint, duration)
+
+        if not success:
+            self.track_error(endpoint)
+
+    def record_user_activity(self, user_id: int):
+        """사용자 활동 기록 (레거시 호환)"""
+        self.track_user(user_id)
+
+    def update_backtest_stats(self, status: str, increment: int = 1):
+        """백테스트 통계 업데이트 (레거시 호환)"""
+        self.update_backtest_status(status, increment)
 
     def get_stats(self) -> Dict:
         """현재 통계 반환"""
         system_info = self._get_system_info()
+
+        # Compute total dynamically
+        backtest_data = dict(self.backtest_stats)
+        backtest_data["total"] = sum(self.backtest_stats.values())
 
         stats = {
             "timestamp": datetime.utcnow().isoformat(),
@@ -71,7 +95,7 @@ class SimpleMonitor:
                 "active_users": len(self.active_users),
                 "users_list": list(self.active_users),
             },
-            "backtest": dict(self.backtest_stats),
+            "backtest": backtest_data,
         }
 
         return stats
@@ -109,6 +133,12 @@ class SimpleMonitor:
         self.response_times.clear()
         self.errors_count.clear()
         self.active_users.clear()
+        self.backtest_stats = {
+            "queued": 0,
+            "running": 0,
+            "completed": 0,
+            "failed": 0,
+        }
 
 
 # 전역 모니터 인스턴스
@@ -133,7 +163,7 @@ def track_endpoint(endpoint_name: str):
             try:
                 result = await func(*args, **kwargs)
                 return result
-            except Exception as e:
+            except Exception:
                 success = False
                 raise
             finally:

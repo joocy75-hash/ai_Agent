@@ -5,7 +5,6 @@
 """
 from collections import defaultdict
 from typing import Dict, Optional
-import asyncio
 
 
 class UserResourceManager:

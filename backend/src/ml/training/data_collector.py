@@ -4,12 +4,13 @@ Data Collector - 학습용 캔들 데이터 수집
 Bitget API를 통해 과거 캔들 데이터를 수집하고 저장
 """
 
-import logging
 import asyncio
-import pandas as pd
-from pathlib import Path
+import logging
 from datetime import datetime, timedelta
-from typing import List, Dict, Optional, Any
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+
+import pandas as pd
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +71,7 @@ class DataCollector:
         try:
             all_candles = []
             end_time = datetime.utcnow()
-            start_time = end_time - timedelta(days=days)
+            end_time - timedelta(days=days)
 
             # 타임프레임별 캔들 개수 계산
             candles_per_request = 200
@@ -293,7 +294,7 @@ class DataCollector:
             import aiohttp
 
             all_candles = []
-            minutes_per_candle = self._timeframe_to_minutes(timeframe)
+            self._timeframe_to_minutes(timeframe)
             granularity_map = {'5m': '5m', '15m': '15m', '1h': '1H', '4h': '4H', '1d': '1D'}
             granularity = granularity_map.get(timeframe, '5m')
 
@@ -302,7 +303,7 @@ class DataCollector:
 
             async with aiohttp.ClientSession() as session:
                 while current_end > start_ms:
-                    url = f"https://api.bitget.com/api/v2/mix/market/candles"
+                    url = "https://api.bitget.com/api/v2/mix/market/candles"
                     params = {
                         'symbol': symbol,
                         'productType': 'USDT-FUTURES',

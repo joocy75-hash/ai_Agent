@@ -5,9 +5,10 @@ MTF Features - 10개 멀티타임프레임 피처
 """
 
 import logging
+from typing import Optional
+
 import numpy as np
 import pandas as pd
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 

@@ -7,10 +7,10 @@ Grid Bot Template Schemas
 from datetime import datetime
 from decimal import Decimal
 from typing import List, Optional
+
 from pydantic import BaseModel, Field, field_validator
 
 from ..database.models import GridMode, PositionDirection
-
 
 # ===== 기본 스키마 =====
 

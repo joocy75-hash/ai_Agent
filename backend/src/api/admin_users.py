@@ -1,15 +1,16 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select, func, and_
-from sqlalchemy.ext.asyncio import AsyncSession
+import logging
 from datetime import datetime
 
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import and_, func, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from ..database.db import get_session
-from ..database.models import User, ApiKey, BotStatus, Trade
+from ..database.models import ApiKey, BotStatus, Trade, User
 from ..schemas.admin_schema import ApiKeyCreate, ApiKeyUpdate, UserCreate
 from ..utils.auth_dependencies import require_admin
-from ..utils.crypto_secrets import encrypt_secret, decrypt_secret
+from ..utils.crypto_secrets import decrypt_secret, encrypt_secret
 from ..utils.structured_logging import get_logger
-import logging
 
 logger = logging.getLogger(__name__)
 structured_logger = get_logger(__name__)
@@ -18,7 +19,29 @@ router = APIRouter(prefix="/admin/users", tags=["admin-users"])
 
 
 def mask_api_key(key: str) -> str:
-    """API 키 마스킹: 앞 4자리와 뒤 4자리만 보여주기"""
+    """API 키를 보안 표시용으로 마스킹합니다.
+
+    민감한 API 키 정보를 UI에 표시할 때 전체 키를 노출하지 않고
+    앞 4자리와 뒤 4자리만 보여주고 나머지는 별표(*)로 마스킹합니다.
+    이를 통해 사용자가 어떤 키인지 식별할 수 있으면서도 보안을 유지합니다.
+
+    Args:
+        key: 마스킹할 원본 API 키 문자열. 거래소 API 키, 시크릿 키,
+            패스프레이즈 등 민감한 인증 정보에 사용됩니다.
+
+    Returns:
+        str: 마스킹된 API 키 문자열.
+            - 키가 None이거나 8자 이하인 경우: "***" 반환
+            - 그 외: "XXXX****YYYY" 형식 (X=앞 4자, Y=뒤 4자)
+
+    Examples:
+        >>> mask_api_key("abcd1234efgh5678ijkl")
+        'abcd************ijkl'
+        >>> mask_api_key("short")
+        '***'
+        >>> mask_api_key(None)
+        '***'
+    """
     if not key or len(key) <= 8:
         return "***"
     return f"{key[:4]}{'*' * (len(key) - 8)}{key[-4:]}"
@@ -99,7 +122,7 @@ async def create_user(
             email=payload.email,
             error=str(e),
         )
-        raise HTTPException(status_code=500, detail=f"사용자 생성 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"사용자 생성 실패: {str(e)}") from e
 
 
 @router.get("")
@@ -131,7 +154,7 @@ async def get_users(
         # 활성 봇 수
         active_bots_result = await session.execute(
             select(func.count(BotStatus.user_id)).where(
-                and_(BotStatus.user_id == user.id, BotStatus.is_running == True)
+                and_(BotStatus.user_id == user.id, BotStatus.is_running is True)
             )
         )
         active_bots_count = active_bots_result.scalar()
@@ -515,7 +538,7 @@ async def suspend_user(
             target_user_id=user_id,
             error=str(e),
         )
-        raise HTTPException(status_code=500, detail=f"Failed to suspend user: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to suspend user: {str(e)}") from e
 
 
 @router.post("/{user_id}/activate")
@@ -588,7 +611,7 @@ async def activate_user(
         )
         raise HTTPException(
             status_code=500, detail=f"Failed to activate user: {str(e)}"
-        )
+        ) from e
 
 
 @router.post("/{user_id}/force-logout")
@@ -663,7 +686,7 @@ async def force_logout_user(
         )
         raise HTTPException(
             status_code=500, detail=f"Failed to force logout user: {str(e)}"
-        )
+        ) from e
 
 
 @router.post("/{user_id}/reset-password")
@@ -680,6 +703,7 @@ async def reset_user_password(
     """
     import secrets
     import string
+
     from passlib.context import CryptContext
 
     pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -716,7 +740,7 @@ async def reset_user_password(
 
         return {
             "success": True,
-            "message": f"비밀번호가 초기화되었습니다.",
+            "message": "비밀번호가 초기화되었습니다.",
             "user_id": user_id,
             "email": user.email,
             "new_password": new_password,  # 주의: 이 비밀번호를 사용자에게 안전하게 전달해야 함
@@ -736,7 +760,7 @@ async def reset_user_password(
         )
         raise HTTPException(
             status_code=500, detail=f"Failed to reset password: {str(e)}"
-        )
+        ) from e
 
 
 @router.put("/{user_id}/role")
@@ -790,7 +814,7 @@ async def update_user_role(
         raise
     except Exception as e:
         await session.rollback()
-        raise HTTPException(status_code=500, detail=f"Failed to change role: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to change role: {str(e)}") from e
 
 
 @router.get("/{user_id}/profit-stats")
@@ -837,6 +861,32 @@ async def get_user_profit_stats(
         ]
 
         def calc_stats(trades):
+            """거래 목록에서 통계 지표를 계산합니다.
+
+            주어진 거래 리스트를 분석하여 총 거래 수, 손익, 승률,
+            수익 팩터 등 다양한 거래 통계를 계산합니다.
+
+            Args:
+                trades (list): Trade 객체들의 리스트. 각 Trade 객체는
+                    pnl (손익) 속성을 가져야 합니다. 빈 리스트도 허용됩니다.
+
+            Returns:
+                dict: 거래 통계 정보를 담은 딕셔너리.
+                    - total_trades (int): 총 거래 수
+                    - total_pnl (float): 총 손익 (소수점 2자리 반올림)
+                    - winning_trades (int): 수익 거래 수 (pnl > 0)
+                    - losing_trades (int): 손실 거래 수 (pnl < 0)
+                    - win_rate (float): 승률 (%, 소수점 1자리 반올림)
+                    - avg_pnl (float): 평균 손익 (소수점 2자리 반올림)
+                    - max_profit (float): 최대 수익 (소수점 2자리 반올림)
+                    - max_loss (float): 최대 손실 (소수점 2자리 반올림, 음수)
+                    - profit_factor (float): 수익 팩터 (총 수익 / 총 손실, 소수점 2자리 반올림)
+
+            Note:
+                - 거래가 없는 경우 모든 값이 0으로 반환됩니다.
+                - pnl이 None인 거래는 계산에서 제외됩니다.
+                - profit_factor는 손실이 0인 경우 0을 반환합니다.
+            """
             if not trades:
                 return {
                     "total_trades": 0,
@@ -905,7 +955,7 @@ async def get_user_profit_stats(
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Failed to get profit stats: {str(e)}"
-        )
+        ) from e
 
 
 @router.delete("/{user_id}/api-keys/all")
@@ -975,4 +1025,4 @@ async def delete_all_user_api_keys(
         await session.rollback()
         raise HTTPException(
             status_code=500, detail=f"Failed to delete API keys: {str(e)}"
-        )
+        ) from e

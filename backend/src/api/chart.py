@@ -6,7 +6,6 @@ Provides real-time OHLCV candle data and position markers for chart visualizatio
 
 import logging
 from datetime import datetime, timedelta
-from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import and_, select
@@ -131,7 +130,7 @@ async def get_candles(
 
     except Exception as e:
         logger.error(f"Error fetching candles for {symbol}: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.get("/positions/{symbol}")
@@ -234,7 +233,7 @@ async def get_position_markers(
         logger.error(
             f"Error fetching position markers for {symbol}: {e}", exc_info=True
         )
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.get("/positions/current/{symbol}")
@@ -287,7 +286,7 @@ async def get_current_positions(
         logger.error(
             f"Error fetching current positions for {symbol}: {e}", exc_info=True
         )
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.get("/status")

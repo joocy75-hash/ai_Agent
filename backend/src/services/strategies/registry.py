@@ -1,4 +1,4 @@
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
 
 from .base import StrategyBase
 from .eth_ai_fusion import EthAIFusionBacktestStrategy

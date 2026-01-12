@@ -1,21 +1,19 @@
-import os
-import uuid
 from datetime import datetime
 from pathlib import Path
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
-from fastapi.security import HTTPAuthorizationCredentials
+
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from ..schemas.backtest_schema import BacktestStartRequest
+from ..config import BacktestConfig
+from ..database.models import BacktestResult
+from ..database.session import get_session
 from ..schemas.backtest_response_schema import BacktestStartResponse
+from ..schemas.backtest_schema import BacktestStartRequest
 from ..services.backtest_engine import BacktestEngine
 from ..services.backtest_persistence import BacktestPersistenceService
 from ..services.strategies.registry import get_strategy
-from ..database.session import get_session
-from ..database.models import BacktestResult
 from ..utils.jwt_auth import get_current_user_id
 from ..utils.resource_manager import resource_manager
-from ..config import BacktestConfig
 
 router = APIRouter(prefix="/backtest", tags=["backtest"])
 
@@ -71,17 +69,55 @@ def validate_csv_path(csv_path: str) -> None:
 
     except ValueError as e:
         # Path.is_relative_to() 에러 (Python 3.9+)
-        raise HTTPException(status_code=403, detail="Invalid file path")
+        raise HTTPException(status_code=403, detail="Invalid file path") from e
 
 
 def _run_backtest_background(result_id: int, request_dict: dict, user_id: int):
+    """백그라운드에서 백테스트를 비동기적으로 실행합니다.
+
+    FastAPI의 BackgroundTasks를 통해 호출되며, 메인 요청 스레드와 별도로
+    백테스트를 실행합니다. 별도의 동기 DB 세션을 생성하여 사용하고,
+    실행 완료 후 결과를 데이터베이스에 저장합니다.
+
+    Args:
+        result_id (int): 백테스트 결과를 저장할 BacktestResult 레코드의 ID.
+            이 ID는 start_backtest 엔드포인트에서 미리 생성됩니다.
+        request_dict (dict): 백테스트 실행에 필요한 파라미터 딕셔너리.
+            - strategy_id (int): 전략 ID
+            - strategy_code (str): 전략 코드 (예: "eth_ai_fusion")
+            - strategy_params (dict): 전략별 파라미터
+            - initial_balance (float): 초기 잔고
+            - start_date (str): 시작 날짜 (YYYY-MM-DD)
+            - end_date (str): 종료 날짜 (YYYY-MM-DD)
+            - csv_path (str, optional): CSV 데이터 파일 경로
+            - symbol (str): 거래 심볼 (예: "BTCUSDT")
+            - timeframe (str): 타임프레임 (예: "1h")
+        user_id (int): 백테스트를 요청한 사용자의 ID.
+            리소스 관리 및 권한 확인에 사용됩니다.
+
+    Returns:
+        None: 이 함수는 반환값이 없습니다. 결과는 데이터베이스에 직접 저장됩니다.
+
+    Raises:
+        이 함수는 예외를 발생시키지 않습니다. 모든 예외는 내부적으로 처리되며,
+        실패 시 BacktestResult.status가 "failed"로 업데이트되고
+        error_message에 오류 내용이 저장됩니다.
+
+    Side Effects:
+        - BacktestResult 레코드 업데이트 (final_balance, equity_curve, status, metrics)
+        - BacktestTrade 레코드 생성 (거래 내역)
+        - CSV 파일 생성 (csv_path가 없는 경우 캐시 데이터로부터)
+        - resource_manager.finish_backtest() 호출로 리소스 해제
+
+    Note:
+        - CSV 경로가 제공되지 않으면 캔들 캐시 시스템에서 과거 데이터를 가져옵니다.
+        - BacktestConfig.CACHE_ONLY가 True이면 오프라인 모드로 동작합니다.
+        - 성능 메트릭(승률, Sharpe Ratio, MDD 등)은 백테스트 완료 후 계산됩니다.
     """
-    백그라운드에서 실행되는 백테스트 작업.
-    별도 DB 세션을 사용하여 실행.
-    """
-    import logging
     import asyncio
+    import logging
     from datetime import datetime
+
     from ..utils.resource_manager import resource_manager
 
     logger = logging.getLogger(__name__)
@@ -155,7 +191,6 @@ def _run_backtest_background(result_id: int, request_dict: dict, user_id: int):
 
             # CSV 파일로 저장
             import csv
-            import tempfile
             from pathlib import Path
 
             # backtest_data 디렉토리에 저장
@@ -221,6 +256,7 @@ def _run_backtest_background(result_id: int, request_dict: dict, user_id: int):
             # 성능 메트릭 계산 (CRITICAL: 전략 평가를 위한 핵심 지표)
             try:
                 import json
+
                 from ..database.models import BacktestTrade
 
                 initial_balance = float(request_dict["initial_balance"])
@@ -393,6 +429,7 @@ async def start_backtest(
     결과 조회: GET /backtest/result/{result_id}
     """
     from sqlalchemy import select
+
     from ..database.models import Strategy
 
     # 0) 리소스 제한 확인
@@ -537,7 +574,7 @@ async def get_cache_info():
                         "updated_at": meta.get("updated_at"),
                     }
                 )
-            except Exception as e:
+            except Exception:
                 # 메타데이터 형식 오류 시 스킵
                 continue
 

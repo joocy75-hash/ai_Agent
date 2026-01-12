@@ -7,8 +7,8 @@ Components:
 - PaperTrader: 페이퍼 트레이딩 시뮬레이터
 """
 
-from .backtester import Backtester, BacktestResult
 from .ab_tester import ABTester, ABTestResult
+from .backtester import Backtester, BacktestResult
 
 __all__ = [
     "Backtester",

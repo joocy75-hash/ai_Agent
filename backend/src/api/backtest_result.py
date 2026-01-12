@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
 import json
 
-from ..database.session import get_session
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+
 from ..database.models import BacktestResult, BacktestTrade
+from ..database.session import get_session
 from ..schemas.backtest_response_schema import BacktestResultResponse
 from ..utils.jwt_auth import get_current_user_id
 

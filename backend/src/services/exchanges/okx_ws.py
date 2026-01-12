@@ -6,14 +6,15 @@ OKX WebSocket API V5
 """
 
 import asyncio
-import json
-import websockets
-import hmac
-import hashlib
 import base64
-import time
-from typing import Dict, Callable, Optional, List
+import hashlib
+import hmac
+import json
 import logging
+import time
+from typing import Callable, Dict, List, Optional
+
+import websockets
 
 logger = logging.getLogger(__name__)
 

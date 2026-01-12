@@ -19,15 +19,14 @@ API Rate Limit 문제를 해결하고 성능을 최적화합니다.
 - 2025-12-13: Binance API 지원 추가
 """
 
-import csv
 import asyncio
+import csv
+import json
 import logging
+import time
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Dict, List, Optional, Any, Tuple
-
-import json
-import time
+from typing import Any, Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -193,7 +192,7 @@ class CandleCacheManager:
                     self._update_memory_cache(cache_key, result)
                     return result
                 else:
-                    logger.warning(f"   ⚠️ Cache only mode: no data in requested range")
+                    logger.warning("   ⚠️ Cache only mode: no data in requested range")
                     return file_candles  # 전체 캐시 반환
 
             # 부분 캐시 → 부족한 부분만 API 호출

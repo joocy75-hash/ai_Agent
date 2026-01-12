@@ -4,19 +4,18 @@ Agent Orchestrator (에이전트 오케스트레이터)
 모든 AI 에이전트를 조율하고 이벤트 기반으로 협업하게 만드는 핵심 레이어
 """
 
-import logging
 import asyncio
-import uuid
-from typing import Dict, List, Any, Optional, Callable
+import logging
 from datetime import datetime
+from typing import Any, Callable, Dict, List
 
 from .models import (
+    AgentAction,
+    AgentHealthStatus,
     EventType,
     OrchestrationEvent,
     OrchestrationResult,
     OrchestrationRule,
-    AgentAction,
-    AgentHealthStatus,
 )
 
 logger = logging.getLogger(__name__)
@@ -496,7 +495,7 @@ class AgentOrchestrator:
 
         # 리밸런싱
         elif event.event_type == EventType.REBALANCING_DUE:
-            optimizer_result = action_results.get("portfolio_optimizer", {})
+            action_results.get("portfolio_optimizer", {})
             validator_result = action_results.get("signal_validator", {})
 
             if validator_result.get("approved", True):

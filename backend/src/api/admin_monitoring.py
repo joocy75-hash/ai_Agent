@@ -5,13 +5,13 @@ Admin Monitoring API
 시스템 상태, 사용자 활동, 백테스트 통계 조회.
 """
 from fastapi import APIRouter, Depends
-from sqlalchemy import func, select
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from ..database.models import BacktestResult
 from ..database.session import get_session
-from ..database.models import BacktestResult, User
-from ..utils.monitoring import monitor
 from ..utils.auth_dependencies import require_admin
+from ..utils.monitoring import monitor
 
 router = APIRouter(prefix="/admin/monitoring", tags=["admin", "monitoring"])
 

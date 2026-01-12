@@ -6,12 +6,13 @@ FinBERT를 사용한 금융 뉴스 감성 분석 에이전트
 
 import logging
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 import torch
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
+from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
-from ..base import BaseAgent, AgentTask
+from ..base import AgentTask, BaseAgent
+from .data_sources import CryptoPanicSource, RedditSource
 from .models import (
     MarketSentiment,
     NewsItem,
@@ -19,7 +20,6 @@ from .models import (
     SentimentSignal,
     SentimentStrength,
 )
-from .data_sources import CryptoPanicSource, RedditSource
 
 logger = logging.getLogger(__name__)
 

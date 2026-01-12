@@ -10,56 +10,52 @@
 """
 
 import asyncio
-import logging
 import json
+import logging
 from collections import deque
 from datetime import datetime
 from decimal import Decimal
 from typing import Dict, Optional, Set
 
-from sqlalchemy import select, func, and_
+from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from ..agents.base import AgentState, AgentTask, TaskPriority
+from ..agents.market_regime import MarketRegimeAgent
+from ..agents.risk_monitor import RiskMonitorAgent
+from ..agents.signal_validator import SignalValidatorAgent
 from ..database.models import (
-    BotStatus,
+    ApiKey,
     BotInstance,  # 다중 봇 시스템 (NEW)
-    BotType,      # 다중 봇 시스템 (NEW)
-    ExitReason,   # enum for exit_reason column
-    Position,
+    BotStatus,
+    BotType,  # 다중 봇 시스템 (NEW)
+    ExitReason,  # enum for exit_reason column
+    RiskSettings,
     Strategy,
     Trade,
     TradeSource,  # 다중 봇 시스템 (NEW)
     User,
-    ApiKey,
-    RiskSettings,
 )
-from ..services.strategy_engine import run as run_strategy
-from ..services.strategy_loader import generate_signal_with_strategy
-from ..services.equity_service import record_equity
-from ..services.trade_executor import (
-    InvalidApiKeyError,
-    ensure_client,
-    place_market_order,
-)
-from ..services.exchanges import exchange_manager, ExchangeFactory
-from ..services.bitget_rest import get_bitget_rest, OrderSide
 from ..services.allocation_manager import allocation_manager  # 다중 봇 시스템 (NEW)
+from ..services.bitget_rest import OrderSide, get_bitget_rest
 from ..services.bot_isolation_manager import bot_isolation_manager  # 다중 봇 시스템 (NEW)
 from ..services.bot_recovery_manager import bot_recovery_manager  # 다중 봇 시스템 (NEW)
-from ..utils.crypto_secrets import decrypt_secret
-from ..websockets.ws_server import broadcast_to_user
+from ..services.equity_service import record_equity
+from ..services.exchanges import ExchangeFactory
+from ..services.strategy_loader import generate_signal_with_strategy
 from ..services.telegram import (
-    get_telegram_notifier,
-    TradeResult,
     OrderFilledInfo,
+    RiskAlertInfo,
     StopLossInfo,
     TakeProfitInfo,
-    RiskAlertInfo,
+    TradeResult,
+    get_telegram_notifier,
 )
-from ..agents.signal_validator import SignalValidatorAgent, ValidationResult
-from ..agents.risk_monitor import RiskMonitorAgent, RiskLevel
-from ..agents.market_regime import MarketRegimeAgent, MarketRegime, RegimeType
-from ..agents.base import AgentTask, TaskPriority, AgentState
+from ..services.trade_executor import (
+    InvalidApiKeyError,
+)
+from ..utils.crypto_secrets import decrypt_secret
+from ..websockets.ws_server import broadcast_to_user
 
 logger = logging.getLogger(__name__)
 
@@ -772,7 +768,7 @@ class BotRunner:
                                             )
                                             # 치명적 리스크 시 포지션 강제 청산
                                             if alert.recommended_action.value in {"close_position", "emergency_shutdown"}:
-                                                logger.warning(f"🛑 Force closing position due to critical risk")
+                                                logger.warning("🛑 Force closing position due to critical risk")
                                                 await self._close_instance_position(
                                                     session, bitget_client, bot_instance, user_id,
                                                     current_position, price, f"Risk alert: {alert.message}"
@@ -1222,7 +1218,7 @@ class BotRunner:
                 and_(
                     BotInstance.id == bot_instance_id,
                     BotInstance.user_id == user_id,
-                    BotInstance.is_active == True
+                    BotInstance.is_active is True
                 )
             )
         )
@@ -1708,7 +1704,7 @@ class BotRunner:
                         f"Failed to load historical candles for user {user_id}: {e}"
                     )
                     logger.info(
-                        f"Continuing with empty candle buffer (strategies may have reduced accuracy)"
+                        "Continuing with empty candle buffer (strategies may have reduced accuracy)"
                     )
 
                 # 4. 기존 포지션 동기화 (봇 시작 시 Bitget에서 조회)

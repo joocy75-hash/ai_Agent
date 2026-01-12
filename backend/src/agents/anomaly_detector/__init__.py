@@ -6,7 +6,7 @@ Anomaly Detection Agent (이상 징후 감지 에이전트)
 """
 
 from .agent import AnomalyDetectionAgent
-from .models import AnomalyType, AnomalySeverity, AnomalyAlert
+from .models import AnomalyAlert, AnomalySeverity, AnomalyType
 
 __all__ = [
     "AnomalyDetectionAgent",

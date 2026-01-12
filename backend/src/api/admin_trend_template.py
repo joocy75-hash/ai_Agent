@@ -7,7 +7,7 @@ from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
-from sqlalchemy import select, update, delete, desc
+from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database.db import get_db
@@ -94,7 +94,30 @@ class TrendTemplateResponse(BaseModel):
 
 
 def template_to_response(template: TrendBotTemplate) -> dict:
-    """템플릿 모델을 응답 dict로 변환"""
+    """TrendBotTemplate 모델을 API 응답용 딕셔너리로 변환합니다.
+
+    데이터베이스에서 조회한 TrendBotTemplate ORM 객체를 JSON 직렬화 가능한
+    딕셔너리로 변환합니다. Decimal 타입은 float로, Enum은 문자열로,
+    datetime은 ISO 형식 문자열로 변환합니다.
+
+    Args:
+        template: TrendBotTemplate ORM 모델 인스턴스. AI 추세 봇 템플릿의
+            모든 설정 정보를 포함합니다:
+            - 기본 정보: id, name, symbol, description
+            - 전략 설정: strategy_type, direction, leverage
+            - 리스크 설정: stop_loss_percent, take_profit_percent
+            - 투자 설정: min_investment, recommended_investment
+            - 백테스트 결과: backtest_roi_30d, backtest_win_rate 등
+            - 상태: is_active, is_featured, sort_order
+            - 사용 통계: active_users, total_users
+
+    Returns:
+        dict: API 응답용 딕셔너리. 모든 값이 JSON 직렬화 가능한 형태로 변환됨.
+            - direction: TrendDirection enum이 문자열로 변환됨
+            - Decimal 필드들: float로 변환됨
+            - datetime 필드들: ISO 8601 형식 문자열로 변환됨
+            - None 값: 그대로 유지되거나 기본값으로 대체됨
+    """
     return {
         "id": template.id,
         "name": template.name,
@@ -150,7 +173,7 @@ async def list_trend_templates(
     )
 
     if not include_inactive:
-        query = query.where(TrendBotTemplate.is_active == True)
+        query = query.where(TrendBotTemplate.is_active is True)
 
     result = await session.execute(query)
     templates = result.scalars().all()

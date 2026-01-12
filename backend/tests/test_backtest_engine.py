@@ -12,6 +12,7 @@ import os
 import sys
 import tempfile
 import csv
+import pytest
 
 # Add src to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
@@ -30,7 +31,8 @@ def create_temp_csv(data):
     return temp_file.name
 
 
-def test_eth_ai_fusion_strategy_basic():
+@pytest.mark.asyncio
+async def test_eth_ai_fusion_strategy_basic():
     """Test basic backtest with EthAIFusionBacktestStrategy."""
     print("\n=== Test 1: Simple Strategy Basic ===")
 
@@ -49,7 +51,7 @@ def test_eth_ai_fusion_strategy_basic():
         strategy = EthAIFusionBacktestStrategy()
         engine = BacktestEngine(strategy=strategy)
 
-        result = engine.run({
+        result = await engine.run({
             'csv_path': csv_path,
             'initial_balance': 1000.0,
             'fee_rate': 0.001,
@@ -68,13 +70,13 @@ def test_eth_ai_fusion_strategy_basic():
         assert len(result['equity_curve']) == len(test_data)
 
         print("✅ Test 1 PASSED")
-        return True
 
     finally:
         os.unlink(csv_path)
 
 
-def test_eth_ai_fusion_strategy_extended():
+@pytest.mark.asyncio
+async def test_eth_ai_fusion_strategy_extended():
     """Test EthAIFusionBacktestStrategy with extended data."""
     print("\n=== Test 2: RSI Strategy ===")
 
@@ -103,7 +105,7 @@ def test_eth_ai_fusion_strategy_extended():
         strategy = EthAIFusionBacktestStrategy()
         engine = BacktestEngine(strategy=strategy)
 
-        result = engine.run({
+        result = await engine.run({
             'csv_path': csv_path,
             'initial_balance': 10000.0,
             'fee_rate': 0.001,
@@ -120,33 +122,30 @@ def test_eth_ai_fusion_strategy_extended():
         assert len(result['equity_curve']) == len(test_data)
 
         print("✅ Test 2 PASSED")
-        return True
 
     finally:
         os.unlink(csv_path)
 
 
-def test_error_handling_missing_csv():
+@pytest.mark.asyncio
+async def test_error_handling_missing_csv():
     """Test error handling for missing CSV file."""
     print("\n=== Test 3: Error Handling - Missing CSV ===")
 
     strategy = EthAIFusionBacktestStrategy()
     engine = BacktestEngine(strategy=strategy)
 
-    try:
-        result = engine.run({
+    with pytest.raises(FileNotFoundError):
+        await engine.run({
             'csv_path': '/nonexistent/path/to/file.csv',
             'initial_balance': 1000.0,
         })
-        print("❌ Test 3 FAILED - Should have raised FileNotFoundError")
-        return False
-    except FileNotFoundError as e:
-        print(f"✅ Correctly caught FileNotFoundError: {e}")
-        print("✅ Test 3 PASSED")
-        return True
+
+    print("✅ Test 3 PASSED")
 
 
-def test_empty_csv():
+@pytest.mark.asyncio
+async def test_empty_csv():
     """Test handling of empty CSV file."""
     print("\n=== Test 4: Empty CSV ===")
 
@@ -157,7 +156,7 @@ def test_empty_csv():
         strategy = EthAIFusionBacktestStrategy()
         engine = BacktestEngine(strategy=strategy)
 
-        result = engine.run({
+        result = await engine.run({
             'csv_path': csv_path,
             'initial_balance': 1000.0,
         })
@@ -170,13 +169,13 @@ def test_empty_csv():
         assert len(result['trades']) == 0
 
         print("✅ Test 4 PASSED")
-        return True
 
     finally:
         os.unlink(csv_path)
 
 
-def test_metrics_calculation():
+@pytest.mark.asyncio
+async def test_metrics_calculation():
     """Test that metrics are calculated correctly."""
     print("\n=== Test 5: Metrics Calculation ===")
 
@@ -196,7 +195,7 @@ def test_metrics_calculation():
         strategy = EthAIFusionBacktestStrategy()
         engine = BacktestEngine(strategy=strategy)
 
-        result = engine.run({
+        result = await engine.run({
             'csv_path': csv_path,
             'initial_balance': 1000.0,
         })
@@ -224,54 +223,6 @@ def test_metrics_calculation():
         assert 0 <= metrics['win_rate'] <= 1
 
         print("✅ Test 5 PASSED")
-        return True
 
     finally:
         os.unlink(csv_path)
-
-
-def run_all_tests():
-    """Run all tests and report results."""
-    print("=" * 60)
-    print("BACKTEST ENGINE INTEGRATION TESTS")
-    print("=" * 60)
-
-    tests = [
-        ("Simple Strategy Basic", test_simple_strategy_basic),
-        ("RSI Strategy", test_rsi_strategy),
-        ("Error Handling - Missing CSV", test_error_handling_missing_csv),
-        ("Empty CSV", test_empty_csv),
-        ("Metrics Calculation", test_metrics_calculation),
-    ]
-
-    results = []
-    for name, test_func in tests:
-        try:
-            passed = test_func()
-            results.append((name, passed))
-        except Exception as e:
-            print(f"❌ Test '{name}' FAILED with exception: {e}")
-            import traceback
-            traceback.print_exc()
-            results.append((name, False))
-
-    print("\n" + "=" * 60)
-    print("TEST SUMMARY")
-    print("=" * 60)
-
-    passed_count = sum(1 for _, passed in results if passed)
-    total_count = len(results)
-
-    for name, passed in results:
-        status = "✅ PASSED" if passed else "❌ FAILED"
-        print(f"{status}: {name}")
-
-    print(f"\nTotal: {passed_count}/{total_count} tests passed")
-    print("=" * 60)
-
-    return passed_count == total_count
-
-
-if __name__ == '__main__':
-    success = run_all_tests()
-    sys.exit(0 if success else 1)

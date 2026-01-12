@@ -121,6 +121,7 @@ class TestJWTDependencies:
 
     def test_get_current_user_id(self):
         """현재 사용자 ID 추출 테스트"""
+        from unittest.mock import MagicMock
         from fastapi.security import HTTPAuthorizationCredentials
         from src.utils.jwt_auth import get_current_user_id
 
@@ -128,12 +129,20 @@ class TestJWTDependencies:
         token = JWTAuth.create_access_token(data={"user_id": user_id})
 
         credentials = HTTPAuthorizationCredentials(scheme="Bearer", credentials=token)
-        extracted_user_id = get_current_user_id(credentials)
+        
+        # Mock request object
+        mock_request = MagicMock()
+        mock_request.state = MagicMock()
+        mock_request.state.jwt_decoded = False  # Force direct decoding
+        mock_request.cookies = {}
+        
+        extracted_user_id = get_current_user_id(mock_request, credentials)
 
         assert extracted_user_id == user_id
 
     def test_get_current_user_id_missing_user_id(self):
         """user_id가 없는 토큰 테스트"""
+        from unittest.mock import MagicMock
         from fastapi import HTTPException
         from fastapi.security import HTTPAuthorizationCredentials
         from src.utils.jwt_auth import get_current_user_id
@@ -142,15 +151,22 @@ class TestJWTDependencies:
         token = JWTAuth.create_access_token(data={"email": "test@example.com"})
 
         credentials = HTTPAuthorizationCredentials(scheme="Bearer", credentials=token)
+        
+        # Mock request object
+        mock_request = MagicMock()
+        mock_request.state = MagicMock()
+        mock_request.state.jwt_decoded = False  # Force direct decoding
+        mock_request.cookies = {}
 
         with pytest.raises(HTTPException) as exc_info:
-            get_current_user_id(credentials)
+            get_current_user_id(mock_request, credentials)
 
         assert exc_info.value.status_code == 401
         assert "Invalid authentication credentials" in exc_info.value.detail
 
     def test_get_current_user_id_invalid_token(self):
         """잘못된 토큰으로 사용자 ID 추출 테스트"""
+        from unittest.mock import MagicMock
         from fastapi import HTTPException
         from fastapi.security import HTTPAuthorizationCredentials
         from src.utils.jwt_auth import get_current_user_id
@@ -159,9 +175,15 @@ class TestJWTDependencies:
             scheme="Bearer",
             credentials="invalid.token.here"
         )
+        
+        # Mock request object
+        mock_request = MagicMock()
+        mock_request.state = MagicMock()
+        mock_request.state.jwt_decoded = False  # Force direct decoding
+        mock_request.cookies = {}
 
         with pytest.raises(HTTPException) as exc_info:
-            get_current_user_id(credentials)
+            get_current_user_id(mock_request, credentials)
 
         assert exc_info.value.status_code == 401
 

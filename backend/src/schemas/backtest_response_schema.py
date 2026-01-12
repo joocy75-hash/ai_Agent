@@ -1,6 +1,7 @@
-from pydantic import BaseModel
-from typing import Dict, List, Any
 from datetime import datetime
+from typing import Any, Dict, List
+
+from pydantic import BaseModel
 
 
 class BacktestResponse(BaseModel):

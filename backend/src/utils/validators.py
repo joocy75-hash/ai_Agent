@@ -7,9 +7,10 @@ XSS 방지, SQL Injection 방지, 파일 경로 검증 등을 제공합니다.
 
 import re
 from pathlib import Path
-from typing import Any, Optional
-from pydantic import field_validator, ConfigDict
+from typing import Optional
+
 import bleach
+from pydantic import field_validator
 
 
 class ValidationRules:
@@ -115,7 +116,7 @@ def validate_no_sql_injection(text: str) -> str:
 
     for pattern in dangerous_patterns:
         if re.search(pattern, text, re.IGNORECASE):
-            raise ValueError(f"Potentially dangerous SQL pattern detected")
+            raise ValueError("Potentially dangerous SQL pattern detected")
 
     return text
 
@@ -136,8 +137,8 @@ def validate_file_path(file_path: str, allowed_extensions: set[str]) -> Path:
     """
     try:
         path = Path(file_path).resolve()
-    except Exception:
-        raise ValueError("Invalid file path")
+    except Exception as e:
+        raise ValueError("Invalid file path") from e
 
     # 확장자 검증
     if path.suffix.lower() not in allowed_extensions:

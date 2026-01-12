@@ -13,19 +13,17 @@ Redis 클라이언트 (Redis Client)
 import asyncio
 import json
 import logging
-from typing import Any, Dict, Optional, List, Callable
-from datetime import timedelta
+from typing import Any, Callable, Dict, List, Optional
 
 try:
-    import redis.asyncio as aioredis
-    from redis.asyncio import Redis, ConnectionPool
+    from redis.asyncio import ConnectionPool, Redis
     REDIS_AVAILABLE = True
 except ImportError:
     REDIS_AVAILABLE = False
     Redis = None
     ConnectionPool = None
 
-from .config import get_agent_config, RedisConfig
+from .config import RedisConfig, get_agent_config
 
 logger = logging.getLogger(__name__)
 

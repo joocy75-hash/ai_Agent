@@ -1,12 +1,13 @@
+import logging
 from datetime import datetime
-from fastapi import APIRouter, Body, Depends, HTTPException
+
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-import logging
 
-from ..config import ExchangeConfig
 from ..database.db import get_session
-from ..database.models import ApiKey, User, RiskSettings
+from ..database.models import ApiKey, RiskSettings, User
+from ..middleware.rate_limit_improved import api_key_reveal_limiter
 from ..schemas.account_schema import (
     ApiKeyPayload,
     RiskSettingsRequest,
@@ -15,7 +16,6 @@ from ..schemas.account_schema import (
 from ..services.exchange_service import ExchangeService
 from ..utils.crypto_secrets import decrypt_secret, encrypt_secret
 from ..utils.jwt_auth import get_current_user_id
-from ..middleware.rate_limit_improved import api_key_reveal_limiter
 from ..utils.structured_logging import get_logger
 
 logger = logging.getLogger(__name__)
@@ -93,7 +93,7 @@ async def balance(
         raise HTTPException(
             status_code=500,
             detail=f"Failed to fetch balance from exchange: {str(e)}"
-        )
+        ) from e
 
 
 @router.get("/positions")
@@ -143,7 +143,7 @@ async def positions(
         raise HTTPException(
             status_code=500,
             detail=f"Failed to fetch positions from exchange: {str(e)}"
-        )
+        ) from e
 
 
 @router.post("/save_keys")
@@ -224,7 +224,7 @@ async def save_keys(
             user_id=user_id,
             error=str(e)
         )
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
         # Unexpected error
         structured_logger.error(
@@ -235,7 +235,7 @@ async def save_keys(
         )
         raise HTTPException(
             status_code=500, detail="Failed to save API keys. Please try again."
-        )
+        ) from e
 
 
 @router.get("/my_keys")
@@ -338,7 +338,7 @@ async def get_risk_settings(
         logger.error(f"[get_risk_settings] Error for user {user_id}: {e}", exc_info=True)
         raise HTTPException(
             status_code=500, detail="리스크 설정 조회에 실패했습니다."
-        )
+        ) from e
 
 
 @router.post("/risk-settings")
@@ -408,10 +408,10 @@ async def save_risk_settings(
     except ValueError as e:
         # Pydantic validation error
         logger.error(f"[save_risk_settings] Validation error for user {user_id}: {e}")
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
         await session.rollback()
         logger.error(f"[save_risk_settings] Error for user {user_id}: {e}", exc_info=True)
         raise HTTPException(
             status_code=500, detail="리스크 설정 저장에 실패했습니다."
-        )
+        ) from e

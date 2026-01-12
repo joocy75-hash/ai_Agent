@@ -5,6 +5,7 @@ FinBERT 기반 금융 뉴스 감성 분석 에이전트
 """
 
 from .agent import SentimentAnalyzerAgent
+from .data_sources import CryptoPanicSource, RedditSource
 from .models import (
     MarketSentiment,
     NewsItem,
@@ -12,7 +13,6 @@ from .models import (
     SentimentSignal,
     SentimentStrength,
 )
-from .data_sources import CryptoPanicSource, RedditSource
 
 __all__ = [
     "SentimentAnalyzerAgent",

@@ -6,29 +6,29 @@
 import asyncio
 import logging
 import os
-from typing import Optional, List, Callable, Dict
+from typing import Callable, Dict, List, Optional
 
 import httpx
 
 from .messages import TelegramMessages
 from .types import (
-    TradeInfo,
-    TradeResult,
-    BotConfig,
-    SessionSummary,
-    PositionInfo,
-    WarningInfo,
-    ErrorInfo,
     BalanceInfo,
+    BotConfig,
     DailyStats,
-    PerformanceStats,
-    OrderInfo,
+    ErrorInfo,
     OrderFilledInfo,
+    OrderInfo,
+    PartialCloseInfo,
+    PerformanceStats,
+    PositionInfo,
+    RiskAlertInfo,
+    SessionSummary,
+    SignalInfo,
     StopLossInfo,
     TakeProfitInfo,
-    PartialCloseInfo,
-    RiskAlertInfo,
-    SignalInfo,
+    TradeInfo,
+    TradeResult,
+    WarningInfo,
 )
 
 logger = logging.getLogger(__name__)
