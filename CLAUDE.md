@@ -144,17 +144,19 @@ positions = await client.get_positions()
 
 ## 서버 및 배포
 
-### Production Server
+### Production Server (서울)
 
 ```
-IP: 141.164.55.245
+IP: 141.164.55.245 (Seoul, Vultr)
 경로: /root/group_c
 OS: Ubuntu 24.04 LTS
 사양: 4 vCPU / 8GB RAM
+Username: root
 
-Repository: https://github.com/joocy75-hash/AI-Agent-DeepSignal
+Repository: https://github.com/joocy75-hash/ai_Agent
 Branch: main
-Remote: hetzner
+
+⚠️ Hetzner 서버 (5.161.112.248)는 2026-01-12에 완전 삭제됨
 ```
 
 ### 접속 URL
@@ -817,6 +819,7 @@ Phase 5: 테스트/배포      → AI-4
 
 | 날짜 | 내용 |
 |------|------|
+| 2026-01-12 | **서버 이전 완료** - Hetzner(5.161.112.248) 완전 삭제, 서울 서버(141.164.55.245)로 단일화 |
 | 2026-01-11 | **배포 문제 해결 가이드 추가** - Frontend 캐시, .env 복구, CSRF 설정, Redis 볼륨 등 7가지 주요 문제 문서화 |
 | 2026-01-10 | **멀티봇 시스템 v2.0** - 40% 한도 제거, 최대 봇 5개, TrendBotTemplate 활용 |
 | 2026-01-10 | **멀티봇 시스템** - 구현 계획서 및 스킬 파일 작성 |
@@ -830,4 +833,8 @@ Phase 5: 테스트/배포      → AI-4
 
 ---
 
-**⚠️ 이전 서버(158.247.245.197)는 삭제되었습니다.**
+**⚠️ 이전 서버들은 모두 삭제되었습니다.**
+- Hetzner 서버 (5.161.112.248) - 2026-01-12 삭제
+- 구 서버 (158.247.245.197) - 이전에 삭제됨
+
+**현재 운영 서버**: 서울 서버 (141.164.55.245) 단일 운영

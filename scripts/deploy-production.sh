@@ -13,12 +13,13 @@ BLUE='\033[0;34m'
 CYAN='\033[0;36m'
 NC='\033[0m'
 
-# Configuration
+# Configuration - Seoul Server (Vultr)
+# Hetzner 서버 (5.161.112.248)는 2026-01-12에 완전 삭제됨
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
-SERVER_IP="5.161.112.248"
+SERVER_IP="141.164.55.245"
 SERVER_USER="root"
-SERVER_PATH="/root/service_c/ai-trading-platform"
+SERVER_PATH="/root/group_c"
 
 # Production URLs
 PRODUCTION_API_URL="https://api.deepsignal.shop"
